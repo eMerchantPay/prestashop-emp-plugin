@@ -1,0 +1,3 @@
+[submodule "modules/emerchantpaygenesis/lib/genesis_php"]
+	path = modules/emerchantpaygenesis/lib/genesis_php
+	url = https://github.com/E-ComProcessing/genesis_php
