@@ -3,7 +3,7 @@
   background: #FFF;
   border:1px solid #ddd;
   border-radius:16px;
-  padding:22px;
+  padding:22px 12px;
   overflow:hidden;
 }
 
@@ -20,6 +20,7 @@
     -webkit-box-sizing: border-box;
        -moz-box-sizing: border-box;
             box-sizing: border-box;
+    max-width: 350px !important;
   }
 
   .emerchantpay-logo {
@@ -33,7 +34,6 @@
     }
 
   .payment-checkout {
-    height: 472px;
     position:relative;
   }
     .payment-checkout .center-wrapper {
@@ -50,6 +50,7 @@
       }
         .payment-checkout .center-wrapper .wrap img {
           width: 85%;
+          max-width: 350px;
           vertical-align: middle;
         }
 
@@ -72,16 +73,18 @@
         }
 
         .payment-standard .form-wrapper .form-group input[type="submit"] {
-          border-radius: 6px !important;
+
         }
         .payment-standard .form-wrapper .form-group input.submit {
           box-shadow: none;
+          border-radius: 6px !important;
           background: #5F604B;
           color: #fff;
           height:40px;
           line-height: 8px;
           cursor: pointer;
           cursor: hand;
+          margin: 0 auto;
         }
           .payment-standard .form-wrapper .form-group input.submit:hover {
             text-decoration: underline;

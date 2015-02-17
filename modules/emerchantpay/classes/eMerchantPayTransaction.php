@@ -65,6 +65,7 @@ class eMerchantPayTransaction extends ObjectModel
 			Hook::exec('actionEmerchantPayAddTransaction', array('emerchantpayAddTransaction' => $this));
 			return true;
 		}
+
 		return false;
 	}
 
@@ -181,7 +182,7 @@ class eMerchantPayTransaction extends ObjectModel
 		foreach ($transactions as &$transaction) {
 			$transaction['amount'] = number_format($transaction['amount'], 2);
 
-			$transaction['date_add'] = date('H:i:s m/d/Y', strtotime($transaction['date_add']));
+			$transaction['date_add'] = date("H:i:s \n m/d/Y", strtotime($transaction['date_add']));
 
 			if (in_array( $transaction['type'], array( 'authorize', 'authorize3d')) && $transaction['status'] == 'approved') {
 				$transaction['can_capture'] = true;
@@ -261,16 +262,33 @@ class eMerchantPayTransaction extends ObjectModel
 	 * @param stdClass $response
 	 */
 	public function importResponse($response) {
-		include __DIR__ . '/lib/genesis_php/vendor/autoload.php';
+		include dirname(__FILE__) . '/../lib/genesis_php/vendor/autoload.php';
 
-		$amount = Genesis\Utils\Currency::exponentToReal($response->amount, $response->currency);
+		if (isset($response->amount) && isset($response->currency)) {
+			$amount = Genesis\Utils\Currency::exponentToReal($response->amount, $response->currency);
+		}
+		else {
+			$amount = $response->amount;
+		}
 
-		$this->id_unique    = (string)$response->unique_id;
-		$this->type         = (string)$response->transaction_type;
-		$this->status       = (string)$response->status;
-		$this->message      = (string)$response->message;
-		$this->currency     = (string)$response->currency;
-		$this->amount       = (string)$amount;
+		if (isset($response->unique_id)) {
+			$this->id_unique = (string) $response->unique_id;
+		}
+		if (isset($response->transaction_type)) {
+			$this->type = (string) $response->transaction_type;
+		}
+		if (isset($response->status)) {
+			$this->status = (string) $response->status;
+		}
+		if (isset($response->message)) {
+			$this->message = (string) $response->message;
+		}
+		if (isset($response->currency)) {
+			$this->currency = (string) $response->currency;
+		}
+		if (isset($response->amount)) {
+			$this->amount = (string) $amount;
+		}
 	}
 
 	/**

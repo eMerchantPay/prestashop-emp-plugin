@@ -25,11 +25,12 @@ class eMerchantPayInstall
 		'header',
 		'payment',
 		'paymentTop',
-		//'orderConfirmation',
+		//'paymentReturn',
+		'orderConfirmation',
 		'adminOrder',
-		'cancelProduct',
+		//'cancelProduct',
 		'BackOfficeHeader',
-		'displayMobileHeader'
+		//'displayMobileHeader'
 	);
 
 	/**

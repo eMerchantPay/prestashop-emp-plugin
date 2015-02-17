@@ -20,9 +20,9 @@
 if (!defined('_PS_VERSION_'))
 	exit;
 
-include __DIR__ . '/emerchantpay_install.php';
-include __DIR__ . '/emerchantpay_transaction.php';
-include __DIR__ . '/emerchantpay_transaction_process.php';
+include dirname(__FILE__) . '/classes/eMerchantPayInstall.php';
+include dirname(__FILE__) . '/classes/eMerchantPayTransaction.php';
+include dirname(__FILE__) . '/classes/eMerchantPayTransactionProcess.php';
 
 class eMerchantPay extends PaymentModule
 {
@@ -32,7 +32,7 @@ class eMerchantPay extends PaymentModule
 		$this->name         = 'emerchantpay';
 		$this->tab          = 'payments_gateways';
 		$this->displayName  = 'eMerchantPay Payment Gateway';
-		$this->controllers  = array('notification', 'payment');
+		$this->controllers  = array('checkout', 'notification', 'redirect', 'validation');
 		$this->version      = 1.0;
 
 		/* The parent construct is required for translations */
@@ -45,11 +45,8 @@ class eMerchantPay extends PaymentModule
 		/* Get all configuration keys */
 		$this->config = Configuration::getMultiple( $this->getConfigKeys() );
 
-		/* Flag, whether or not 3DSecure transaction type is selected */
-		$this->is3DSecure = (stripos($this->config['EMERCHANTPAY_TRANSACTION_TYPE'], '3d') !== false) ? true : false;
-
 		/* Storage for transaction data to avoid init/call every-time */
-		$this->transaction_data = new stdClass();
+		$this->transaction_data = null;
 
 		/* Store warnings during init */
 		$this->warning = '';
@@ -63,8 +60,14 @@ class eMerchantPay extends PaymentModule
 		/* Run all parent constructors */
 		parent::__construct();
 
-		/* Set Smarty BaseDir */
+		/* Smarty Presta constants */
 		$this->context->smarty->assign('base_dir', __PS_BASE_URI__);
+		$this->context->smarty->assign('ps_version', _PS_VERSION_);
+
+		/* Smarty Module constants */
+		$this->context->smarty->assign('module_name', $this->name);
+		$this->context->smarty->assign('module_path', $this->getPathUri());
+		$this->context->smarty->assign('module_warn', $this->warning);
 	}
 
 	/**
@@ -122,11 +125,46 @@ class eMerchantPay extends PaymentModule
 	 */
 	public function isAvailable()
 	{
-		if (isset($this->warning)) {
+		if (isset($this->warning) && !empty($this->warning)) {
 			return false;
 		}
 
 		return true;
+	}
+
+	/**
+	 * Is Standard payment method enabled?
+	 *
+	 * @return bool
+	 */
+	public function isStandardMethodAvailable() {
+		return ($this->config['EMERCHANTPAY_STANDARD'] == 'true' ? true : false);
+	}
+
+	/**
+	 * Is Checkout payment method available?
+	 *
+	 * @return bool
+	 */
+	public function isCheckoutMethodAvailable() {
+		return ($this->config['EMERCHANTPAY_CHECKOUT'] == 'true' ? true : false);
+	}
+
+	/**
+	 * Is the current transaction type async?
+	 *
+	 * Note: This takes into account only Standard
+	 * transaction methods as Checkout is inherently
+	 * asynchronous
+	 *
+	 * @return bool
+	 */
+	public function isAsyncTransaction() {
+		if ($this->isStandardMethodAvailable()) {
+			return (stripos($this->config['EMERCHANTPAY_STANDARD_TRX_TYPE'], '3d') !== false) ? true : false;
+		}
+
+		return false;
 	}
 
 	/**
@@ -161,32 +199,29 @@ class eMerchantPay extends PaymentModule
 
 		if (version_compare(_PS_VERSION_, '1.6', '<')) {
 			$this->context->controller->addCSS(
-				$this->_path . 'assets/css/font-awesome.min.css', 'all'
+				$this->getPathUri() . 'assets/css/font-awesome.min.css', 'all'
 			);
 		}
 
 		$this->context->controller->addCSS(
-			$this->_path . 'assets/css/treegrid.min.css', 'all'
+			$this->getPathUri() . 'assets/css/treegrid.min.css', 'all'
 		);
 		$this->context->controller->addJS(
-			$this->_path . 'assets/js/treegrid/cookie.min.js'
+			$this->getPathUri() . 'assets/js/treegrid/cookie.min.js'
 		);
 		$this->context->controller->addJS(
-			$this->_path . 'assets/js/treegrid/treegrid.min.js'
+			$this->getPathUri() . 'assets/js/treegrid/treegrid.min.js'
 		);
 
 		$currency = new Currency((int)$order->id_currency);
 
 		$this->context->smarty->assign(
 			array(
-				'warning'           => $this->warning,
-				'ps_version'        => _PS_VERSION_,
 				'base_url'          => _PS_BASE_URL_ . __PS_BASE_URI__,
-				'module_name'       => $this->name,
 				'order_id'          => $order->id,
 				'order_amount'      => $order->getTotalPaid(),
 				'order_currency'    => $currency->iso_code,
-				'payment_error'     => $this->getSessionVariable('admin_transaction_error'),
+				'error_transaction' => $this->getSessionVariable('error_transaction'),
 				'transactions'      => eMerchantPayTransaction::getTransactionTree((int)$params['id_order']),
 			)
 		);
@@ -194,57 +229,8 @@ class eMerchantPay extends PaymentModule
 		return $this->fetchTemplate('/views/templates/admin/admin_order/transactions.tpl');
 	}
 
-	public function hookProductCancel($params)
-	{
-		if (Tools::isSubmit('generateDiscount')) {
-			return false;
-		}
-		elseif ($params['order']->module != $this->name || !($order = $params['order']) || !Validate::isLoadedObject($order)) {
-			return false;
-		}
-		elseif (!$order->hasBeenPaid()) {
-			return false;
-		}
-
-		$order_detail = new OrderDetail((int)$params['id_order_detail']);
-		if (!$order_detail || !Validate::isLoadedObject($order_detail))
-			return false;
-
-		$transactions = eMerchantPayOrder::getTransactionByOrderId((int)$order->id);
-
-		/** @var eMerchantPayTransaction $transaction */
-		$transaction = null;
-
-		foreach ($transactions as $trx) {
-			if (in_array(array('capture', 'sale'), $trx['type'])) {
-				if ($trx['status'] == 'approved') {
-					$transaction = $trx;
-				}
-			}
-		}
-
-		if (!$transaction) {
-			return false;
-		}
-
-		$products   = $order->getProducts();
-		$quantity   = Tools::getValue('cancelQuantity');
-
-		$amount = (float)($products[(int)$order_detail->id]['product_price_wt'] * (int)$quantity[(int)$order_detail->id]);
-
-		$this->doRefund(
-			array(
-				'id_unique' => $transaction->id_unique,
-				'amount'    => $amount,
-				'usage'     => (Tools::getIsset('discount_name') ? Tools::getValue('discount_name') : 'Prestashop Refund'),
-			)
-		);
-
-		return true;
-	}
-
 	/**
-	 * Display our payment page
+	 * List our payment methods
 	 *
 	 * @param $params
 	 *
@@ -252,24 +238,35 @@ class eMerchantPay extends PaymentModule
 	 */
 	public function hookPayment($params)
 	{
-		global $smarty;
-
 		if (!isset($_SESSION)) {
 			session_start();
 		}
 
-		$smarty->assign(
+		if (version_compare(_PS_VERSION_, '1.6', '<')) {
+			$this->context->controller->addCSS(
+				$this->getPathUri() . 'assets/css/font-awesome.min.css', 'all'
+			);
+		}
+
+		$this->context->smarty->assign(
 			array(
-				'path'          => $this->_path,
-				'module_name'   => $this->name,
-				'warning'       => $this->warning,
-				'logo_url'      => Tools::getHttpHost(true) . '/modules/' . $this->name . '/assets/img/logo_500px.png',
-				'form_url'      => Tools::getHttpHost(true) . '/modules/' . $this->name . '/validation.php',
-				'payment_error' => $this->getSessionVariable('payment_error'),
+				'module_name'       => $this->name,
+				'warning'           => $this->warning,
+				//'logo_url'          => Tools::getHttpHost(true) . '/modules/' . $this->name . '/assets/img/logo_500px.png',
+				//'form_url'          => Tools::getHttpHost(true) . '/modules/' . $this->name . '/validation.php',
+				'checkout_url'      => $this->context->link->getModuleLink($this->name, 'checkout'),
+				'standard_url'      => $this->context->link->getModuleLink($this->name, 'validation'),
+				'error_standard'    => $this->getSessionVariable('error_standard'),
+				'payment_methods'   => array( 'standard' => $this->isStandardMethodAvailable(), 'checkout'  => $this->isCheckoutMethodAvailable() ),
 			)
 		);
 
-		return $this->fetchTemplate('payment.tpl');
+		if (!$this->isAvailable()) {
+			return $this->fetchTemplate('blank.tpl');
+		}
+		else {
+			return $this->fetchTemplate('payment.tpl');
+		}
 	}
 
 	/**
@@ -283,72 +280,70 @@ class eMerchantPay extends PaymentModule
 	 */
 	public function hookPaymentTop($params)
 	{
+		if (!$this->isAvailable()) {
+			return null;
+		}
+
 		if (version_compare(_PS_VERSION_, '1.6', '<')) {
 			$this->context->controller->addCSS(
-				$this->_path . 'assets/css/bootstrap-custom.min.css', 'all'
+				$this->getPathUri() . 'assets/css/bootstrap-custom.min.css', 'all'
 			);
 			$this->context->controller->addJS(
-				$this->_path  . 'assets/js/bootstrap/bootstrap.min.js'
+				$this->getPathUri() . 'assets/js/bootstrap/bootstrap.min.js'
 			);
 		}
 
 		$this->context->controller->addCSS(
-			$this->_path . 'assets/css/card.min.css', 'all'
+			$this->getPathUri() . 'assets/css/card.min.css', 'all'
 		);
 		$this->context->controller->addJS(
-			$this->_path  . 'assets/js/card/card.min.js'
+			$this->getPathUri() . 'assets/js/card/card.min.js'
 		);
 	}
 
 	/**
-	 * Show the customer a message regarding his order status
+	 * Show a information about the customers order
 	 *
 	 * @param $params
 	 *
-	 * @return mixed
+	 * @return bool|mixed
 	 */
-	public function hookPaymentReturn($params)
-	{
-		global $smarty;
-
-		$state = $params['objOrder']->getCurrentState();
-
-		if ($state == _PS_OS_OUTOFSTOCK_ or $state == _PS_OS_PAYMENT_) {
-			$smarty->assign( array(
-				'status'       => 'ok',
-				'id_order'     => $params['objOrder']->id,
-				'total_to_pay' => Tools::displayPrice( $params['total_to_pay'], $params['currencyObj'], false, false )
-			) );
-		}
-		else {
-			$smarty->assign( 'status', 'failed' );
-		}
-
-		return $this->fetchTemplate('payment_return.tpl');
-	}
-
-	/*
 	public function hookOrderConfirmation($params)
 	{
-		if (!isset($params['objOrder']) || ($params['objOrder']->module != $this->name))
+		if (!isset($params['objOrder']) || ($params['objOrder']->module != $this->name)) {
 			return false;
-
-		if ($params['objOrder'] && Validate::isLoadedObject($params['objOrder']) && isset($params['objOrder']->valid))
-
-			$this->smarty->assign('order', array('reference' => isset($params['objOrder']->reference) ? $params['objOrder']->reference : '#'.sprintf('%06d', $params['objOrder']->id), 'valid' => $params['objOrder']->valid));
-
-		$pendingOrderStatus = (int)Configuration::get('TWOCHECKOUT_PENDING_ORDER_STATUS');
-		$currentOrderStatus = (int)$params['objOrder']->getCurrentState();
-
-		if ($pendingOrderStatus==$currentOrderStatus) {
-			$this->smarty->assign('order_pending', true);
-		} else {
-			$this->smarty->assign('order_pending', false);
 		}
+
+		if ($params['objOrder'] && Validate::isLoadedObject($params['objOrder']) && isset($params['objOrder']->valid)) {
+
+			$this->smarty->assign( 'order',
+				array(
+					'reference' => isset( $params['objOrder']->reference ) ? $params['objOrder']->reference : '#' . sprintf( '%06d',
+							$params['objOrder']->id ),
+					'valid'     => $params['objOrder']->valid
+				) );
+		}
+
+		switch ($params['objOrder']->current_state) {
+			case _PS_OS_PREPARATION_:
+				$status = 'pending';
+				break;
+			case _PS_OS_PAYMENT_:
+				$status = 'success';
+				break;
+			default:
+				$status = 'failure';
+				break;
+		}
+
+		$this->context->smarty->assign(
+			array(
+				'status' => $status,
+			)
+		);
 
 		return $this->fetchTemplate('confirmation.tpl');
 	}
-	*/
 
 	/**
 	 * Collect and process the data required for the initial payment.
@@ -358,7 +353,7 @@ class eMerchantPay extends PaymentModule
 	public function populateTransactionData()
 	{
 		/** @var CartCore $cart */
-		$cart = new Cart((int)$this->context->cart->id);
+		$cart = new Cart(intval($this->context->cart->id));
 
 		/** @var AddressCore $shipping */
 		$shipping   = new Address(intval($cart->id_address_delivery));
@@ -369,60 +364,169 @@ class eMerchantPay extends PaymentModule
 		/** @var CurrencyCore $currency */
 		$currency   = new Currency(intval($cart->id_currency));
 
+		$data = new stdClass();
+
 		// Parameters
-		$this->transaction_data->id                = sprintf('%s-%s', $cart->id, md5(microtime(true)));
-		$this->transaction_data->transaction_type  = $this->config['EMERCHANTPAY_TRANSACTION_TYPE'];
+		$data->id                = md5(mt_rand() . microtime(true) . mt_rand());
+		$data->transaction_type  = $this->getStandardTransactionType();
 
-		$this->transaction_data->remote_ip         = $_SERVER['REMOTE_ADDR'];
-		$this->transaction_data->currency          = $currency->iso_code;
-		$this->transaction_data->amount            = $cart->getOrderTotal();
+		$data->usage             = $this->l('Prestashop Transaction');
 
-		$this->transaction_data->customer_phone    = $invoice->phone;
-		$this->transaction_data->customer_email    = $customer->email;
+		$description = '';
 
-		$this->transaction_data->card_number       = str_replace(' ', '', Tools::getValue('emerchantpay-number'));
-		$this->transaction_data->card_holder       = Tools::getValue('emerchantpay-name');
-		$this->transaction_data->cvv               = Tools::getValue('emerchantpay-cvc');
-		$this->transaction_data->expiration        = Tools::getValue('emerchantpay-expiry');
+		foreach ($cart->getProducts() as $product) {
+			if (isset($product['name']) && isset($product['quantity'])) {
+				$quantity_text = ($product['quantity']) > 1 ? $this->l('pcs') : $this->l('pc');
 
-		$this->transaction_data->card_type         = $this->getCardTypeByNumber($this->transaction_data->card_number);
-		$this->transaction_data->card_last4        = substr($this->transaction_data->card_number, -4);
+				$description .= $product['name'] . ' x' . $product['quantity'] . $quantity_text . PHP_EOL;
+			}
+		}
 
-		list($month, $year) = explode(' / ', $this->transaction_data->expiration);
+		$data->description       = $description;
 
-		$this->transaction_data->expiration_month  = $month;
-		$this->transaction_data->expiration_year   = substr(date('Y'), 0, 2) . substr($year, -2);
+		$data->remote_ip         = Tools::getRemoteAddr();
+		$data->currency          = $currency->iso_code;
+		$data->amount            = $cart->getOrderTotal();
+
+		$data->customer_email    = $customer->email;
+		$data->customer_phone    = (empty($invoice->phone) ? $invoice->phone_mobile : $invoice->phone);
+
+		if (Tools::getIsset('emerchantpay-number')) {
+			$data->card_number       = str_replace(' ', '', Tools::getValue('emerchantpay-number'));
+			$data->card_type         = $this->getCardTypeByNumber($this->transaction_data->card_number);
+			$data->card_last4        = substr($this->transaction_data->card_number, -4);
+		}
+
+		if (Tools::getIsset('emerchantpay-name')) {
+			$data->card_holder       = Tools::getValue('emerchantpay-name');
+		}
+
+		if (Tools::getIsset('emerchantpay-cvc')) {
+			$data->cvv               = Tools::getValue('emerchantpay-cvc');
+		}
+
+		if (Tools::getIsset('emerchantpay-expiry')) {
+			$data->expiration        = Tools::getValue('emerchantpay-expiry');
+
+			list($month, $year) = explode(' / ', $data->expiration);
+
+			$data->expiration_month  = $month;
+			$data->expiration_year   = substr(date('Y'), 0, 2) . substr($year, -2);
+		}
 
 		// Billing
-		$this->transaction_data->billing = new stdClass();
-		$this->transaction_data->billing->firstname         = $invoice->firstname;
-		$this->transaction_data->billing->lastname          = $invoice->lastname;
-		$this->transaction_data->billing->address1          = $invoice->address1;
-		$this->transaction_data->billing->address2          = $invoice->address2;
-		$this->transaction_data->billing->postcode          = $invoice->postcode;
-		$this->transaction_data->billing->city              = $invoice->city;
-		$this->transaction_data->billing->state             = State::getNameById($invoice->id_state);
-		$this->transaction_data->billing->country           = \Genesis\Utils\Country::getCountryISO($invoice->country);
+		if ($invoice) {
+			$data->billing            = new stdClass();
+			$data->billing->firstname = $invoice->firstname;
+			$data->billing->lastname  = $invoice->lastname;
+			$data->billing->address1  = $invoice->address1;
+			$data->billing->address2  = $invoice->address2;
+			$data->billing->postcode  = $invoice->postcode;
+			$data->billing->city      = $invoice->city;
+			$data->billing->state     = State::getNameById( $invoice->id_state );
+			$data->billing->country   = \Genesis\Utils\Country::getCountryISO( $invoice->country );
+		}
 
 		// Shipping
 		if ($shipping) {
-			$this->transaction_data->shipping = new stdClass();
-			$this->transaction_data->shipping->firstname    = $shipping->firstname;
-			$this->transaction_data->shipping->lastname     = $shipping->lastname;
-			$this->transaction_data->shipping->address1     = $shipping->address1;
-			$this->transaction_data->shipping->address2     = $shipping->address2;
-			$this->transaction_data->shipping->postcode     = $shipping->postcode;
-			$this->transaction_data->shipping->city         = $shipping->city;
-			$this->transaction_data->shipping->state        = State::getNameById($shipping->id_state);
-			$this->transaction_data->shipping->country      = \Genesis\Utils\Country::getCountryISO($shipping->country);
+			$data->shipping = new stdClass();
+			$data->shipping->firstname    = $shipping->firstname;
+			$data->shipping->lastname     = $shipping->lastname;
+			$data->shipping->address1     = $shipping->address1;
+			$data->shipping->address2     = $shipping->address2;
+			$data->shipping->postcode     = $shipping->postcode;
+			$data->shipping->city         = $shipping->city;
+			$data->shipping->state        = State::getNameById($shipping->id_state);
+			$data->shipping->country      = \Genesis\Utils\Country::getCountryISO($shipping->country);
 		}
 
-		// URL (Async transactions)
-		if ($this->is3DSecure) {
-			$this->transaction_data->url = new stdClass();
-			$this->transaction_data->url->notification      = $this->getNotificationURL();
-			$this->transaction_data->url->return_success    = $this->getAsyncSuccessURL();
-			$this->transaction_data->url->return_failure    = $this->getAsyncFailureURL();
+		// URL endpoints (Async transactions)
+		$data->url = new stdClass();
+		$data->url->notification      = $this->getNotificationURL();
+		$data->url->return_success    = $this->getAsyncSuccessURL();
+		$data->url->return_failure    = $this->getAsyncFailureURL();
+		$data->url->return_cancel     = $this->getAsyncCancelURL();
+
+		// Set transaction types
+		$data->transaction_types = json_decode(
+			$this->config['EMERCHANTPAY_CHECKOUT_TRX_TYPES']
+		);
+
+		$this->transaction_data = $data;
+	}
+
+	/**
+	 * Process a checkout request
+	 *
+	 * This method will try to create a new WPF instance
+	 * if successful - we redirect the customer to the newly created insnace
+	 * if unsuccessful - we show them an error message
+	 *
+	 * @return string url
+	 */
+	public function doCheckout()
+	{
+		try {
+			if (is_null($this->transaction_data)) {
+				$this->populateTransactionData();
+			}
+
+			$response = eMerchantPayTransactionProcess::checkout($this->transaction_data);
+
+			if (isset($response)) {
+				if ($response->isSuccessful()) {
+					$message = 'Unique Id: ' . $response->getResponseObject()->unique_id . PHP_EOL;
+
+					$this->validateOrder( (int) $this->context->cart->id, (int) _PS_OS_PREPARATION_, (float)$this->getResponseAmount( $response->getResponseObject() ), $this->displayName, $message, array(), null, false, $this->context->customer->secure_key );
+
+					// Add Transaction Info to the original Order
+					$new_order = new Order( (int)$this->currentOrder );
+
+					// Save the transaction to Db
+					$transaction = new eMerchantPayTransaction();
+					$transaction->id_parent = 0;
+					$transaction->ref_order = $new_order->reference;
+					$transaction->type      = 'checkout';
+					$transaction->importResponse( $response->getResponseObject() );
+					$transaction->add();
+
+					return strval($response->getResponseObject()->redirect_url);
+				}
+				else {
+					if (isset($response) && isset($response->getResponseObject()->message)) {
+						$message = strval($response->getResponseObject()->message);
+					}
+					else {
+						$message = $this->l("Please, make sure you've entered all of the required data correctly, e.g. Email, Phone, Billing/Shipping Address.");
+					}
+
+					$this->setSessionVariable('error_checkout', $message);
+
+					Tools::redirect(
+						$this->context->link->getModuleLink($this->name, 'checkout')
+					);
+				}
+			}
+			else {
+				$this->setSessionVariable('error_checkout', $this->l("We were unable to process your request, please try again!"));
+
+				Tools::redirect(
+					$this->context->link->getModuleLink($this->name, 'checkout')
+				);
+			}
+		}
+		catch (Exception $e) {
+			error_log($e->getMessage());
+
+			if (class_exists('Logger')) {
+				Logger::addLog( $e->getMessage(), 4, $e->getCode(), $this->displayName, $this->id, true );
+			}
+
+			$this->setSessionVariable('error_checkout', $this->l('We\'re experiencing technical difficulties, please try again or contact us to resolve this issues!'));
+
+			Tools::redirect(
+				$this->context->link->getModuleLink($this->name, 'checkout')
+			);
 		}
 	}
 
@@ -437,27 +541,20 @@ class eMerchantPay extends PaymentModule
 	function doPayment()
 	{
 		try {
-			//$this->populateTransactionData();
+			if (is_null($this->transaction_data)) {
+				$this->populateTransactionData();
+			}
 
 			$response = eMerchantPayTransactionProcess::pay($this->transaction_data);
 
-			// Successful
+			// Valid
 			if (isset($response)) {
+				// Successful
 				if ( $response->isSuccessful() ) {
 
-					// 3DSecure
-					if ( $this->is3DSecure ) {
+					if ( isset($response->getResponseObject()->redirect_url) ) {
 						// Validate/Insert Order
 						$message = 'UniqueId: ' . $response->getResponseObject()->unique_id . PHP_EOL;
-
-						/*
-							$this->l('Genesis Transaction Details:'). PHP_EOL . PHP_EOL .
-							$this->l('Unique ID:').' '.$responseData->unique_id . PHP_EOL .
-							$this->l('Status:').' '.$responseData->status . PHP_EOL .
-							$this->l('Amount:').' '. $this->getResponseAmount($responseData) . PHP_EOL .
-							$this->l('Currency:').' '.$responseData->currency . PHP_EOL .
-							$this->l('Message:').' '.$responseData->message . PHP_EOL;
-						*/
 
 						$this->validateOrder( (int) $this->context->cart->id, (int) _PS_OS_PREPARATION_, (float) $this->getResponseAmount( $response->getResponseObject() ), $this->displayName, $message, array(), null, false, $this->context->customer->secure_key );
 
@@ -476,15 +573,6 @@ class eMerchantPay extends PaymentModule
 					else {
 						// Validate/Insert Order
 						$message = 'UniqueId: ' . $response->getResponseObject()->unique_id . PHP_EOL;
-
-						/*
-							 $this->l('Genesis Transaction Details:'). PHP_EOL . PHP_EOL .
-							 $this->l('Unique ID:').' '.$responseData->unique_id . PHP_EOL .
-							 $this->l('Status:').' '.$responseData->status . PHP_EOL .
-							 $this->l('Amount:').' '. $this->getResponseAmount($responseData) . PHP_EOL .
-							 $this->l('Currency:').' '.$responseData->currency . PHP_EOL .
-							 $this->l('Message:').' '.$responseData->message . PHP_EOL;
-						*/
 
 						$this->validateOrder( (int) $this->context->cart->id, (int) _PS_OS_PAYMENT_, (float) $this->getResponseAmount( $response->getResponseObject() ), $this->displayName, $message, array(), null, false, $this->context->customer->secure_key );
 
@@ -528,14 +616,14 @@ class eMerchantPay extends PaymentModule
 				// lack of connectivity, etc.)
 			}
 
-			if (isset($response) && is_object($response)) {
+			if (isset($response) && isset($response->getResponseObject()->message)) {
 				$message = strval($response->getResponseObject()->message);
 			}
 			else {
 				$message = $this->l('There was a problem processing your transaction, please try again!');
 			}
 
-			$this->setSessionVariable('payment_error', $message);
+			$this->setSessionVariable('error_standard', $message);
 
 			$this->redirectToPage('order.php', array('step' => '3'));
 		}
@@ -546,7 +634,7 @@ class eMerchantPay extends PaymentModule
 				Logger::addLog( $e->getMessage(), 4, $e->getCode(), $this->displayName, $this->id, true );
 			}
 
-			$this->setSessionVariable('payment_error', $this->l('We\'re experiencing technical difficulties, please try again or contact us to resolve this issues.'));
+			$this->setSessionVariable('error_standard', $this->l('We\'re experiencing technical difficulties, please try again or contact us to resolve this issues.'));
 
 			$this->redirectToPage('order.php', array('step' => '3'));
 		}
@@ -587,7 +675,7 @@ class eMerchantPay extends PaymentModule
 		else {
 			$message = $this->l('The transaction was unsuccessful, please check your Logs for more information');
 
-			$this->setSessionVariable('admin_transaction_error', $message);
+			$this->setSessionVariable('error_transaction', $message);
 		}
 	}
 
@@ -596,33 +684,22 @@ class eMerchantPay extends PaymentModule
 	 *
 	 * @return bool
 	 */
-	function doRefund($args = array())
+	function doRefund()
 	{
-		$default = array(
-			'id_unique' => Tools::getValue($this->name . '_transaction_id'),
-			'amount'    => Tools::getValue($this->name . '_transaction_amount'),
-			'usage'     => Tools::getValue($this->name . '_transaction_usage'),
-			'ip_addr'   => Tools::getRemoteAddr()
-		);
-
-		/*
 		$id_unique  = Tools::getValue($this->name . '_transaction_id');
 		$amount     = Tools::getValue($this->name . '_transaction_amount');
 		$usage      = Tools::getValue($this->name . '_transaction_usage');
 		$ip_addr    = Tools::getRemoteAddr();
-		*/
 
-		$params = array_merge($default, $args);
-
-		$transaction = eMerchantPayTransaction::getByUniqueId($params['id_unique']);
+		$transaction = eMerchantPayTransaction::getByUniqueId($id_unique);
 
 		$data = array(
 			'transaction_id'    => md5($transaction->date_upd . mt_rand() . microtime(true)),
-			'usage'             => $params['usage'],
-			'remote_ip'         => $params['ip_addr'],
+			'usage'             => $usage,
+			'remote_ip'         => $ip_addr,
 			'reference_id'      => $transaction->id_unique,
 			'currency'          => $transaction->currency,
-			'amount'            => $params['amount'],
+			'amount'            => $amount,
 		);
 
 		$response = eMerchantPayTransactionProcess::refund($data);
@@ -637,7 +714,7 @@ class eMerchantPay extends PaymentModule
 		else {
 			$message = $this->l('The transaction was unsuccessful, please check your Logs for more information');
 
-			$this->setSessionVariable('admin_transaction_error', $message);
+			$this->setSessionVariable('error_transaction', $message);
 		}
 	}
 
@@ -673,7 +750,7 @@ class eMerchantPay extends PaymentModule
 		else {
 			$message = $this->l('The transaction was unsuccessful, please check your Logs for more information');
 
-			$this->setSessionVariable('admin_transaction_error', $message);
+			$this->setSessionVariable('error_transaction', $message);
 		}
 	}
 
@@ -685,6 +762,7 @@ class eMerchantPay extends PaymentModule
 	 **/
 	static function getCardTypeByNumber($number)
 	{
+		// Strip everything, but the digits
 		$number = preg_replace('/[^\d]/','',$number);
 
 		if (preg_match('/^3[47][0-9]{13}$/',$number)) {
@@ -711,163 +789,27 @@ class eMerchantPay extends PaymentModule
 	}
 
 	/**
-	 * Get the Module Settings HTML code
+	 * Check whether we can process the selected currency
 	 *
-	 * @return string HTML code
+	 * @param $cart
+	 *
+	 * @return bool
 	 */
-	public function getContent()
+	public function checkCurrency($cart)
 	{
-		$output = '';
+		$currency_order     = new Currency((int)($cart->id_currency));
+		$currencies_module  = $this->getCurrency((int)$cart->id_currency);
 
-		if (Tools::isSubmit('submit' . $this->name)) {
-
-			foreach ($this->getConfigKeys() as $key) {
-				$value = Tools::getValue($key);
-
-				if (empty($value) || !Validate::isGenericName($value)) {
-					$output = $this->displayError($this->l('Invalid value for key: ' . $key));
+		if (is_array($currencies_module)) {
+			foreach ( $currencies_module as $currency_module ) {
+				if ( $currency_order->id == $currency_module['id_currency'] ) {
+					return true;
 				}
-				else {
-					Configuration::updateValue($key, $value);
-				}
-			}
-
-			// If $output is empty - everything went fine
-			if (empty($output)) {
-				$output = $this->displayConfirmation($this->l('Settings updated'));
 			}
 		}
 
-		return $output . $this->_displayForm();
-	}
-
-	/**
-	 * Generate the Module Settings HTML via HelperForm()
-	 *
-	 * @return mixed HTML Content
-	 */
-	private function _displayForm()
-	{
-		$fields_form = array(
-			'form' => array(
-				'legend' => array(
-					'title' => $this->l('eMerchantPay Configuration'),
-					'icon' => 'icon-cog'
-				),
-				'input' => array(
-					array(
-						'type'      => 'text',
-						'label'     => $this->l('Username'),
-						'name'      => 'EMERCHANTPAY_USERNAME',
-						'size'      => 20,
-						'required'  => true
-					),
-					array(
-						'type'      => 'text',
-						'label'     => $this->l('Password'),
-						'name'      => 'EMERCHANTPAY_PASSWORD',
-						'size'      => 20,
-						'required'  => true
-					),
-					array(
-						'type'      => 'text',
-						'label'     => $this->l('Token'),
-						'name'      => 'EMERCHANTPAY_TOKEN',
-						'size'      => 20,
-						'required'  => true
-					),
-					array(
-						'type'      => 'select',
-						'label'     => $this->l('Environment'),
-						'name'      => 'EMERCHANTPAY_ENVIRONMENT',
-						'options'   => array(
-							'query' => array(
-								array(
-									'id'    => 'sandbox',
-									'name'  => $this->l('Sandbox')
-								),
-								array(
-									'id'    => 'production',
-									'name'  => $this->l('Production')
-								)
-							),
-							'id'    => 'id',
-							'name'  => 'name',
-						)
-					),
-					array(
-						'type'      => 'select',
-						'label'     => $this->l('Transaction type'),
-						'name'      => 'EMERCHANTPAY_TRANSACTION_TYPE',
-						'options'   => array(
-							'query' => array(
-								array(
-									'id'    => 'authorize',
-									'name'  => $this->l('Authorize')
-								),
-								array(
-									'id'    => 'authorize3d',
-									'name'  => $this->l('Authorize 3D')
-								),
-								array(
-									'id'    => 'sale',
-									'name'  => $this->l('Sale')
-								),
-								array(
-									'id'    => 'sale3d',
-									'name'  => $this->l('Sale 3D')
-								)
-							),
-							'id'    => 'id',
-							'name'  => 'name',
-						)
-					),
-				),
-				'submit' => array(
-					'title' => $this->l('Save'),
-				)
-			),
-		);
-
-		$helper = new HelperForm();
-		// Title and toolbar
-		$helper->title          = $this->displayName;
-		$helper->show_toolbar   = false;
-		$helper->toolbar_scroll = false;
-		// Module, token and currentIndex
-		$helper->id             = (int)Tools::getValue('id_carrier');
-		$helper->identifier     = $this->identifier;
-		$helper->token          = Tools::getAdminTokenLite('AdminModules');
-		$helper->currentIndex   = $this->context->link->getAdminLink('AdminModules', false).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name;
-
-		// Language
-		$helper->default_form_language      = intval(Configuration::get('PS_LANG_DEFAULT'));
-		$helper->allow_employee_form_lang   = intval(Configuration::get('PS_LANG_DEFAULT'));
-
-		$helper->submit_action  = 'submit' . $this->name;
-
-		$helper->tpl_vars = array(
-			'fields_value'  => $this->getConfigValues(),
-			'languages'     => $this->context->controller->getLanguages(),
-			'id_language'   => $this->context->language->id
-		);
-
-		return $helper->generateForm(array($fields_form));
-	}
-
-	/*
-	public function checkCurrency($cart)
-	{
-		$currency_order = new Currency($cart->id_currency);
-		$currencies_module = $this->getCurrency($cart->id_currency);
-
-		if (is_array($currencies_module))
-			foreach ($currencies_module as $currency_module)
-				if ($currency_order->id == $currency_module['id_currency'])
-					return true;
 		return false;
 	}
-	*/
 
 	/**
 	 * Redirect to page
@@ -992,6 +934,18 @@ class eMerchantPay extends PaymentModule
 	}
 
 	/**
+	 * Get Cancel URL for Async Transactions
+	 *
+	 * @return mixed Http URL
+	 */
+	private function getAsyncCancelURL()
+	{
+		$url = $this->context->link->getModuleLink($this->name, 'redirect', array('action' => 'cancel'));
+
+		return str_replace( "&", "&amp;", $url);
+	}
+
+	/**
 	 * Get the amount in major format
 	 *
 	 * @param $response stdClass Genesis Response
@@ -1012,13 +966,9 @@ class eMerchantPay extends PaymentModule
 	 */
 	private function fetchTemplate($name)
 	{
-		if (version_compare(_PS_VERSION_, '1.4', '<')) {
-			$this->context->smarty->currentTemplate = $name;
-		}
-		elseif (version_compare(_PS_VERSION_, '1.5', '<')) {
+		if (version_compare(_PS_VERSION_, '1.6', '<')) {
 
 			$locations = array(
-				'/'. $name,
 				'/views/templates/hook/' . $name,
 				'/views/templates/front/' . $name,
 				'/views/templates/admin/' . $name
@@ -1035,18 +985,51 @@ class eMerchantPay extends PaymentModule
 	}
 
 	/**
+	 * Get selected Transaction Type
+	 *
+	 * @return bool|string
+	 */
+	public function getStandardTransactionType()
+	{
+		if (isset($this->config['EMERCHANTPAY_STANDARD_TRX_TYPE'])) {
+			switch ( $this->config['EMERCHANTPAY_STANDARD_TRX_TYPE'] ) {
+				default:
+				case 'authorize':
+					$type = 'authorize';
+					break;
+				case 'authorize3d':
+					$type = 'authorize3d';
+					break;
+				case 'sale':
+					$type = 'sale';
+					break;
+				case 'sale3d':
+					$type = 'sale3d';
+					break;
+			}
+
+			return $type;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Get Module's configuration fields
 	 *
 	 * @return array field keys
 	 */
-	private function getConfigKeys()
+	public function getConfigKeys()
 	{
 		return array(
 			'EMERCHANTPAY_USERNAME',
 			'EMERCHANTPAY_PASSWORD',
 			'EMERCHANTPAY_TOKEN',
 			'EMERCHANTPAY_ENVIRONMENT',
-			'EMERCHANTPAY_TRANSACTION_TYPE',
+			'EMERCHANTPAY_STANDARD',
+			'EMERCHANTPAY_STANDARD_TRX_TYPE',
+			'EMERCHANTPAY_CHECKOUT',
+			'EMERCHANTPAY_CHECKOUT_TRX_TYPES'
 		);
 	}
 
@@ -1060,63 +1043,315 @@ class eMerchantPay extends PaymentModule
 		$config_key_value = array();
 
 		foreach ($this->getConfigKeys() as $config_key) {
-			$config_key_value[$config_key] = Configuration::get($config_key);
+			if (in_array($config_key, array('EMERCHANTPAY_CHECKOUT_TRX_TYPES'))) {
+				$config_key_value[ $config_key . '[]' ] = json_decode( Configuration::get( $config_key ) );
+			}
+			else {
+				$config_key_value[ $config_key ] = Configuration::get( $config_key );
+			}
 		}
 
 		return $config_key_value;
 	}
 
 	/**
-	 * Initialize the module:
-	 * - Include the backward compatibility
-	 * - Include and populate gateway settings
+	 * Get the Module Settings HTML code
+	 *
+	 * @return string HTML code
+	 */
+	public function getContent()
+	{
+		$output = '';
+
+		if (Tools::isSubmit('submit' . $this->name)) {
+
+			foreach ($this->getConfigKeys() as $key) {
+				$value = Tools::getValue($key);
+
+				if (in_array($key, array('EMERCHANTPAY_CHECKOUT_TRX_TYPES'))) {
+					$value = json_encode($value);
+				}
+
+				if (!Validate::isConfigName($key)) {
+					$output = $this->displayError($this->l('Invalid config name: ' . $key));
+				}
+				elseif (empty($value)) {
+					$output = $this->displayError($this->l('Invalid content for: ' . $key));
+				}
+				else {
+					Configuration::updateValue($key, $value);
+				}
+			}
+
+			// If $output is empty - everything went fine
+			if (empty($output)) {
+				$output = $this->displayConfirmation($this->l('Settings updated'));
+			}
+		}
+
+		return $output . $this->_displayForm();
+	}
+
+	/**
+	 * Generate the Module Settings HTML via HelperForm()
+	 *
+	 * @return mixed HTML Content
+	 */
+	private function _displayForm()
+	{
+		$form_structure = array(
+			'form' => array(
+				'legend' => array(
+					'title' => $this->l('eMerchantPay Configuration'),
+					'icon' => 'icon-cog'
+				),
+				'input' => array(
+					array(
+						'type'      => 'text',
+						'label'     => $this->l('Username'),
+						'desc'      => $this->l(
+							'Enter your Username, required for accessing the Genesis Gateway'
+						),
+						'name'      => 'EMERCHANTPAY_USERNAME',
+						'size'      => 20,
+						'required'  => true
+					),
+					array(
+						'type'      => 'text',
+						'label'     => $this->l('Password'),
+						'desc'      => $this->l(
+							'Enter your Password, required for accessing the Genesis Gateway'
+						),
+						'name'      => 'EMERCHANTPAY_PASSWORD',
+						'size'      => 20,
+						'required'  => true
+					),
+					array(
+						'type'      => 'text',
+						'label'     => $this->l('Token'),
+						'desc'      => $this->l(
+							'Enter your Token, required for accessing the Genesis Gateway'
+						),
+						'name'      => 'EMERCHANTPAY_TOKEN',
+						'size'      => 20,
+						'required'  => true
+					),
+					array(
+						'type'      => 'select',
+						'label'     => $this->l('Environment'),
+						'desc'      => $this->l(
+							'Select the environment you wish to use for processing your transactions.' . PHP_EOL .
+							'Note: Its recommended to use the Sandbox environment every-time you alter your settings, in order to ensure everything works as intended.'
+						),
+						'name'      => 'EMERCHANTPAY_ENVIRONMENT',
+						'options'   => array(
+							'query' => array(
+								array(
+									'id'    => 'sandbox',
+									'name'  => $this->l('Sandbox')
+								),
+								array(
+									'id'    => 'production',
+									'name'  => $this->l('Production')
+								)
+							),
+							'id'    => 'id',
+							'name'  => 'name',
+						)
+					),
+					array(
+						'type'      => 'radio',
+						'label'     => 'Standard (Hosted) Payment Method',
+						'desc'      => $this->l(
+							'Enable/Disable the Standard API - allow customers to enter their CreditCard information on your website.' . PHP_EOL .
+							'Note: You need PCI-DSS certificate in order to enable this feature.'
+						),
+						'name'      => 'EMERCHANTPAY_STANDARD',
+						'values'    => array(
+							array(
+								'id'    => 'on',
+								'value' => 'true',
+								'label'  => $this->l('Enable'),
+							),
+							array(
+								'id'    => 'off',
+								'value' => 'false',
+								'label' => $this->l('Disable'),
+							)
+						)
+					),
+					array(
+						'type'      => 'select',
+						'label'     => $this->l('Standard Transaction Type'),
+						'desc'      => $this->l(
+							'Select the transaction type, you want to use for Standard processing.'
+						),
+						'name'      => 'EMERCHANTPAY_STANDARD_TRX_TYPE',
+						'options'   => array(
+							'query' => array(
+								array(
+									'id'    => 'authorize',
+									'name'  => $this->l('Authorize')
+								),
+								array(
+									'id'    => 'authorize3d',
+									'name'  => $this->l('Authorize 3D')
+								),
+								array(
+									'id'    => 'sale',
+									'name'  => $this->l('Sale')
+								),
+								array(
+									'id'    => 'sale3d',
+									'name'  => $this->l('Sale 3D')
+								)
+							),
+							'id'    => 'id',
+							'name'  => 'name',
+						)
+					),
+					array(
+						'type'      => 'radio',
+						'label'     => 'Checkout (Remote) Payment Method',
+						'desc'      => $this->l(
+							'Enable/Disable the Checkout payment method - receive credit-card payments, without the need of PCI-DSS certificate or HTTPS.' . PHP_EOL .
+							'Note: Upon checkout, the customer will be redirected to a secure payment form, located on our servers and we will notify you, once the payment reached a final status'
+						),
+						'name'      => 'EMERCHANTPAY_CHECKOUT',
+						'values'    => array(
+							array(
+								'id'    => 'on',
+								'value' => 'true',
+								'label'  => $this->l('Enable'),
+							),
+							array(
+								'id'    => 'off',
+								'value' => 'false',
+								'label' => $this->l('Disable'),
+							)
+						)
+					),
+					array(
+						'type'      => 'select',
+						'label'     => $this->l('Checkout Transaction Types'),
+						'desc'      => $this->l(
+							'Select the transaction types you want to use during Checkout session.'
+						),
+						'id'        => 'EMERCHANTPAY_CHECKOUT_TRX_TYPES',
+						'name'      => 'EMERCHANTPAY_CHECKOUT_TRX_TYPES[]',
+						'multiple'  => true,
+						'options'   => array(
+							'query' => array(
+								array(
+									'id'    => 'authorize',
+									'name'  => $this->l('Authorize')
+								),
+								array(
+									'id'    => 'authorize3d',
+									'name'  => $this->l('Authorize 3D')
+								),
+								array(
+									'id'    => 'sale',
+									'name'  => $this->l('Sale')
+								),
+								array(
+									'id'    => 'sale3d',
+									'name'  => $this->l('Sale 3D')
+								)
+							),
+							'id'    => 'id',
+							'name'  => 'name',
+						)
+					),
+				),
+				'submit' => array(
+					'title' => $this->l('Save'),
+				)
+			),
+		);
+
+		$helper = new HelperForm();
+		// Title and toolbar
+		$helper->title          = $this->displayName;
+		$helper->show_toolbar   = false;
+		$helper->toolbar_scroll = false;
+		// Module, token and currentIndex
+		$helper->id             = (int)Tools::getValue('id_carrier');
+		$helper->identifier     = $this->identifier;
+		$helper->token          = Tools::getAdminTokenLite('AdminModules');
+		$helper->currentIndex   = $this->context->link->getAdminLink('AdminModules', false).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name;
+
+		// Language
+		$helper->default_form_language      = intval(Configuration::get('PS_LANG_DEFAULT'));
+		$helper->allow_employee_form_lang   = intval(Configuration::get('PS_LANG_DEFAULT'));
+
+		$helper->submit_action  = 'submit' . $this->name;
+
+		$helper->tpl_vars = array(
+			'fields_value'  => $this->getConfigValues(),
+			'id_language'   => $this->context->language->id,
+			'languages'     => $this->context->controller->getLanguages(),
+		);
+
+		return $helper->generateForm(
+			array($form_structure)
+		);
+	}
+
+	/**
+	 * Initialize the module and check for compatibility
 	 *
 	 * @return void
 	 */
 	private function init()
 	{
-		/* Backward compatibility */
-		if (version_compare(_PS_VERSION_, '1.6', '<')) {
-			include_once  __DIR__ . '/backward_compatibility/backward.php';
-		}
-
-		/** Check if SSL is enabled */
-		if (!Configuration::get('PS_SSL_ENABLED')) {
-			//$this->warning = $this->l( 'This plugin requires SSL enabled and PCI-DSS compliant server!' );
+		/* Check PHP compatibility */
+		if (version_compare(PHP_VERSION, '5.3.0', '<')) {
+			$this->warning = $this->l( 'Sorry, this module requires PHP version 5.3 (or higher).' . PHP_EOL . 'Check back with your hosting provider for assistance!');
 		}
 
 		/* Check if cURL is available */
 		if (!function_exists('curl_version')) {
-			$this->warning = $this->l( 'Sorry, this module requires the cURL PHP Extension (http://www.php.net/curl), which is not available on your server.' . PHP_EOL . 'Please ask your hosting provider for assistance.' );
+			$this->warning = $this->l( 'Sorry, this module requires the cURL PHP Extension (http://www.php.net/curl), which is not available on your server.' . PHP_EOL . 'Check back with your hosting provider for assistance.' );
+		}
+
+		/* Backward compatibility */
+		if (version_compare(_PS_VERSION_, '1.6', '<')) {
+			include_once dirname(__FILE__) . '/backward_compatibility/backward.php';
+		}
+
+		/** Check if SSL is enabled */
+		if (!Configuration::get('PS_SSL_ENABLED') && $this->isStandardMethodAvailable()) {
+			$this->warning = $this->l( 'This plugin requires SSL enabled and PCI-DSS compliant server, in order to accept customer\'s credit card information directly on your website!' );
 		}
 
 		/* Bootstrap Genesis */
-		include_once __DIR__ . '/lib/genesis_php/vendor/autoload.php';
+		include_once dirname(__FILE__) . '/lib/genesis_php/vendor/autoload.php';
 
 		/* Check if Genesis Library is initialized */
 		if (!class_exists('\Genesis\Genesis')) {
-			$this->warning = 'Sorry, there was a problem initializing Genesis client, please check your installation!';
+			$this->warning = 'Sorry, there was a problem initializing Genesis client, please verify your installation!';
 		}
 
 		/* Check if the module is configured */
 		if (!isset($this->config['EMERCHANTPAY_USERNAME']) ||
-		    !isset($this->config['EMERCHANTPAY_PASSWORD']) ||
-		    !isset($this->config['EMERCHANTPAY_TOKEN']))
+		    !isset($this->config['EMERCHANTPAY_PASSWORD']))
 		{
-			$this->warning = $this->l('You need to set your credentials (username, password, token), in order to access our service!');
+			$this->warning = $this->l('You need to set your credentials (username, password), in order to connect to Genesis Gateway!');
 		}
-
-		\Genesis\GenesisConfig::setUsername(
-			$this->config['EMERCHANTPAY_USERNAME']
-		);
-		\Genesis\GenesisConfig::setPassword(
-			$this->config['EMERCHANTPAY_PASSWORD']
-		);
-		\Genesis\GenesisConfig::setToken(
-			$this->config['EMERCHANTPAY_TOKEN']
-		);
-		\Genesis\GenesisConfig::setEnvironment(
-			$this->config['EMERCHANTPAY_ENVIRONMENT']
-		);
+		else {
+			\Genesis\GenesisConfig::setUsername(
+				$this->config['EMERCHANTPAY_USERNAME']
+			);
+			\Genesis\GenesisConfig::setPassword(
+				$this->config['EMERCHANTPAY_PASSWORD']
+			);
+			\Genesis\GenesisConfig::setToken(
+				$this->config['EMERCHANTPAY_TOKEN']
+			);
+			\Genesis\GenesisConfig::setEnvironment(
+				$this->config['EMERCHANTPAY_ENVIRONMENT']
+			);
+		}
 	}
 }

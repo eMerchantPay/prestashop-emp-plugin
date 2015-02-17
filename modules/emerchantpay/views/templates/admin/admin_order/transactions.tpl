@@ -15,7 +15,173 @@
 * @copyright   2015 eMerchantPay Ltd.
 * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
 *}
-{if $smarty.const._PS_VERSION_ > 1.5}
+
+{if version_compare($ps_version, '1.5', '>=') && version_compare($ps_version, '1.6', '<') }
+
+    <style>
+        .text-left { text-align:left; }
+        .text-center { text-align:center; }
+        .text-right { text-align:right; }
+    </style>
+
+    <br/>
+
+    <fieldset {if isset($ps_version) && ($ps_version < '1.5')}style="width: 400px"{/if}>
+        <legend><img src="{$base_url}modules/{$module_name}/logo.png" style="width:16px" alt="" />{l s='eMerchantPay Transactions' mod='emerchantpay'}</legend>
+        {* System errors, impacting the module functionallity *}
+        {if $module_warn}
+            <div class="warn">{$module_warn|escape:html:'UTF-8'}</div>
+        {else}
+            {* Transaction errors *}
+            {if $error_transaction}
+                <div class="error">{$error_transaction}</div>
+            {/if}
+
+            <div class="row">
+                <div class="col-xs-3"></div>
+                <div class="col-xs-6">
+                    <div class="warn">
+                        {l s="Full/Partial refunds through Prestashop's UI are local and WILL NOT REFUND the original transaction." mod="emerchantpay"}
+                    </div>
+                </div>
+                <div class="col-xs-3"></div>
+            </div>
+
+            <form method="post" action="{$smarty.server.REQUEST_URI|escape:'htmlall':'UTF-8'}">
+                <table class="table tree" width="100%" cellspacing="0" cellpadding="0" id="shipping_table">
+                    <colgroup>
+                        <col width="18%"/>
+                        <col width="5%"/>
+                        <col width="5%"/>
+                        <col width="5%"/>
+                        <col width="5%"/>
+                        <col width="5%"/>
+                        <col width="2%"/>
+                        <col width="2%"/>
+                        <col width="2%"/>
+                    </colgroup>
+                    <thead>
+                    <tr>
+                        <th>{l s="Id"       mod="emerchantpay"}</th>
+                        <th>{l s="Type"     mod="emerchantpay"}</th>
+                        <th>{l s="Date"     mod="emerchantpay"}</th>
+                        <th>{l s="Amount"   mod="emerchantpay"}</th>
+                        <th>{l s="Status"   mod="emerchantpay"}</th>
+                        <th>{l s="Message"  mod="emerchantpay"}</th>
+                        <th colspan="3" style="text-align: center;">{l s="Action" mod="emerchantpay"}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {foreach from=$transactions item=transaction}
+                        <tr class="treegrid-{$transaction['id_unique']} {if $transaction['id_parent']}treegrid-parent-{$transaction['id_parent']}{/if}">
+                            <td class="text-left">{$transaction['id_unique']}</td>
+                            <td class="text-left">{$transaction['type']}</td>
+                            <td class="text-center">{$transaction['date_add']}</td>
+                            <td class="text-center">{$transaction['amount']}</td>
+                            <td class="text-center">{$transaction['status']}</td>
+                            <td class="text-center">{$transaction['message']}</td>
+                            <td class="text-center">
+                                {if $transaction['can_capture']}
+                                    <div class="transaction-action-button">
+                                        <a class="btn btn-transaction btn-success button-capture button" role="button" data-type="capture" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['amount']}" >
+                                            <i class="fa fa-check fa-large"></i>
+                                        </a>
+                                    </div>
+                                {/if}
+                            </td>
+                            <td class="text-center">
+                                {if $transaction['can_refund']}
+                                    <div class="transaction-action-button">
+                                        <a class="btn btn-transaction btn-warning button-refund button" role="button" data-type="refund" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['amount']}">
+                                            <i class="fa fa-reply fa-large"></i>
+                                        </a>
+                                    </div>
+                                {/if}
+                            </td>
+                            <td class="text-center">
+                                {if $transaction['can_void']}
+                                    <div class="transaction-action-button">
+                                        <a class="btn btn-transaction btn-danger button-void button" role="button" data-type="void" data-id-unique="{$transaction['id_unique']}">
+                                            <i class="fa fa-remove fa-large"></i>
+                                        </a>
+                                    </div>
+                                {/if}
+                            </td>
+                        </tr>
+                    {/foreach}
+                    <tr id="{$module_name}_action_bar" class="current-edit" style="display:none;">
+                        <td colspan="1" id="{$module_name}_transaction_amount_placeholder" style="vertical-align:middle">
+                            <label for="{$module_name}_transaction_amount" style="width:20%;">{l s="Amount:" mod="emerchantpay"}</label>
+                            <input type="text" id="{$module_name}_transaction_amount" name="{$module_name}_transaction_amount" placeholder="{l s="Amount..." mod="emerchantpay"}" value="{{$order_amount}}" style="width:70%;" />
+                        </td>
+                        <td colspan="5" id="{$module_name}_transaction_usage_placeholder" style="vertical-align:middle">
+                            <label for="{$module_name}_transaction_usage" style="width:20%;">{l s="Usage:" mod="emerchantpay"}</label>
+                            <input type="text" id="{$module_name}_transaction_usage" name="{$module_name}_transaction_usage" placeholder="{l s="Usage..." mod="emerchantpay"}" style="width:70%;" />
+                        </td>
+                        <td colspan="3" style="text-align:center;vertical-align:middle">
+                            <input type="hidden" id="{$module_name}_transaction_id" name="{$module_name}_transaction_id" value="" />
+                            <input type="hidden" id="{$module_name}_transaction_type" name="{$module_name}_transaction_type" value="" />
+                            <button type="submit" class="btn btn-success">
+                                <i class="fa fa-arrow-right fa-large"></i>
+                                {l s="Submit" mod="emerchantpay"}
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </form>
+            <p class="text-right">
+                <b>{l s='Information:' mod='emerchantpay'}</b> {l s="For more complex workflows/functionallity, please visit our Merchant Portal!" mod="emerchantpay"}
+            </p>
+        {/if}
+    </fieldset>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('.tree').treegrid({
+                expanderExpandedClass:  'fa fa-chevron-circle-down',
+                expanderCollapsedClass: 'fa fa-chevron-circle-right'
+            });
+            $('.btn-transaction').click(function () {
+                transactionBar($(this).attr('data-type'), $(this).attr('data-id-unique'), $(this).attr('data-amount'));
+                $('html, body').animate({
+                    scrollTop: $("#{$module_name}_action_bar").offset().top - 180
+                }, 840);
+            });
+        });
+
+        function transactionBar(type, id_unique, amount) {
+            modalObj = $('#{$module_name}_action_bar');
+
+            if (modalObj.is(':visible')) {
+                modalObj.fadeOut(420).delay(420);
+            }
+
+            switch(type) {
+                case 'capture':
+                    modalObj.find('#{$module_name}_transaction_type').attr('value', 'capture');
+                    modalObj.find('#{$module_name}_transaction_amount_placeholder').css('visibility','visible');
+                    break;
+                case 'refund':
+                    modalObj.find('#{$module_name}_transaction_type').attr('value', 'refund');
+                    modalObj.find('#{$module_name}_transaction_amount_placeholder').css('visibility','visible');
+                    break;
+                case 'void':
+                    modalObj.find('#{$module_name}_transaction_type').attr('value', 'void');
+                    modalObj.find('#{$module_name}_transaction_amount_placeholder').css('visibility','hidden');
+                    break;
+                default:
+                    return;
+            }
+
+            modalObj.find('#{$module_name}_transaction_id').attr('value', id_unique);
+
+            modalObj.delay(420).fadeIn(420);
+        }
+    </script>
+{/if}
+
+{if version_compare($ps_version, '1.6', '>=') && version_compare($ps_version, '1.7', '<') }
+
     <div class="row">
         <div class="col-lg-12">
             <div class="panel">
@@ -24,21 +190,38 @@
                     <span>{l s='eMerchantPay Transactions' mod='emerchantpay'}</span>
                 </div>
                 <div class="panel-collapse collapse in">
-                    {if $warning}
+
+                    {* System errors, impacting the module functionallity *}
+                    {if $module_warn}
                         <div class="alert alert-warning alert-dismissable error-wrapper">
                             <button type="button" class="close" data-dismiss="alert">&times;</button>
-                            {$warning|escape:html:'UTF-8'}
+                            {$module_warn|escape:html:'UTF-8'}
                         </div>
                     {/if}
-                    {if $payment_error}
+
+                    {* Transaction errors *}
+                    {if $error_transaction}
                         <div class="alert alert-danger alert-dismissable error-wrapper">
                             <button type="button" class="close" data-dismiss="alert">&times;</button>
-                            {$payment_error|escape:html:'UTF-8'}
+                            {$error_transaction|escape:html:'UTF-8'}
                         </div>
                     {/if}
+
+                    <div class="row">
+                        <div class="col-xs-3"></div>
+                        <div class="col-xs-6">
+                            <div class="alert alert-info">
+                                {l s="You must process partial/standard refunds only through this panel!" mod="emerchantpay"}
+                                <br/>
+                                {l s="Full/Partial refunds through Prestashop's UI are local and WILL NOT REFUND the original transaction." mod="emerchantpay"}
+                            </div>
+                        </div>
+                        <div class="col-xs-3"></div>
+                    </div>
+
                     {if $transactions}
-                    <table class="table table-hover tree">
-                        <thead>
+                        <table class="table table-hover tree">
+                            <thead>
                             <tr>
                                 <th>{l s="Id"       mod="emerchantpay"}</th>
                                 <th>{l s="Type"     mod="emerchantpay"}</th>
@@ -50,59 +233,59 @@
                                 <th>{l s="Refund"   mod="emerchantpay"}</th>
                                 <th>{l s="Cancel"   mod="emerchantpay"}</th>
                             </tr>
-                        </thead>
-                        <tbody>
-                        {foreach from=$transactions item=transaction}
-                            <tr class="treegrid-{$transaction['id_unique']} {if $transaction['id_parent']}treegrid-parent-{$transaction['id_parent']}{/if}">
-                                <td class="text-left">
-                                    {$transaction['id_unique']}
-                                </td>
-                                <td class="text-left">
-                                    {$transaction['type']}
-                                </td>
-                                <td class="text-left">
-                                    {$transaction['date_add']}
-                                </td>
-                                <td class="text-left">
-                                    {$transaction['amount']}
-                                </td>
-                                <td class="text-left">
-                                    {$transaction['status']}
-                                </td>
-                                <td class="text-left">
-                                    {$transaction['message']}
-                                </td>
-                                <td class="text-center">
-                                    {if $transaction['can_capture']}
-                                    <div class="transaction-action-button">
-                                        <a class="btn btn-transaction btn-success button-capture button" role="button" data-type="capture" data-id-unique="{$transaction['id_unique']}">
-                                            <i class="icon-check icon-large"></i>
-                                        </a>
-                                    </div>
-                                    {/if}
-                                </td>
-                                <td class="text-center">
-                                    {if $transaction['can_refund']}
-                                    <div class="transaction-action-button">
-                                        <a class="btn btn-transaction btn-warning button-refund button" role="button" data-type="refund" data-id-unique="{$transaction['id_unique']}">
-                                            <i class="icon-reply icon-large"></i>
-                                        </a>
-                                    </div>
-                                    {/if}
-                                </td>
-                                <td class="text-center">
-                                    {if $transaction['can_void']}
-                                    <div class="transaction-action-button">
-                                        <a class="btn btn-transaction btn-danger button-void button" role="button" data-type="void" data-id-unique="{$transaction['id_unique']}">
-                                            <i class="icon-remove icon-large"></i>
-                                        </a>
-                                    </div>
-                                    {/if}
-                                </td>
-                            </tr>
-                        {/foreach}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                            {foreach from=$transactions item=transaction}
+                                <tr class="treegrid-{$transaction['id_unique']} {if $transaction['id_parent']}treegrid-parent-{$transaction['id_parent']}{/if}">
+                                    <td class="text-left">
+                                        {$transaction['id_unique']}
+                                    </td>
+                                    <td class="text-left">
+                                        {$transaction['type']}
+                                    </td>
+                                    <td class="text-left">
+                                        {$transaction['date_add']}
+                                    </td>
+                                    <td class="text-left">
+                                        {$transaction['amount']}
+                                    </td>
+                                    <td class="text-left">
+                                        {$transaction['status']}
+                                    </td>
+                                    <td class="text-left">
+                                        {$transaction['message']}
+                                    </td>
+                                    <td class="text-center">
+                                        {if $transaction['can_capture']}
+                                            <div class="transaction-action-button">
+                                                <a class="btn btn-transaction btn-success button-capture button" role="button" data-type="capture" data-id-unique="{$transaction['id_unique']}">
+                                                    <i class="icon-check icon-large"></i>
+                                                </a>
+                                            </div>
+                                        {/if}
+                                    </td>
+                                    <td class="text-center">
+                                        {if $transaction['can_refund']}
+                                            <div class="transaction-action-button">
+                                                <a class="btn btn-transaction btn-warning button-refund button" role="button" data-type="refund" data-id-unique="{$transaction['id_unique']}">
+                                                    <i class="icon-reply icon-large"></i>
+                                                </a>
+                                            </div>
+                                        {/if}
+                                    </td>
+                                    <td class="text-center">
+                                        {if $transaction['can_void']}
+                                            <div class="transaction-action-button">
+                                                <a class="btn btn-transaction btn-danger button-void button" role="button" data-type="void" data-id-unique="{$transaction['id_unique']}">
+                                                    <i class="icon-remove icon-large"></i>
+                                                </a>
+                                            </div>
+                                        {/if}
+                                    </td>
+                                </tr>
+                            {/foreach}
+                            </tbody>
+                        </table>
                     {/if}
                     <div class="disclaimer" style="text-align:right;margin-top:16px;">
                         {l s="Note: For more complex workflows/functionallity, please visit our Merchant Portal!" mod="emerchantpay"}
@@ -155,7 +338,10 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
-            $('.tree').treegrid();
+            $('.tree').treegrid({
+                expanderExpandedClass:  'icon icon-chevron-sign-down',
+                expanderCollapsedClass: 'icon icon-chevron-sign-right'
+            });
             $('.btn-transaction').click(function() {
                 transactionModal($(this).attr('data-type'), $(this).attr('data-id-unique'));
             });
@@ -193,157 +379,5 @@
             });
         }
     </script>
-{else}
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $('.tree').treegrid();
-            $('.btn-transaction').click(function () {
-                transactionBar($(this).attr('data-type'), $(this).attr('data-id-unique'), $(this).attr('data-amount'));
-                $('html, body').animate({
-                    scrollTop: $("#{$module_name}_action_bar").offset().top - 180
-                }, 2000);
-            });
-        });
 
-        function transactionBar(type, id_unique, amount) {
-            modalObj = $('#{$module_name}_action_bar');
-
-            if (modalObj.is(':visible')) {
-                modalObj.delay(420).fadeOut(420);
-            }
-
-            switch(type) {
-                case 'capture':
-                    modalObj.find('#{$module_name}_transaction_type').attr('value', 'capture');
-                    modalObj.find('#{$module_name}_transaction_amount').val(amount).show();
-                    break;
-                case 'refund':
-                    modalObj.find('#{$module_name}_transaction_type').attr('value', 'refund');
-                    modalObj.find('#{$module_name}_transaction_amount').val(amount).show();
-                    break;
-                case 'void':
-                    modalObj.find('#{$module_name}_transaction_type').attr('value', 'void');
-                    modalObj.find('#{$module_name}_transaction_amount').hide();
-                    break;
-                default:
-                    return;
-            }
-
-            modalObj.find('#{$module_name}_transaction_id').attr('value', id_unique);
-
-            modalObj.delay(420).fadeIn(420);
-        }
-    </script>
-    <br/>
-    <fieldset {if isset($ps_version) && ($ps_version < '1.5')}style="width: 400px"{/if}>
-        <legend><img src="{$base_url}modules/{$module_name}/logo.png" style="width:16px" alt="" />{l s='eMerchantPay Transactions' mod='emerchantpay'}</legend>
-        {if $warning}
-            <div class="warn">{$warning|escape:html:'UTF-8'}</div>
-        {else}
-            {if $payment_error}
-                <div class="error">{$payment_error}</div>
-            {/if}
-            <p><b>{l s='Information:' mod='emerchantpay'}</b> {l s="For more complex workflows/functionallity, please visit our Merchant Portal!" mod="emerchantpay"}</p>
-            <form method="post" action="{$smarty.server.REQUEST_URI|escape:'htmlall':'UTF-8'}">
-                <table class="table tree" width="100%" cellspacing="0" cellpadding="0" id="shipping_table">
-                    <colgroup>
-                        <col width="18%"/>
-                        <col width="5%"/>
-                        <col width="5%"/>
-                        <col width="5%"/>
-                        <col width="5%"/>
-                        <col width="5%"/>
-                        <col width="2%"/>
-                        <col width="2%"/>
-                        <col width="2%"/>
-                    </colgroup>
-                    <thead>
-                    <tr>
-                        <th>{l s="Id"       mod="emerchantpay"}</th>
-                        <th>{l s="Type"     mod="emerchantpay"}</th>
-                        <th>{l s="Date"     mod="emerchantpay"}</th>
-                        <th>{l s="Amount"   mod="emerchantpay"}</th>
-                        <th>{l s="Status"   mod="emerchantpay"}</th>
-                        <th>{l s="Message"  mod="emerchantpay"}</th>
-                        <!--
-                        <th>{l s="Capture"  mod="emerchantpay"}</th>
-                        <th>{l s="Refund"   mod="emerchantpay"}</th>
-                        <th>{l s="Cancel"   mod="emerchantpay"}</th>
-                        -->
-                        <th colspan="3" style="text-align: center;">{l s="Action" mod="emerchantpay"}</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {foreach from=$transactions item=transaction}
-                        <tr class="treegrid-{$transaction['id_unique']} {if $transaction['id_parent']}treegrid-parent-{$transaction['id_parent']}{/if}">
-                            <td class="text-left">
-                                {$transaction['id_unique']}
-                            </td>
-                            <td class="text-left">
-                                {$transaction['type']}
-                            </td>
-                            <td class="text-left">
-                                {$transaction['date_add']}
-                            </td>
-                            <td class="text-left">
-                                {$transaction['amount']}
-                            </td>
-                            <td class="text-left">
-                                {$transaction['status']}
-                            </td>
-                            <td class="text-left">
-                                {$transaction['message']}
-                            </td>
-                            <td class="text-center">
-                                {if $transaction['can_capture']}
-                                    <div class="transaction-action-button">
-                                        <a class="btn btn-transaction btn-success button-capture button" role="button" data-type="capture" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['amount']}" >
-                                            <i class="fa fa-check fa-large"></i>
-                                        </a>
-                                    </div>
-                                {/if}
-                            </td>
-                            <td class="text-center">
-                                {if $transaction['can_refund']}
-                                    <div class="transaction-action-button">
-                                        <a class="btn btn-transaction btn-warning button-refund button" role="button" data-type="refund" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['amount']}">
-                                            <i class="fa fa-reply fa-large"></i>
-                                        </a>
-                                    </div>
-                                {/if}
-                            </td>
-                            <td class="text-center">
-                                {if $transaction['can_void']}
-                                    <div class="transaction-action-button">
-                                        <a class="btn btn-transaction btn-danger button-void button" role="button" data-type="void" data-id-unique="{$transaction['id_unique']}">
-                                            <i class="fa fa-remove fa-large"></i>
-                                        </a>
-                                    </div>
-                                {/if}
-                            </td>
-                        </tr>
-                    {/foreach}
-                    <tr id="{$module_name}_action_bar" class="current-edit" style="display:none;">
-                        <td colspan="1">
-                            <label for="{$module_name}_transaction_amount" style="width:auto;">{l s="Amount:" mod="emerchantpay"}</label>
-                            <input type="text" id="{$module_name}_transaction_amount" name="{$module_name}_transaction_amount" placeholder="{l s="Amount..." mod="emerchantpay"}" value="{{$order_amount}}" />
-                        </td>
-                        <td colspan="5">
-                            <label for="{$module_name}_transaction_usage" style="width:auto;">{l s="Usage:" mod="emerchantpay"}</label>
-                            <input type="text" id="{$module_name}_transaction_usage" name="{$module_name}_transaction_usage" placeholder="{l s="Usage..." mod="emerchantpay"}" />
-                        </td>
-                        <td colspan="3" style="text-align:center;">
-                            <input type="hidden" id="{$module_name}_transaction_id" name="{$module_name}_transaction_id" value="" />
-                            <input type="hidden" id="{$module_name}_transaction_type" name="{$module_name}_transaction_type" value="" />
-                            <button type="submit" class="btn btn-success">
-                                <i class="fa fa-arrow-right fa-large"></i>
-                                {l s="Submit" mod="emerchantpay"}
-                            </button>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </form>
-        {/if}
-    </fieldset>
 {/if}

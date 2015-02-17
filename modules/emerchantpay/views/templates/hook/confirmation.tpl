@@ -15,8 +15,29 @@
 * @copyright   2015 eMerchantPay Ltd.
 * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
 *}
-<p>
-    {l s='Your order on' mod='emerchantpay'} <span class="bold">{$shop_name|escape:'htmlall':'UTF-8'}</span> {l s='is complete.' mod='emerchantpay'}
-    <br /><br /><span class="bold">{l s='Your order will be sent very soon.' mod='emerchantpay'}</span>
-    <br /><br />{l s='For any questions or for further information, please contact our' mod='emerchantpay'} <a href="{$link->getPageLink('contact', true)}" target="_blank">{l s='customer support' mod='emerchantpay'}</a>.
-</p>
+
+<style>
+    #center_column a {
+        text-decoration:underline;
+    }
+</style>
+
+{if $status == 'success'}
+    <p>
+        {l s='Your payment on' mod='emerchantpay'} <span class="bold">{$shop_name|escape:'htmlall':'UTF-8'}</span> {l s='is complete.' mod='emerchantpay'}
+        <br /><br /><span class="bold">{l s='Your order will be sent very soon.' mod='emerchantpay'}</span>
+        <br /><br />{l s='For any questions or for further information, please contact our' mod='emerchantpay'} <a href="{$link->getPageLink('contact', true)}" target="_blank">{l s='customer support' mod='emerchantpay'}</a>.
+    </p>
+{elseif $status == 'pending'}
+    <p>
+        {l s='Your payment on' mod='emerchantpay'} <span class="bold">{$shop_name|escape:'htmlall':'UTF-8'}</span> {l s='is pending processing.' mod='emerchantpay'}
+        <br /><br /><span class="bold">{l s='Your order will be sent as soon as we cler your payment.' mod='emerchantpay'}</span>
+        <br /><br />{l s='For any questions or for further information, please contact our' mod='emerchantpay'} <a href="{$link->getPageLink('contact', true)}" target="_blank">{l s='customer support' mod='emerchantpay'}</a>.
+    </p>
+{else}
+    <p>
+        {l s='Your payment on' mod='emerchantpay'} <span class="bold">{$shop_name|escape:'htmlall':'UTF-8'}</span> {l s='was unsuccessful.' mod='emerchantpay'}
+        <br /><br /><span class="bold">{l s='Please check your input and try again or contact us, if the problem persists.' mod='emerchantpay'}</span>
+        <br /><br />{l s='For any questions or for further information, please contact our' mod='emerchantpay'} <a href="{$link->getPageLink('contact', true)}" target="_blank">{l s='customer support' mod='emerchantpay'}</a>.
+    </p>
+{/if}

@@ -19,65 +19,72 @@
 
 class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
 {
-	public $errors = array();
 	/** @var  eMerchantPay */
 	public $module;
 	/** @var  ContextCore  */
 	protected $context;
 
+	/**
+	 * @see FrontController::initContent()
+	 */
 	public function initContent()
 	{
-		parent::initContent();
-
-		switch (Tools::getValue('action')) {
-			case 'success':
-				$this->handleSuccessfulRedirect();
-				break;
-			case 'failure':
-				$this->handleFailureRedirect();
-				break;
+		if (version_compare(_PS_VERSION_, '1.6', '<')) {
+			$this->display_column_left  = true;
+			$this->display_column_right = true;
 		}
 
-		exit(0);
+		parent::initContent();
+
+		if (Tools::getIsset('restore')) {
+			if (Tools::getValue('restore') == 'cart') {
+				$this->restoreCustomerCart();
+			}
+		}
+
+		$this->context->smarty->assign(
+			array(
+				'status'        => Tools::getValue('action'),
+				'url_history'   => $this->context->link->getPageLink('history.php'),
+				'url_restore'   => $this->context->link->getModuleLink(
+					$this->module->name, 'redirect', array('restore' => 'cart')
+				),
+				'url_support'   => $this->context->link->getPageLink('contact.php'),
+			)
+		);
+
+		$this->setTemplate('async_return.tpl');
 	}
 
-	private function handleSuccessfulRedirect()
+	/**
+	 * Restore customer's cart
+	 *
+	 * @return void
+	 */
+	private function restoreCustomerCart()
 	{
-		Tools::redirect($this->context->link->getPageLink('history.php'));
-	}
-
-	private function handleFailureRedirect()
-	{
-		$this->module->setSessionVariable('payment_error', $this->module->l('There was a problem processing your transaction, please try again!') );
-
 		$order = Order::getCustomerOrders($this->context->customer->id, false, $this->context);
 
 		$order = reset($order);
 
-		$oldCart = new Cart(Order::getCartIdStatic($order['id_order'], $this->context->customer->id));
+		$oldCart = new Cart((int)Order::getCartIdStatic($order['id_order'], $this->context->customer->id));
 
 		$duplication = $oldCart->duplicate();
 
-		if (!$duplication || !Validate::isLoadedObject($duplication['cart'])) {
-			$this->errors[] = Tools::displayError( 'Sorry. We cannot renew your order.' );
-		}
-		else if (!$duplication['success']) {
-			$this->errors[] = Tools::displayError( 'Some items are no longer available, and we are unable to renew your order.' );
-		}
-		else
+		if ($duplication && Validate::isLoadedObject($duplication['cart']))
 		{
 			$this->context->cookie->id_cart = $duplication['cart']->id;
 			$this->context->cookie->write();
 
-			if (Configuration::get('PS_ORDER_PROCESS_TYPE') == 1) {
-				Tools::redirect( 'index.php?controller=order-opc&step=3' );
+			if (Configuration::get('PS_ORDER_PROCESS_TYPE') == PS_ORDER_PROCESS_OPC) {
+				$this->module->redirectToPage('order-opc.php', array('step' => '3'));
 			}
 			else {
-				Tools::redirect( 'index.php?controller=order&step=3' );
+				$this->module->redirectToPage('order.php', array('step' => '3'));
 			}
 		}
 
 		// If all else fails, redirect the customer to their OrderHistory
-		Tools::redirect($this->context->link->getPageLink('history.php'));
+		$this->module->redirectToPage('history.php');
 	}
 }

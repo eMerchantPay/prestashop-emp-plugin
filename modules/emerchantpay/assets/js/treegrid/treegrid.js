@@ -562,8 +562,8 @@
         saveStateName: 'tree-grid-state',
         expanderTemplate: '<span class="treegrid-expander"></span>',
         indentTemplate: '<span class="treegrid-indent"></span>',
-        expanderExpandedClass: 'icon icon-chevron-sign-down treegrid-expander-expanded',
-        expanderCollapsedClass: 'icon icon-chevron-sign-right treegrid-expander-collapsed',
+        expanderExpandedClass: 'treegrid-expander-expanded',
+        expanderCollapsedClass: 'treegrid-expander-collapsed',
         treeColumn: 0,
         getExpander: function() {
             return $(this).find('.treegrid-expander');
