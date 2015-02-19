@@ -60,14 +60,14 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
 
 				$genesis->execute();
 
-				if (null !== $genesis->response()) {
+				if (null !== $genesis->response() && $genesis->response()->getResponseObject()->status != 'error') {
 
 					$reconcile = $genesis->response()->getResponseObject();
 
 					if ( isset( $reconcile->transaction_id ) ) {
 						$transaction = eMerchantPayTransaction::getByUniqueId( $reconcile->unique_id );
 
-						if ( isset( $transaction->id_unique ) && $transaction->id_unique == $reconcile->unique_id ) {
+						if ( isset( $transaction->id_unique ) && $transaction->id_unique == (string)$reconcile->unique_id ) {
 
 							if ($reconcile->status == 'approved') {
 								$status = _PS_OS_PAYMENT_;
@@ -115,13 +115,13 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
 
 				$genesis->execute();
 
-				if (null !== $genesis->response()) {
+				if (null !== $genesis->response() && $genesis->response()->getResponseObject()->status != 'error') {
 
 					$checkout_reconcile = $genesis->response()->getResponseObject();
 
 					$checkout_transaction = eMerchantPayTransaction::getByUniqueId($checkout_reconcile->unique_id);
 
-					if (isset($checkout_transaction)) {
+					if (isset($checkout_transaction->id_unique)) {
 
 						$payment_reconcile = $checkout_reconcile->payment_transaction;
 
