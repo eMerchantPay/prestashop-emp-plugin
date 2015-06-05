@@ -19,7 +19,7 @@
 {if version_compare($ps_version, '1.5', '>=') && version_compare($ps_version, '1.6', '<') }
     {if $payment_methods['checkout']}
     <p class="payment_module">
-        <a href="{$url_checkout}">
+        <a href="{$urls['checkout']}">
             <img src="{$module_path}/assets/img/checkout.png" alt="{l s="eMerchantPay Logo" mod="emerchantpay"}" style="width:224px;" />
             {l s="Pay safely with eMerchantPay" mod="emerchantpay"}
         </a>
