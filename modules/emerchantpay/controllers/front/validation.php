@@ -1,13 +1,34 @@
 <?php
+/*
+ * Copyright (C) 2015 eMerchantPay Ltd.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * @author      eMerchantPay
+ * @copyright   2015 eMerchantPay Ltd.
+ * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
+ */
 
-
+/**
+ * Class eMerchantPayValidationModuleFrontController
+ *
+ * Validation Front-End Controller
+ */
 class eMerchantPayValidationModuleFrontController extends ModuleFrontControllerCore
 {
 	/** @var eMerchantPay */
 	public $module;
 
 	/**
-	 * @see FrontController::initContent()
+	 * @see FrontControlwler::initContent()
 	 */
 	public function initContent()
 	{
@@ -28,17 +49,15 @@ class eMerchantPayValidationModuleFrontController extends ModuleFrontControllerC
 		if (Tools::getIsset('submit' . $this->module->name . 'Checkout')) {
 			$this->validateCheckout();
 		}
-		elseif (Tools::getIsset('submit' . $this->module->name . 'Standard')) {
-			$this->validateStandard();
+		elseif (Tools::getIsset('submit' . $this->module->name . 'Direct')) {
+			$this->validateDirect();
 		}
-
-		exit(0);
 	}
 
 	public function validateCheckout()
 	{
 		// Is Checkout allowed?
-		if (!$this->module->isCheckoutMethodAvailable()) {
+		if (!$this->module->isCheckoutPaymentMethodAvailable()) {
 			$this->module->redirectToPage('order.php', array('step' => 3));
 		}
 
@@ -56,22 +75,23 @@ class eMerchantPayValidationModuleFrontController extends ModuleFrontControllerC
 
 	}
 
-	public function validateStandard()
+	public function validateDirect()
 	{
 		// Is standard method allowed?
-		if (!$this->module->isStandardMethodAvailable()) {
+		if (!$this->module->isDirectPaymentMethodAvailable()) {
 			$this->module->redirectToPage('order.php', array('step' => 3));
 		}
 
 		// Is everything required filled in?
 		if (!$this->isRequiredFilled()) {
-			$this->module->setSessionVariable( 'error_standard', $this->module->l('Please fill all of the required fields!') );
+			$this->module->setSessVar( 'error_direct',
+                                               $this->module->l('Please fill all of the required fields!')
+            );
 
 			$this->module->redirectToPage('order.php', array('step' => '3'));
 		}
 
-		// Send transaction
-		$this->module->doPayment();
+        $this->module->doPayment();
 	}
 
 	/**
@@ -81,9 +101,9 @@ class eMerchantPayValidationModuleFrontController extends ModuleFrontControllerC
 	 */
 	public function isRequiredFilled()
 	{
-		return Tools::getIsset('emerchantpay-number') &&
+		return Tools::getIsset('emerchantpay-cvc') &&
 		       Tools::getIsset('emerchantpay-name') &&
-	           Tools::getIsset('emerchantpay-cvc') &&
+               Tools::getIsset('emerchantpay-number') &&
 	           Tools::getIsset('emerchantpay-expiry');
 	}
 }

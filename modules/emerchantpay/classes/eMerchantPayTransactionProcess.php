@@ -17,6 +17,15 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
+/**
+ * Class eMerchantPayTransactionProcess
+ *
+ * Build and execute eMerchantPay transactions
+ */
 class eMerchantPayTransactionProcess
 {
 	const displayName = 'eMerchantPay Transactions';
@@ -32,7 +41,8 @@ class eMerchantPayTransactionProcess
 	{
 		$genesis = new \Genesis\Genesis('WPF\Create');
 
-		$genesis->request()
+		$genesis
+            ->request()
 		        ->setTransactionId( $data->id )
 		        ->setCurrency( $data->currency )
 		        ->setAmount( $data->amount )
@@ -40,17 +50,20 @@ class eMerchantPayTransactionProcess
 		        ->setCustomerPhone( $data->customer_phone );
 
 		if (isset($data->usage)) {
-			$genesis->request()
+			$genesis
+                ->request()
 					->setUsage($data->usage);
 		}
 
 		if (isset($data->description)) {
-			$genesis->request()
+			$genesis
+                ->request()
 					->setDescription($data->description);
 		}
 
 		if (isset($data->billing)) {
-			$genesis->request()
+			$genesis
+                ->request()
 			        ->setBillingFirstName( $data->billing->firstname )
 			        ->setBillingLastName( $data->billing->lastname )
 			        ->setBillingAddress1( $data->billing->address1 )
@@ -62,7 +75,8 @@ class eMerchantPayTransactionProcess
 		}
 
 		if (isset($data->shipping)) {
-			$genesis->request()
+			$genesis
+                ->request()
 			        ->setShippingFirstName( $data->shipping->firstname )
 			        ->setShippingLastName( $data->shipping->lastname )
 			        ->setShippingAddress1( $data->shipping->address1 )
@@ -74,7 +88,8 @@ class eMerchantPayTransactionProcess
 		}
 
 		if (isset($data->url)) {
-			$genesis->request()
+			$genesis
+                ->request()
 			        ->setNotificationUrl( $data->url->notification )
 			        ->setReturnSuccessUrl( $data->url->return_success )
 					->setReturnFailureUrl( $data->url->return_failure )
@@ -83,20 +98,21 @@ class eMerchantPayTransactionProcess
 
 		if (isset($data->transaction_types)) {
 			foreach ($data->transaction_types as $type) {
-				$genesis->request()
+				$genesis
+                    ->request()
 						->addTransactionType($type);
 			}
 		}
 
+        if (isset($data->language)) {
+            $genesis
+                ->request()
+                    ->setLanguage($data->language);
+        }
+
 		$genesis->execute();
 
-		if ( $genesis->response() ) {
-			return $genesis->response();
-		}
-		else {
-			throw new Exception( 'Invalid response - system error or missing component!' );
-		}
-
+        return $genesis->response();
 	}
 
 	/**
@@ -113,20 +129,21 @@ class eMerchantPayTransactionProcess
 		switch ( $data->transaction_type ) {
 			default:
 			case 'authorize':
-				$genesis = new \Genesis\Genesis( 'Financial\Authorize' );
+				$genesis = new \Genesis\Genesis( 'Financial\Cards\Authorize' );
 				break;
 			case 'authorize3d':
-				$genesis = new \Genesis\Genesis( 'Financial\Authorize3D' );
+				$genesis = new \Genesis\Genesis( 'Financial\Cards\Authorize3D' );
 				break;
 			case 'sale':
-				$genesis = new \Genesis\Genesis( 'Financial\Sale' );
+				$genesis = new \Genesis\Genesis( 'Financial\Cards\Sale' );
 				break;
 			case 'sale3d':
-				$genesis = new \Genesis\Genesis( 'Financial\Sale3D' );
+				$genesis = new \Genesis\Genesis( 'Financial\Cards\Sale3D' );
 				break;
 		}
 
-		$genesis->request()
+		$genesis
+            ->request()
 				->setTransactionId( $data->id )
 				->setRemoteIp( $data->remote_ip )
 				->setCurrency( $data->currency )
@@ -140,7 +157,8 @@ class eMerchantPayTransactionProcess
 				->setCustomerPhone( $data->customer_phone );
 
 		if (isset($data->billing)) {
-			$genesis->request()
+			$genesis
+                ->request()
 					->setBillingFirstName( $data->billing->firstname )
 					->setBillingLastName( $data->billing->lastname )
 					->setBillingAddress1( $data->billing->address1 )
@@ -152,7 +170,8 @@ class eMerchantPayTransactionProcess
 		}
 
 		if (isset($data->shipping)) {
-			$genesis->request()
+			$genesis
+                ->request()
 					->setShippingFirstName( $data->shipping->firstname )
 					->setShippingLastName( $data->shipping->lastname )
 					->setShippingAddress1( $data->shipping->address1 )
@@ -164,7 +183,8 @@ class eMerchantPayTransactionProcess
 		}
 
 		if (isset($data->url)) {
-			$genesis->request()
+			$genesis
+                ->request()
 					->setNotificationUrl( $data->url->notification )
 					->setReturnSuccessUrl( $data->url->return_success )
 					->setReturnFailureUrl( $data->url->return_failure );
@@ -172,12 +192,7 @@ class eMerchantPayTransactionProcess
 
 		$genesis->execute();
 
-		if ( $genesis->response() ) {
-			return $genesis->response();
-		}
-		else {
-			throw new Exception( 'Invalid response - system error or missing component!' );
-		}
+        return $genesis->response();
 	}
 
 	/**
@@ -193,7 +208,8 @@ class eMerchantPayTransactionProcess
 	{
 		$genesis = new \Genesis\Genesis('Financial\Capture');
 
-		$genesis->request()
+		$genesis
+            ->request()
 				->setTransactionId($data['transaction_id'])
 				->setUsage($data['usage'])
 				->setRemoteIp($data['remote_ip'])
@@ -203,17 +219,7 @@ class eMerchantPayTransactionProcess
 
 		$genesis->execute();
 
-		if ( $genesis->response() ) {
-			if (!$genesis->response()->isSuccessful()) {
-				throw new Exception('Failed Capture transaction attempt: ' .
-				                    $genesis->response()->getResponseObject()->technical_message);
-			}
-
-			return $genesis->response();
-		}
-		else {
-			throw new Exception( 'Invalid response - system error or missing component!' );
-		}
+        return $genesis->response();
 	}
 
 	/**
@@ -229,7 +235,8 @@ class eMerchantPayTransactionProcess
 	{
 		$genesis = new \Genesis\Genesis('Financial\Refund');
 
-		$genesis->request()
+		$genesis
+            ->request()
 				->setTransactionId($data['transaction_id'])
 				->setUsage($data['usage'])
 				->setRemoteIp($data['remote_ip'])
@@ -239,17 +246,7 @@ class eMerchantPayTransactionProcess
 
 		$genesis->execute();
 
-		if ( $genesis->response() ) {
-			if (!$genesis->response()->isSuccessful()) {
-				throw new Exception('Failed Refund transaction attempt: ' .
-				                    $genesis->response()->getResponseObject()->technical_message);
-			}
-
-			return $genesis->response();
-		}
-		else {
-			throw new Exception( 'Invalid response - system error or missing component!' );
-		}
+        return $genesis->response();
 	}
 
 	/**
@@ -265,7 +262,8 @@ class eMerchantPayTransactionProcess
 	{
 		$genesis = new \Genesis\Genesis('Financial\Void');
 
-		$genesis->request()
+		$genesis
+            ->request()
 				->setTransactionId($data['transaction_id'])
 				->setUsage($data['usage'])
 				->setRemoteIp($data['remote_ip'])
@@ -273,16 +271,6 @@ class eMerchantPayTransactionProcess
 
 		$genesis->execute();
 
-		if ( $genesis->response() ) {
-			if (!$genesis->response()->isSuccessful()) {
-				throw new Exception('Failed Void transaction attempt: ' .
-				                    $genesis->response()->getResponseObject()->technical_message);
-			}
-
-			return $genesis->response();
-		}
-		else {
-			throw new Exception( 'Invalid response - system error or missing component!' );
-		}
+        return $genesis->response();
 	}
 }

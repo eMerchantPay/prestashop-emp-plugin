@@ -17,6 +17,11 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
+/**
+ * Class eMerchantPayCheckoutModuleFrontController
+ *
+ * Checkout Front-End Controller
+ */
 class eMerchantPayCheckoutModuleFrontController extends ModuleFrontController
 {
 	/** @var eMerchantPay */
@@ -56,6 +61,10 @@ class eMerchantPayCheckoutModuleFrontController extends ModuleFrontController
 				$this->module->redirectToPage('order.php');
 			}
 
+			if(!$cart->getOrderTotal(true, $cart::BOTH)) {
+				$this->module->redirectToPage('order.php');
+			}
+
 			if (version_compare(_PS_VERSION_, '1.6', '<')) {
 				$this->context->controller->addCSS(
 					$this->module->getPathUri() . 'assets/css/bootstrap-custom.min.css', 'all'
@@ -77,7 +86,7 @@ class eMerchantPayCheckoutModuleFrontController extends ModuleFrontController
 				'currency'      => $cart->id_currency,
 				'total'         => $cart->getOrderTotal(true, $cart::BOTH),
 				'isoCode'       => $this->context->language->iso_code,
-				'error_checkout'=> $this->module->getSessionVariable('error_checkout'),
+				'error_checkout'=> $this->module->getSessVar('error_checkout'),
 				'link_back'     => $this->context->link->getPageLink('order', true, NULL, "step=3"),
 				'link_confirm'  => $this->context->link->getModuleLink($this->module->name, 'validation'),
 			));

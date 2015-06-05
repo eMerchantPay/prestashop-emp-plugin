@@ -17,10 +17,22 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
+/**
+ * Class eMerchantPayNotificationModuleFrontController
+ *
+ * Notifications Front-End Controller
+ */
 class eMerchantPayNotificationModuleFrontController extends ModuleFrontController
 {
 	/** @var eMerchantPay */
 	public $module;
+
+    public $types = array(
+        \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
+        \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
+        \Genesis\API\Constants\Transaction\Types::SALE,
+        \Genesis\API\Constants\Transaction\Types::SALE_3D
+    );
 
 	/**
 	 * @see FrontController::initContent()
@@ -34,7 +46,7 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
 				$this->processCheckoutIPN();
 			}
 			else {
-				$this->processStandardIPN();
+				$this->processDirectIPN();
 			}
 		}
 
@@ -42,54 +54,40 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
 	}
 
 	/**
-	 * Process Notification for the Standard (Payment) API
+	 * Process Notification for the Direct API
 	 */
-	private function processStandardIPN()
+	private function processDirectIPN()
 	{
 		try {
 			/** @var \Genesis\API\Notification $notification */
-			$notification = new \Genesis\API\Notification();
-
-			$notification->parseNotification( $_POST );
+			$notification = new \Genesis\API\Notification($_POST);
 
 			if ( $notification->isAuthentic() ) {
-				$genesis = new \Genesis\Genesis( 'Reconcile\Transaction' );
+				$notification->initReconciliation();
 
-				$genesis->request()
-				        ->setUniqueId( $notification->getParsedNotification()->unique_id );
+                $reconcile = $notification->getReconciliationObject();
 
-				$genesis->execute();
+				if (isset($reconcile->unique_id)) {
 
-				if (null !== $genesis->response() && $genesis->response()->getResponseObject()->status != 'error') {
+                    $transaction = eMerchantPayTransaction::getByUniqueId( $reconcile->unique_id );
 
-					$reconcile = $genesis->response()->getResponseObject();
+                    if (isset( $transaction->id_unique ) && $transaction->id_unique == $reconcile->unique_id) {
+                        if (in_array($reconcile->transaction_type, $this->types)) {
+                            $status = $this->module->getPrestaStatus($reconcile->status);
+                        } else {
+                            $status = $this->module->getPrestaBackendStatus($reconcile->transaction_type);
+                        }
 
-					if ( isset( $reconcile->transaction_id ) ) {
-						$transaction = eMerchantPayTransaction::getByUniqueId( $reconcile->unique_id );
+                        $transaction->importResponse( $reconcile );
+                        $transaction->updateOrderHistory( $status, true );
+                        $transaction->save();
+                    }
 
-						if ( isset( $transaction->id_unique ) && $transaction->id_unique == (string)$reconcile->unique_id ) {
-
-							if ($reconcile->status == 'approved') {
-								$status = _PS_OS_PAYMENT_;
-							}
-							else {
-								$status = _PS_OS_ERROR_;
-							}
-
-							$transaction->updateOrderHistory( $status, true );
-
-							$transaction->importResponse( $reconcile );
-
-							$transaction->save();
-
-							header( 'Content-type: application/xml' );
-							echo $notification->getEchoResponse();
-						}
-					}
-				}
+                    $notification->renderResponse();
+                }
 			}
 		}
-		catch (Exception $exception) {
+		catch (\Exception $exception) {
 			if (class_exists('Logger')) {
 				Logger::addLog( $exception->getMessage(), 4, $exception->getCode(), $this->module->displayName, $this->module->id, true );
 			}
@@ -103,21 +101,14 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
 	{
 		try {
 			/** @var \Genesis\API\Notification $notification */
-			$notification = new \Genesis\API\Notification();
-
-			$notification->parseNotification( $_POST );
+			$notification = new \Genesis\API\Notification($_POST);
 
 			if ( $notification->isAuthentic() ) {
-				$genesis = new \Genesis\Genesis( 'WPF\Reconcile' );
+				$notification->initReconciliation();
 
-				$genesis->request()
-				        ->setUniqueId( $notification->getParsedNotification()->wpf_unique_id );
+                $checkout_reconcile = $notification->getReconciliationObject();
 
-				$genesis->execute();
-
-				if (null !== $genesis->response() && $genesis->response()->getResponseObject()->status != 'error') {
-
-					$checkout_reconcile = $genesis->response()->getResponseObject();
+				if (isset($checkout_reconcile->unique_id)) {
 
 					$checkout_transaction = eMerchantPayTransaction::getByUniqueId($checkout_reconcile->unique_id);
 
@@ -142,20 +133,18 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
 							}
 						}
 
-						if ($payment_reconcile->status == 'approved') {
-							$status = _PS_OS_PAYMENT_;
-						}
-						else {
-							$status = _PS_OS_ERROR_;
-						}
+                        if (in_array($payment_reconcile->transaction_type, $this->types)) {
+                            $status = $this->module->getPrestaStatus($payment_reconcile->status);
+                        } else {
+                            $status = $this->module->getPrestaBackendStatus($payment_reconcile->transaction_type);
+                        }
 
 						$checkout_transaction->type = 'checkout';
 						$checkout_transaction->importResponse($checkout_reconcile);
 						$checkout_transaction->updateOrderHistory( $status, true );
 						$checkout_transaction->save();
 
-						header( 'Content-type: application/xml' );
-						echo $notification->getEchoResponse();
+						$notification->renderResponse();
 					}
 				}
 			}

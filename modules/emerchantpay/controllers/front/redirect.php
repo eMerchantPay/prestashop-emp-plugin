@@ -17,6 +17,11 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
+/**
+ * Class eMerchantPayRedirectModuleFrontController
+ *
+ * Redirection Front-End Controller
+ */
 class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
 {
 	/** @var  eMerchantPay */

@@ -17,6 +17,15 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
+/**
+ * Class eMerchantPayTransaction
+ *
+ * eMerchantPay Transaction Model
+ */
 class eMerchantPayTransaction extends ObjectModel
 {
 	public $id_unique;
@@ -27,6 +36,7 @@ class eMerchantPayTransaction extends ObjectModel
 	public $message;
 	public $currency;
 	public $amount;
+    public $terminal;
 	public $date_add;
 	public $date_upd;
 
@@ -45,6 +55,7 @@ class eMerchantPayTransaction extends ObjectModel
 			'message'   => array('type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 254),
 			'currency'  => array('type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 3),
 			'amount'    => array('type' => self::TYPE_FLOAT,  'validate' => 'isPrice'),
+            'terminal'  => array('type' => self::TYPE_STRING, 'validate' => 'isString'),
 			'date_add'  => array('type' => self::TYPE_DATE,   'validate' => 'isDate'),
 			'date_upd'  => array('type' => self::TYPE_DATE,   'validate' => 'isDate'),
 		),
@@ -82,6 +93,15 @@ class eMerchantPayTransaction extends ObjectModel
 		return $orders->getFirst();
 	}
 
+    /**
+     * Return transaction object based on its id_unique
+     *
+     * @param $id_unique
+     *
+     * @return eMerchantPayTransaction
+     *
+     * @throws PrestaShopException
+     */
 	public static function getByUniqueId($id_unique)
 	{
 		/** @var PrestaShopCollectionCore $result */
@@ -134,11 +154,11 @@ class eMerchantPayTransaction extends ObjectModel
 	public static function getByOrderReference($order_reference)
 	{
 		return ObjectModel::hydrateCollection('eMerchantPayTransaction',
-			Db::getInstance()->executeS('
+			Db::getInstance()->executeS("
 				SELECT *
-				FROM `'._DB_PREFIX_.'emerchantpay_transactions`
-				WHERE `ref_order` = \''.pSQL($order_reference).'\''
-			)
+				FROM `" . _DB_PREFIX_ . "emerchantpay_transactions`
+				WHERE `ref_order` = '" . pSQL($order_reference) . "'
+			")
 		);
 	}
 
@@ -160,7 +180,8 @@ class eMerchantPayTransaction extends ObjectModel
 
 		$transactions = array();
 
-		foreach ($result as $transaction) {
+        /** @var eMerchantPayTransaction $transaction */
+        foreach ($result as $transaction) {
 			$transactions[] = $transaction->getFields();
 		}
 
@@ -243,7 +264,8 @@ class eMerchantPayTransaction extends ObjectModel
 	 * @param $val array
 	 * @param $array_asc array
 	 */
-	public static function treeTransactionSort(&$array_out, $val, $array_asc){
+	public static function treeTransactionSort(&$array_out, $val, $array_asc)
+    {
 		if (isset($val['org_key'])) {
 			$array_out[ $val['org_key'] ] = $val;
 
@@ -261,34 +283,34 @@ class eMerchantPayTransaction extends ObjectModel
 	 *
 	 * @param stdClass $response
 	 */
-	public function importResponse($response) {
-		include dirname(__FILE__) . '/../lib/genesis_php/vendor/autoload.php';
-
-		if (isset($response->amount) && isset($response->currency)) {
-			$amount = Genesis\Utils\Currency::exponentToReal($response->amount, $response->currency);
-		}
-		else {
-			$amount = $response->amount;
-		}
+	public function importResponse($response)
+    {
+		include_once dirname(__FILE__) . '/../lib/genesis/vendor/autoload.php';
 
 		if (isset($response->unique_id)) {
-			$this->id_unique = (string) $response->unique_id;
+			$this->id_unique = $response->unique_id;
 		}
 		if (isset($response->transaction_type)) {
-			$this->type = (string) $response->transaction_type;
+			$this->type = $response->transaction_type;
 		}
 		if (isset($response->status)) {
-			$this->status = (string) $response->status;
+			$this->status = $response->status;
 		}
 		if (isset($response->message)) {
-			$this->message = (string) $response->message;
+			$this->message = $response->message;
 		}
 		if (isset($response->currency)) {
-			$this->currency = (string) $response->currency;
+			$this->currency = $response->currency;
 		}
 		if (isset($response->amount)) {
-			$this->amount = (string) $amount;
+			$this->amount = $response->amount;
 		}
+        if (isset($response->terminal_token)) {
+            $this->terminal = $response->terminal_token;
+        }
+        if (isset($response->payment_transaction->terminal_token)) {
+            $this->terminal = $response->payment_transaction->terminal_token;
+        }
 	}
 
 	/**
@@ -297,7 +319,8 @@ class eMerchantPayTransaction extends ObjectModel
 	 * @param int   $status             Order Status Id
 	 * @param bool  $notify_customer    Should we notify the customer?
 	 */
-	public function updateOrderHistory($status, $notify_customer = null) {
+	public function updateOrderHistory($status, $notify_customer = null)
+    {
 		$order = $this->getOrder();
 
 		/** @var OrderHistoryCore $new_history */

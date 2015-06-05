@@ -17,6 +17,15 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
+/**
+ * Class eMerchantPayInstall
+ *
+ * Perform module installation/un-installation
+ */
 class eMerchantPayInstall
 {
 	private $status = true;
@@ -25,12 +34,9 @@ class eMerchantPayInstall
 		'header',
 		'payment',
 		'paymentTop',
-		//'paymentReturn',
 		'orderConfirmation',
 		'adminOrder',
-		//'cancelProduct',
 		'BackOfficeHeader',
-		//'displayMobileHeader'
 	);
 
 	/**
@@ -40,14 +46,15 @@ class eMerchantPayInstall
 	{
 		$schema = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'emerchantpay_transactions` (
 						`id_entry` INT NOT NULL AUTO_INCREMENT,
-						`id_unique` varchar(255) NOT NULL,
-						`id_parent` varchar(255) NOT NULL,
-						`ref_order` varchar(9) NOT NULL,
-						`type` varchar(255) NOT NULL,
-						`status` varchar(255) NOT NULL,
-						`message` varchar(255) NULL,
-						`currency` varchar(3) NULL,
+						`id_unique` VARCHAR(255) NOT NULL,
+						`id_parent` VARCHAR(255) NOT NULL,
+						`ref_order` VARCHAR(9) NOT NULL,
+						`type` VARCHAR(255) NOT NULL,
+						`status` VARCHAR(255) NOT NULL,
+						`message` VARCHAR(255) NULL,
+						`currency` VARCHAR(3) NULL,
 						`amount` DECIMAL(10,2) NULL,
+						`terminal` VARCHAR(255) NULL,
 						`date_add` DATETIME DEFAULT CURRENT_TIMESTAMP,
 						`date_upd` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 						PRIMARY KEY (`id_entry`)
@@ -104,9 +111,11 @@ class eMerchantPayInstall
 		}
 	}
 
-	/**
-	 * Delete module configuration
-	 */
+    /**
+     * Delete module configuration
+     *
+     * @param eMerchantPay $instance
+     */
 	public function dropKeys($instance)
 	{
 		foreach ($instance->getConfigKeys() as $key) {
