@@ -44,24 +44,29 @@ class eMerchantPayInstall
 	 */
 	public function createSchema()
 	{
-		$schema = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'emerchantpay_transactions` (
-						`id_entry` INT NOT NULL AUTO_INCREMENT,
-						`id_unique` VARCHAR(255) NOT NULL,
-						`id_parent` VARCHAR(255) NOT NULL,
-						`ref_order` VARCHAR(9) NOT NULL,
-						`type` VARCHAR(255) NOT NULL,
-						`status` VARCHAR(255) NOT NULL,
-						`message` VARCHAR(255) NULL,
-						`currency` VARCHAR(3) NULL,
-						`amount` DECIMAL(10,2) NULL,
-						`terminal` VARCHAR(255) NULL,
-						`date_add` DATETIME DEFAULT CURRENT_TIMESTAMP,
-						`date_upd` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-						PRIMARY KEY (`id_entry`)
-					) ENGINE=`' . _MYSQL_ENGINE_ . '` DEFAULT CHARSET=utf8;';
+        $schema = '
+            CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'emerchantpay_transactions`
+              (
+                 `id_entry`  INT NOT NULL auto_increment,
+                 `id_unique` VARCHAR(255) NOT NULL,
+                 `id_parent` VARCHAR(255) NOT NULL,
+                 `ref_order` VARCHAR(9) NOT NULL,
+                 `type`      VARCHAR(255) NOT NULL,
+                 `status`    VARCHAR(255) NOT NULL,
+                 `message`   VARCHAR(255) NULL,
+                 `currency`  VARCHAR(3) NULL,
+                 `amount`    DECIMAL(10, 2) NULL,
+                 `terminal`  VARCHAR(255) NULL,
+                 `date_add`  DATETIME DEFAULT NULL,
+                 `date_upd`  TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                 PRIMARY KEY (`id_entry`)
+              )
+            engine=`' . _MYSQL_ENGINE_ . '`
+            DEFAULT charset=utf8;';
 
 		if (!Db::getInstance()->execute($schema)) {
 			$this->status = false;
+            throw new PrestaShopException('Module Install: Unable to create MySQL Database');
 		}
 	}
 
@@ -77,7 +82,7 @@ class eMerchantPayInstall
 		foreach ($this->hooks as $hook) {
 			if (!$instance->registerHook($hook)) {
 				$this->status = false;
-				throw new PrestaShopException('Module Hook (' . $hook . ') can\'t be registered!');
+				throw new PrestaShopException('Module Install: Hook (' . $hook . ') can\'t be registered!');
 			}
 		}
 	}
@@ -90,7 +95,8 @@ class eMerchantPayInstall
 		$schema = 'DROP TABLE IF EXISTS `'._DB_PREFIX_.'emerchantpay_transactions`';
 
 		if (!Db::getInstance()->execute($schema)) {
-			$this->status = false;;
+			$this->status = false;
+            throw new PrestaShopException('Module Uninstall: Unable to DROP transactions table!');
 		}
 	}
 
@@ -106,7 +112,7 @@ class eMerchantPayInstall
 		foreach ($this->hooks as $hook) {
 			if (!$instance->unregisterHook($hook)) {
 				$this->status = false;
-				throw new PrestaShopException('Module Hook (' . $hook . ') can\'t be unregistered!');
+				throw new PrestaShopException('Module Uninstall: Hook (' . $hook . ') can\'t be unregistered!');
 			}
 		}
 	}
@@ -115,12 +121,14 @@ class eMerchantPayInstall
      * Delete module configuration
      *
      * @param eMerchantPay $instance
+     * @throws PrestaShopException
      */
 	public function dropKeys($instance)
 	{
 		foreach ($instance->getConfigKeys() as $key) {
 			if (!Configuration::deleteByName($key)) {
 				$this->status = false;
+                throw new PrestaShopException('Module Uninstall: Unable to remove configuration keys');
 			}
 		}
 	}

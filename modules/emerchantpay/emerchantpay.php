@@ -1301,7 +1301,7 @@ class eMerchantPay extends PaymentModule
 
         /** Check if SSL is enabled */
         if (!Configuration::get('PS_SSL_ENABLED') && $this->isDirectPaymentMethodAvailable()) {
-        	$this->warning = $this->l( 'This plugin requires SSL enabled and PCI-DSS compliant server, in order to accept customer\'s credit card information directly on your website!' );
+        	$this->warning = $this->l( 'This plugin requires SSL enabled and PCI-DSS compliant server in order to accept customer\'s credit card information directly on your website!' );
         }
 
         /* Bootstrap Genesis */
@@ -1325,7 +1325,7 @@ class eMerchantPay extends PaymentModule
         try {
             \Genesis\Utils\Requirements::verify();
         } catch(\Exception $e) {
-            $this->warning = $this->l('Your server does not meet the minimum system requirements! Check back with your hosting provider for assistance!');
+            $this->warning = $this->l('Your server does not meet the minimum system requirements! Contact your hosting provider for assistance!');
         }
 
         /* Check if the module is configured */
@@ -1346,7 +1346,7 @@ class eMerchantPay extends PaymentModule
                 Configuration::get('EMERCHANTPAY_ENVIRONMENT')
             );
         } else {
-            $this->warning = $this->l('You need to set your credentials (username, password), in order to connect to Genesis Gateway!');
+            $this->warning = $this->l('You need to set your credentials (username, password), in order to use Genesis Payment Gateway!');
 
         }
     }
