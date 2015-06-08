@@ -143,39 +143,37 @@
             });
             $('.btn-transaction').click(function () {
                 transactionBar($(this).attr('data-type'), $(this).attr('data-id-unique'), $(this).attr('data-amount'));
-                $('html, body').animate({
-                    scrollTop: $("#{$module_name}_action_bar").offset().top - 180
-                }, 840);
             });
         });
 
         function transactionBar(type, id_unique, amount) {
             modalObj = $('#{$module_name}_action_bar');
 
-            if (modalObj.is(':visible')) {
-                modalObj.fadeOut(420).delay(420);
-            }
+            modalObj.fadeOut(300, function() {
+                switch(type) {
+                    case 'capture':
+                        modalObj.find('#{$module_name}_transaction_amount_placeholder').css('visibility', 'visible');
+                        break;
+                    case 'refund':
+                        modalObj.find('#{$module_name}_transaction_amount_placeholder').css('visibility', 'visible');
+                        break;
+                    case 'void':
+                        modalObj.find('#{$module_name}_transaction_amount_placeholder').css('visibility', 'hidden');
+                        break;
+                    default:
+                        return;
+                }
 
-            switch(type) {
-                case 'capture':
-                    modalObj.find('#{$module_name}_transaction_type').attr('value', 'capture');
-                    modalObj.find('#{$module_name}_transaction_amount_placeholder').css('visibility','visible');
-                    break;
-                case 'refund':
-                    modalObj.find('#{$module_name}_transaction_type').attr('value', 'refund');
-                    modalObj.find('#{$module_name}_transaction_amount_placeholder').css('visibility','visible');
-                    break;
-                case 'void':
-                    modalObj.find('#{$module_name}_transaction_type').attr('value', 'void');
-                    modalObj.find('#{$module_name}_transaction_amount_placeholder').css('visibility','hidden');
-                    break;
-                default:
-                    return;
-            }
+                modalObj.find('#{$module_name}_transaction_type').attr('value', type);
 
-            modalObj.find('#{$module_name}_transaction_id').attr('value', id_unique);
+                modalObj.find('#{$module_name}_transaction_id').attr('value', id_unique);
 
-            modalObj.delay(420).fadeIn(420);
+                modalObj.find('#{$module_name}_transaction_amount').attr('value', amount);
+            });
+
+            modalObj.fadeIn(300, function() {
+
+            });
         }
     </script>
 {/if}
@@ -258,7 +256,7 @@
                                     <td class="text-center">
                                         {if $transaction['can_capture']}
                                             <div class="transaction-action-button">
-                                                <a class="btn btn-transaction btn-success button-capture button" role="button" data-type="capture" data-id-unique="{$transaction['id_unique']}">
+                                                <a class="btn btn-transaction btn-success button-capture button" role="button" data-type="capture" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['amount']}">
                                                     <i class="icon-check icon-large"></i>
                                                 </a>
                                             </div>
@@ -267,7 +265,7 @@
                                     <td class="text-center">
                                         {if $transaction['can_refund']}
                                             <div class="transaction-action-button">
-                                                <a class="btn btn-transaction btn-warning button-refund button" role="button" data-type="refund" data-id-unique="{$transaction['id_unique']}">
+                                                <a class="btn btn-transaction btn-warning button-refund button" role="button" data-type="refund" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['amount']}">
                                                     <i class="icon-reply icon-large"></i>
                                                 </a>
                                             </div>
@@ -276,7 +274,7 @@
                                     <td class="text-center">
                                         {if $transaction['can_void']}
                                             <div class="transaction-action-button">
-                                                <a class="btn btn-transaction btn-danger button-void button" role="button" data-type="void" data-id-unique="{$transaction['id_unique']}">
+                                                <a class="btn btn-transaction btn-danger button-void button" role="button" data-type="void" data-id-unique="{$transaction['id_unique']}" data-amount="0">
                                                     <i class="icon-remove icon-large"></i>
                                                 </a>
                                             </div>
@@ -310,7 +308,7 @@
                         <input type="hidden" name="{$module_name}_transaction_type" value="" />
 
                         <div class="form-group amount-input">
-                            <label for="comment">Amount:</label>
+                            <label for="comment">{l s="Amount:" mod="emerchantpay"}</label>
                             <div class="input-group">
                                 <div class="input-group-addon">{{$order_currency}}</div>
                                 <input type="text" class="form-control" name="{$module_name}_transaction_amount" placeholder="{l s="Amount..." mod="emerchantpay"}" value="{{$order_amount}}" />
@@ -318,8 +316,8 @@
                         </div>
 
                         <div class="form-group usage-input">
-                            <label for="comment">{l s='Message (optional):' mod='emerchantpay'}</label>
-                            <textarea class="form-control" rows="3" name="{$module_name}_transaction_usage"></textarea>
+                            <label for="form-message">{l s='Message (optional):' mod='emerchantpay'}</label>
+                            <textarea class="form-control form-message" rows="3" name="{$module_name}_transaction_usage"></textarea>
                         </div>
                     </form>
                 </div>
@@ -343,34 +341,35 @@
                 expanderCollapsedClass: 'icon icon-chevron-sign-right'
             });
             $('.btn-transaction').click(function() {
-                transactionModal($(this).attr('data-type'), $(this).attr('data-id-unique'));
+                transactionModal($(this).attr('data-type'), $(this).attr('data-id-unique'), $(this).attr('data-amount'));
             });
         });
 
-        function transactionModal(type, id_unique) {
+        function transactionModal(type, id_unique, amount = 0) {
             modalObj = $('#{$module_name}-modal');
 
             switch(type) {
                 case 'capture':
                     modalObj.find('h3.{$module_name}-modal-title').text('{l s="Capture transaction" mod="emerchantpay"}');
-                    modalObj.find('input[name="{$module_name}_transaction_type"]').attr('value', 'capture');
-                    modalObj.find('.amount-input').show();
+                    modalObj.find('div.amount-input').show();
                     break;
                 case 'refund':
                     modalObj.find('h3.{$module_name}-modal-title').text('{l s="Refund transaction" mod="emerchantpay"}');
-                    modalObj.find('input[name="{$module_name}_transaction_type"]').attr('value', 'refund');
-                    modalObj.find('.amount-input').show();
+                    modalObj.find('div.amount-input').show();
                     break;
                 case 'void':
                     modalObj.find('h3.{$module_name}-modal-title').text('{l s="Cancel transaction" mod="emerchantpay"}');
-                    modalObj.find('input[name="{$module_name}_transaction_type"]').attr('value', 'void');
-                    modalObj.find('.amount-input').hide();
+                    modalObj.find('div.amount-input').hide();
                     break;
                 default:
                     return;
             }
 
+            modalObj.find('input[name="{$module_name}_transaction_type"]').attr('value', type);
+
             modalObj.find('input[name="{$module_name}_transaction_id"]').attr('value', id_unique);
+
+            modalObj.find('input[name="{$module_name}_transaction_amount"]').attr('value', amount);
 
             modalObj.modal('show');
 

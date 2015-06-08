@@ -20,7 +20,7 @@
     {if $payment_methods['checkout']}
     <p class="payment_module">
         <a href="{$urls['checkout']}">
-            <img src="{$module_path}/assets/img/checkout.png" alt="{l s="eMerchantPay Logo" mod="emerchantpay"}" style="width:224px;" />
+            <img src="{$module_path}/assets/img/logos/emerchantpay_checkout.png" alt="{l s="eMerchantPay Logo" mod="emerchantpay"}" style="width:224px;" />
             {l s="Pay safely with eMerchantPay" mod="emerchantpay"}
         </a>
     </p>
@@ -98,7 +98,7 @@
         <div class="col-xs-12 col-md-6">
              <p class="payment_module">
                 <a class="emerchantpay" href="{$urls['checkout']}">
-                    <img src="{$module_path}/assets/img/checkout.png" alt="{l s="eMerchantPay Logo" mod="emerchantpay"}" style="width:224px;" />
+                    <img src="{$module_path}/assets/img/logos/emerchantpay_checkout.png" alt="{l s="eMerchantPay Logo" mod="emerchantpay"}" style="width:224px;" />
                     <span>{l s="Pay safely with eMerchantPay" mod="emerchantpay"}</span>
                 </a>
             </p>
@@ -246,6 +246,8 @@
     }
 </style>
 
+{* Disable Card init if there is no Direct method available *}
+{if $payment_methods['direct']}
 <script type="text/javascript">
     new Card({
         form:       '#{$module_name}-form',
@@ -257,7 +259,8 @@
             expiryInput:'input[name="{$module_name}-expiry"]'
         },
         messages: {
-            legalText: '&copy;{$smarty.now|date_format: '%Y'} {$shop_name}<br/><br/>Powered by {$display_name}'
+            legalText: '&copy;{$smarty.now|date_format: '%Y'} {$shop_name}<br/><br/>{l s="Powered by"} {$display_name}'
         }
     });
 </script>
+{/if}

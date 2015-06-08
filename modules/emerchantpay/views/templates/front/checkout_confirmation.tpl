@@ -59,7 +59,7 @@
             <input type="hidden" name="submit{$module_name}Checkout" value="true" />
 
             <p>
-                <img src="{$module_path}/assets/img/logo_500px.png" alt="{l s='eMerchantPay Checkout' mod='emerchantpay'}" width="128" style="float:left; margin: 0px 10px 5px 0px;" />
+                <img src="{$module_path}/assets/img/logos/emerchantpay.png" alt="{l s='eMerchantPay Checkout' mod='emerchantpay'}" width="128" style="float:left;margin: 0 10px 5px 0;" />
                 {l s='You have chosen to pay via eMerchantPay Secure Checkout' mod='emerchantpay'}
             </p>
             <p style="margin-top:20px;">

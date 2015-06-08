@@ -303,7 +303,7 @@ class eMerchantPay extends PaymentModule
                 $this->getPathUri() . 'assets/css/bootstrap-custom.min.css', 'all'
             );
             $this->context->controller->addJS(
-                $this->getPathUri() . 'assets/js/bootstrap/bootstrap.min.js'
+                $this->getPathUri() . 'assets/js/bootstrap/bootstrap.alert.min.js'
             );
         }
 

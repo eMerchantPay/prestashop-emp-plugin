@@ -27,6 +27,11 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
 	/** @var eMerchantPay */
 	public $module;
 
+    /**
+     * Supported transaction types for Order Status
+     *
+     * @var array
+     */
     public $types = array(
         \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
         \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
@@ -114,10 +119,13 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
 
 					if (isset($checkout_transaction->id_unique)) {
 
-						$payment_reconcile = $checkout_reconcile->payment_transaction;
+                        $checkout_transaction->type = 'checkout';
+                        $checkout_transaction->importResponse($checkout_reconcile);
 
-						if ( isset( $payment_reconcile->unique_id ) ) {
-							/** @var eMerchantPayTransaction $transaction */
+						if ( isset( $checkout_reconcile->payment_transaction ) ) {
+                            $payment_reconcile = $checkout_reconcile->payment_transaction;
+
+                            /** @var eMerchantPayTransaction $transaction */
 							$payment_transaction = eMerchantPayTransaction::getByUniqueId( $payment_reconcile->unique_id );
 
 							if ( $payment_transaction ) {
@@ -131,18 +139,17 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
 								$payment_transaction->importResponse( $payment_reconcile );
 								$payment_transaction->add();
 							}
+
+                            if (in_array($payment_reconcile->transaction_type, $this->types)) {
+                                $status = $this->module->getPrestaStatus($payment_reconcile->status);
+                            } else {
+                                $status = $this->module->getPrestaBackendStatus($payment_reconcile->transaction_type);
+                            }
+
+                            $checkout_transaction->updateOrderHistory( $status, true );
 						}
 
-                        if (in_array($payment_reconcile->transaction_type, $this->types)) {
-                            $status = $this->module->getPrestaStatus($payment_reconcile->status);
-                        } else {
-                            $status = $this->module->getPrestaBackendStatus($payment_reconcile->transaction_type);
-                        }
-
-						$checkout_transaction->type = 'checkout';
-						$checkout_transaction->importResponse($checkout_reconcile);
-						$checkout_transaction->updateOrderHistory( $status, true );
-						$checkout_transaction->save();
+                        $checkout_transaction->save();
 
 						$notification->renderResponse();
 					}
