@@ -40,15 +40,16 @@ class eMerchantPay extends PaymentModule
     public function __construct()
     {
         /* Initial Module Setup */
-        $this->name        = 'emerchantpay';
-        $this->tab         = 'payments_gateways';
-        $this->displayName = 'eMerchantPay Payment Gateway';
-        $this->controllers = array('checkout', 'notification', 'redirect', 'validation');
-        $this->version     = '1.2.0';
+        $this->name         = 'emerchantpay';
+        $this->tab          = 'payments_gateways';
+        $this->displayName  = 'eMerchantPay Payment Gateway';
+        $this->controllers  = array('checkout', 'notification', 'redirect', 'validation');
+        $this->version      = '1.2.1';
+        $this->author       = 'eMerchantPay Ltd.';
 
         /* The parent construct is required for translations */
-        $this->page        = basename(__FILE__, '.php');
-        $this->description = $this->l('Accept payments through eMerchantPay\'s Payment Gateway - Genesis');
+        $this->page         = basename(__FILE__, '.php');
+        $this->description  = $this->l('Accept payments through eMerchantPay\'s Payment Gateway - Genesis');
 
         /* Use Bootstrap */
         $this->bootstrap = true;
@@ -68,14 +69,24 @@ class eMerchantPay extends PaymentModule
         /* Run all parent constructors */
         parent::__construct();
 
-        /* Smarty Presta constants */
-        $this->context->smarty->assign('base_dir', __PS_BASE_URI__);
-        $this->context->smarty->assign('ps_version', _PS_VERSION_);
-
         /* Smarty Module constants */
-        $this->context->smarty->assign('module_name', $this->name);
-        $this->context->smarty->assign('module_path', $this->getPathUri());
-        $this->context->smarty->assign('module_warn', $this->warning);
+        $this->context->smarty->assign(
+            'emerchantpay',
+            array(
+                'name'      => array(
+                    'module'    => $this->name,
+                    'display'   => $this->displayName,
+                    'store'     => Configuration::get('PS_SHOP_NAME')
+                ),
+                'path'      => $this->getPathUri(),
+                'presta'    => array(
+                    'url'       => Tools::getHttpHost(true) . __PS_BASE_URI__,
+                    'version'   => _PS_VERSION_,
+                ),
+                'version'   => $this->version,
+                'warning'   => $this->warning
+            )
+        );
     }
 
     /**
@@ -208,6 +219,10 @@ class eMerchantPay extends PaymentModule
 
         $order = new Order((int)$params['id_order']);
 
+        if ($order->payment != $this->displayName) {
+            return '';
+        }
+
         if (version_compare(_PS_VERSION_, '1.6', '<')) {
             $this->context->controller->addCSS(
                 $this->getPathUri() . 'assets/css/font-awesome.min.css', 'all'
@@ -226,15 +241,20 @@ class eMerchantPay extends PaymentModule
 
         $currency = new Currency((int)$order->id_currency);
 
-        $this->context->smarty->assign(
+        $this->context->smarty->append(
+            'emerchantpay',
             array(
-                'base_url'          => _PS_BASE_URL_ . __PS_BASE_URI__,
-                'order_id'          => $order->id,
-                'order_amount'      => $order->getTotalPaid(),
-                'order_currency'    => $currency->iso_code,
-                'error_transaction' => $this->getSessVar('error_transaction'),
-                'transactions'      => eMerchantPayTransaction::getTransactionTree((int)$params['id_order']),
-            )
+                'transactions'  => array(
+                    'order'             => array(
+                        'id'          => $order->id,
+                        'amount'      => $order->getTotalPaid(),
+                        'currency'    => $currency->iso_code,
+                    ),
+                    'error' => $this->getSessVar('error_transaction'),
+                    'tree'  => eMerchantPayTransaction::getTransactionTree((int)$params['id_order']),
+                ),
+            ),
+            true
         );
 
         return $this->fetchTemplate('/views/templates/admin/admin_order/transactions.tpl');
@@ -257,25 +277,25 @@ class eMerchantPay extends PaymentModule
             );
         }
 
-        $this->context->smarty->assign(
+        $this->context->smarty->append(
+            'emerchantpay',
             array(
-                'warning'       => $this->warning,
-                'module_name'   => $this->name,
-                'display_name'  => $this->displayName,
-                'shop_name'     => Configuration::get('PS_SHOP_NAME'),
-                'urls'          => array(
-                    'direct'    => $this->context->link->getModuleLink($this->name, 'validation'),
-                    'checkout'  => $this->context->link->getModuleLink($this->name, 'checkout'),
-                ),
-                'errors'        => array(
-                    'direct'    => $this->getSessVar('error_direct'),
-                    'checkout'  => $this->getSessVar('error_checkout')
-                ),
-                'payment_methods' => array(
-                    'direct'    => $this->isDirectPaymentMethodAvailable(),
-                    'checkout'  => $this->isCheckoutPaymentMethodAvailable()
-                ),
-            )
+                'payment'   => array(
+                    'urls'          => array(
+                        'direct'    => $this->context->link->getModuleLink($this->name, 'validation'),
+                        'checkout'  => $this->context->link->getModuleLink($this->name, 'checkout'),
+                    ),
+                    'errors'        => array(
+                        'direct'    => $this->getSessVar('error_direct'),
+                        'checkout'  => $this->getSessVar('error_checkout')
+                    ),
+                    'methods'       => array(
+                        'direct'    => $this->isDirectPaymentMethodAvailable(),
+                        'checkout'  => $this->isCheckoutPaymentMethodAvailable()
+                    ),
+                )
+            ),
+            true
         );
 
         if (!$this->isAvailable()) {
@@ -327,13 +347,15 @@ class eMerchantPay extends PaymentModule
 
         if ($params['objOrder'] && Validate::isLoadedObject($params['objOrder']) && isset($params['objOrder']->valid)) {
 
+            $reference = isset($params['objOrder']->reference)
+                ? $params['objOrder']->reference
+                : '#' . sprintf('%06d', $params['objOrder']->id);
+
+
             $this->smarty->assign('order',
                 array(
-                    'reference' => isset($params['objOrder']->reference)
-                        ? $params['objOrder']->reference
-                        : '#' . sprintf('%06d',
-                            $params['objOrder']->id),
-                    'valid' => $params['objOrder']->valid
+                    'reference' => $reference,
+                    'valid'     => $params['objOrder']->valid
                 ));
         }
 
@@ -349,10 +371,14 @@ class eMerchantPay extends PaymentModule
                 break;
         }
 
-        $this->context->smarty->assign(
+        $this->context->smarty->append(
+            'emerchantpay',
             array(
-                'status' => $status,
-            )
+                'confirmation' => array(
+                    'status' => $status,
+                )
+            ),
+            true
         );
 
         return $this->fetchTemplate('confirmation.tpl');
@@ -483,6 +509,9 @@ class eMerchantPay extends PaymentModule
      */
     public function doCheckout()
     {
+        // Apply settings
+        $this->applyGenesisConfig();
+
         try {
             $responseObj = eMerchantPayTransactionProcess::checkout(
                 $this->populateTransactionData()
@@ -545,6 +574,9 @@ class eMerchantPay extends PaymentModule
      */
     function doPayment()
     {
+        // Apply settings
+        $this->applyGenesisConfig();
+
         try {
             $responseObj = eMerchantPayTransactionProcess::pay(
                 $this->populateTransactionData()
@@ -627,6 +659,9 @@ class eMerchantPay extends PaymentModule
         $usage     = Tools::getValue($this->name . '_transaction_usage');
         $ip_addr   = Tools::getRemoteAddr();
 
+        // Apply settings
+        $this->applyGenesisConfig();
+
         try {
             $transaction = eMerchantPayTransaction::getByUniqueId($id_unique);
 
@@ -674,6 +709,9 @@ class eMerchantPay extends PaymentModule
         $usage     = Tools::getValue($this->name . '_transaction_usage');
         $ip_addr   = Tools::getRemoteAddr();
 
+        // Apply settings
+        $this->applyGenesisConfig();
+
         try {
             $transaction = eMerchantPayTransaction::getByUniqueId($id_unique);
 
@@ -719,6 +757,9 @@ class eMerchantPay extends PaymentModule
         $id_unique = Tools::getValue($this->name . '_transaction_id');
         $usage     = Tools::getValue($this->name . '_transaction_usage');
         $ip_addr   = Tools::getRemoteAddr();
+
+        // Apply settings
+        $this->applyGenesisConfig();
 
         try {
             $transaction = eMerchantPayTransaction::getByUniqueId($id_unique);
@@ -1301,7 +1342,7 @@ class eMerchantPay extends PaymentModule
 
         /** Check if SSL is enabled */
         if (!Configuration::get('PS_SSL_ENABLED') && $this->isDirectPaymentMethodAvailable()) {
-        	$this->warning = $this->l( 'This plugin requires SSL enabled and PCI-DSS compliant server in order to accept customer\'s credit card information directly on your website!' );
+        	//$this->warning = $this->l( 'This plugin requires SSL enabled and PCI-DSS compliant server in order to accept customer\'s credit card information directly on your website!' );
         }
 
         /* Bootstrap Genesis */
@@ -1330,24 +1371,34 @@ class eMerchantPay extends PaymentModule
 
         /* Check if the module is configured */
         if (Configuration::get('EMERCHANTPAY_USERNAME') && Configuration::get('EMERCHANTPAY_PASSWORD')) {
-            \Genesis\Config::setEndpoint(
-                'emerchantpay'
-            );
-            \Genesis\Config::setUsername(
-                Configuration::get('EMERCHANTPAY_USERNAME')
-            );
-            \Genesis\Config::setPassword(
-                Configuration::get('EMERCHANTPAY_PASSWORD')
-            );
-            \Genesis\Config::setToken(
-                Configuration::get('EMERCHANTPAY_TOKEN')
-            );
-            \Genesis\Config::setEnvironment(
-                Configuration::get('EMERCHANTPAY_ENVIRONMENT')
-            );
+            $this->applyGenesisConfig();
         } else {
             $this->warning = $this->l('You need to set your credentials (username, password), in order to use Genesis Payment Gateway!');
 
         }
+    }
+
+    /**
+     * Set Genesis Configuration based on the module settings
+     *
+     * @return void
+     */
+    private function applyGenesisConfig()
+    {
+        \Genesis\Config::setEndpoint(
+            'emerchantpay'
+        );
+        \Genesis\Config::setUsername(
+            Configuration::get('ECP_USERNAME')
+        );
+        \Genesis\Config::setPassword(
+            Configuration::get('ECP_PASSWORD')
+        );
+        \Genesis\Config::setToken(
+            Configuration::get('ECP_TOKEN')
+        );
+        \Genesis\Config::setEnvironment(
+            Configuration::get('ECP_ENVIRONMENT')
+        );
     }
 }

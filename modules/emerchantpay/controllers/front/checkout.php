@@ -81,15 +81,23 @@ class eMerchantPayCheckoutModuleFrontController extends ModuleFrontController
 				$this->module->getPathUri() . 'assets/js/card/card.min.js'
 			);
 
-			$this->context->smarty->assign(array(
-				'product_count' => $cart->nbProducts(),
-				'currency'      => $cart->id_currency,
-				'total'         => $cart->getOrderTotal(true, $cart::BOTH),
-				'isoCode'       => $this->context->language->iso_code,
-				'error_checkout'=> $this->module->getSessVar('error_checkout'),
-				'link_back'     => $this->context->link->getPageLink('order', true, NULL, "step=3"),
-				'link_confirm'  => $this->context->link->getModuleLink($this->module->name, 'validation'),
-			));
+			$this->context->smarty->append(
+                'emerchantpay',
+                array(
+                    'checkout'  => array(
+                        'product_count' => $cart->nbProducts(),
+                        'currency'      => $cart->id_currency,
+                        'total'         => $cart->getOrderTotal(true, $cart::BOTH),
+                        'isoCode'       => $this->context->language->iso_code,
+                        'error'         => $this->module->getSessVar('error_checkout'),
+                        'links'         => array(
+                            'back'     => $this->context->link->getPageLink('order', true, NULL, "step=3"),
+                            'confirm'  => $this->context->link->getModuleLink($this->module->name, 'validation'),
+                        )
+                    )
+                ),
+                true
+            );
 
 			$this->setTemplate('checkout_confirmation.tpl');
 		}

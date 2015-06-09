@@ -22,7 +22,7 @@
     }
 </style>
 
-{if $status == 'success'}
+{if $emerchantpay['redirect']['status'] == 'success'}
 
     {capture name=path}{l s='Payment Status'}{/capture}
 
@@ -35,10 +35,10 @@
             <div class="col-xs-12">
                 <p>
                     {l s='You can find more information about the order, ' mod='emerchantpay'}
-                    <a href="{$url_history}">{l s='in your order history' mod='emerchantpay'}</a>.
+                    <a href="{$emerchantpay['redirect']['url']['history']}">{l s='in your order history' mod='emerchantpay'}</a>.
 
                     <br /><br />{l s='For any questions or for further information, please contact our' mod='emerchantpay'}
-                    <a href="{$url_support}">{l s='customer support' mod='emerchantpay'}</a>.
+                    <a href="{$emerchantpay['redirect']['url']['support']}">{l s='customer support' mod='emerchantpay'}</a>.
                 </p>
             </div>
         </div>
@@ -46,7 +46,7 @@
 
 {/if}
 
-{if $status == 'failure'}
+{if $emerchantpay['redirect']['status'] == 'failure'}
 
     {capture name=path}{l s='Payment Status'}{/capture}
 
@@ -59,10 +59,10 @@
             <div class="col-xs-12">
                 <p>
                     {l s='Please check your input and try again! If you would like to restore your cart, you can click' mod='emerchantpay'}
-                    <a href="{$url_restore}">{l s='here' mod='emerchantpay'}</a>
+                    <a href="{$emerchantpay['redirect']['url']['restore']}">{l s='here' mod='emerchantpay'}</a>
 
                     <br /><br />{l s='If the problem persists, you can contact our' mod='emerchantpay'}
-                    <a href="{$url_support}">{l s='customer support' mod='emerchantpay'}</a>.
+                    <a href="{$emerchantpay['redirect']['url']['support']}">{l s='customer support' mod='emerchantpay'}</a>.
                 </p>
             </div>
         </div>
@@ -70,7 +70,7 @@
 
 {/if}
 
-{if $status == 'cancel'}
+{if $emerchantpay['redirect']['status'] == 'cancel'}
 
     {capture name=path}{l s='Payment Status'}{/capture}
 
@@ -83,10 +83,10 @@
             <div class="col-xs-12">
                 <p>
                     {l s='You have successfully cancelled your order. If you like to restore your cart, please click ' mod='emerchantpay'}
-                    <a href="{$url_restore}">{l s='here' mod='emerchantpay'}</a>.
+                    <a href="{$emerchantpay['redirect']['url']['restore']}">{l s='here' mod='emerchantpay'}</a>.
 
                     <br/><br/>{l s='Or you can go back to your order' mod='emerchantpay'}
-                    <a href="{$url_history}">{l s='history' mod='emerchantpay'}</a>.
+                    <a href="{$emerchantpay['redirect']['url']['history']}">{l s='history' mod='emerchantpay'}</a>.
                 </p>
             </div>
         </div>

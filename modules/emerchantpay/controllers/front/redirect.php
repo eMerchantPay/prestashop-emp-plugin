@@ -28,6 +28,8 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
 	public $module;
 	/** @var  ContextCore  */
 	protected $context;
+    /** @var array  */
+    protected $statuses = array('success', 'failure', 'cancel');
 
 	/**
 	 * @see FrontController::initContent()
@@ -47,15 +49,25 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
 			}
 		}
 
-		$this->context->smarty->assign(
+        if (!in_array(Tools::getValue('action'), $this->statuses)) {
+            $this->module->redirectToPage('history.php');
+        }
+
+		$this->context->smarty->append(
+            'emerchantpay',
 			array(
-				'status'        => Tools::getValue('action'),
-				'url_history'   => $this->context->link->getPageLink('history.php'),
-				'url_restore'   => $this->context->link->getModuleLink(
-					$this->module->name, 'redirect', array('restore' => 'cart')
-				),
-				'url_support'   => $this->context->link->getPageLink('contact.php'),
-			)
+                'redirect'  => array(
+                    'status'        => Tools::getValue('action'),
+                    'url'   => array(
+                        'history'   => $this->context->link->getPageLink('history.php'),
+                        'restore'   => $this->context->link->getModuleLink(
+                            $this->module->name, 'redirect', array('restore' => 'cart')
+                        ),
+                        'support'   => $this->context->link->getPageLink('contact.php'),
+                    )
+                )
+			),
+            true
 		);
 
 		$this->setTemplate('async_return.tpl');
