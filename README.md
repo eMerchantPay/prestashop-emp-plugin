@@ -31,7 +31,8 @@ Installation
 * Locate ```eMerchantPay Payment Gateway``` in the list and click ```Install```
 * Tweak the settings to your liking and click the ```Save``` button when ready
 * You can find the new payment methods in the ```Checkout``` section in your Store Front
+* Clear the cache via ```Advanced Parameters``` -> ```Performance``` -> ```Clear cache```
 
-Note: If you have payment restrictions in place, you'll have to add the newly installed payment method to the ```Currencies``` / ```Countries``` / ```Groups``` you wish to appear on.
+__Note__: If you have payment restrictions in place, you'll have to add the newly installed payment method to the ```Currencies``` / ```Countries``` / ```Groups``` you wish to appear on.
 
 You're now ready to process payments through our gateway.
