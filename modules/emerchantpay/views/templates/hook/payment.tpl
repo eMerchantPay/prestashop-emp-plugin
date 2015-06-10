@@ -21,7 +21,8 @@
         {if $emerchantpay['payment']['methods']['checkout']}
             <div id="payment-method-{$emerchantpay['name']['module']}-checkout" class="payment_module">
                 <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']}">
-                    <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_checkout.png" alt="{l s="eMerchantPay Logo" mod="emerchantpay"}" style="width:224px;" />
+                    <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_checkout.png"
+                         alt="{l s="eMerchantPay Logo" mod="emerchantpay"}" style="width:224px;"/>
                     {l s="Pay safely with eMerchantPay" mod="emerchantpay"}
                 </a>
             </div>
@@ -61,12 +62,27 @@
 
                                     <div class="form-wrapper">
                                         <div class="form-group active">
-                                            <form action="{$emerchantpay['payment']['urls']['direct']}" autocomplete="off" class="payment-form" method="post">
-                                                <input autocomplete="off" placeholder="{l s="Card Number"  mod="emerchantpay"}" class="form-control" type="text" name="{$emerchantpay['name']['module']}-number">
-                                                <input autocomplete="off" placeholder="{l s="Card Holder"  mod="emerchantpay"}" class="form-control" type="text" name="{$emerchantpay['name']['module']}-name">
-                                                <input autocomplete="off" placeholder="{l s="Month / Year" mod="emerchantpay"}" class="form-control" type="text" name="{$emerchantpay['name']['module']}-expiry">
-                                                <input autocomplete="off" placeholder="{l s="CVV/CVV2/CSC" mod="emerchantpay"}" class="form-control" type="text" name="{$emerchantpay['name']['module']}-cvc">
-                                                <input class="form-control submit" type="submit" name="submit{$emerchantpay['name']['module']}Direct" value="{l s="Pay" mod="emerchantpay"}"/>
+                                            <form action="{$emerchantpay['payment']['urls']['direct']}"
+                                                  autocomplete="off" class="payment-form" method="post">
+                                                <input autocomplete="off"
+                                                       placeholder="{l s="Card Number"  mod="emerchantpay"}"
+                                                       class="form-control" type="text"
+                                                       name="{$emerchantpay['name']['module']}-number">
+                                                <input autocomplete="off"
+                                                       placeholder="{l s="Card Holder"  mod="emerchantpay"}"
+                                                       class="form-control" type="text"
+                                                       name="{$emerchantpay['name']['module']}-name">
+                                                <input autocomplete="off"
+                                                       placeholder="{l s="Month / Year" mod="emerchantpay"}"
+                                                       class="form-control" type="text"
+                                                       name="{$emerchantpay['name']['module']}-expiry">
+                                                <input autocomplete="off"
+                                                       placeholder="{l s="CVV/CVV2/CSC" mod="emerchantpay"}"
+                                                       class="form-control" type="text"
+                                                       name="{$emerchantpay['name']['module']}-cvc">
+                                                <input class="form-control submit" type="submit"
+                                                       name="submit{$emerchantpay['name']['module']}Direct"
+                                                       value="{l s="Pay" mod="emerchantpay"}"/>
                                             </form>
                                         </div>
                                     </div>
@@ -89,7 +105,8 @@
                     <div class="col-xs-12 col-md-6">
                         <p class="payment_module">
                             <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']}">
-                                <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_checkout.png" alt="{l s="eMerchantPay Logo" mod="emerchantpay"}" />
+                                <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_checkout.png"
+                                     alt="{l s="eMerchantPay Logo" mod="emerchantpay"}"/>
                                 <span>{l s="Pay safely with eMerchantPay" mod="emerchantpay"}</span>
                             </a>
                         </p>
@@ -136,12 +153,28 @@
                                     <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4 no-gutter">
                                         <div class="form-wrapper">
                                             <div class="form-group active">
-                                                <form action="{$emerchantpay['payment']['urls']['direct']}" autocomplete="off" class="payment-form" method="post" enctype="multipart/form-data">
-                                                    <input autocomplete="off" placeholder="{l s="Card number"  mod="emerchantpay"}" class="form-control" type="text" name="{$emerchantpay['name']['module']}-number">
-                                                    <input autocomplete="off" placeholder="{l s="Card holder"  mod="emerchantpay"}" class="form-control" type="text" name="{$emerchantpay['name']['module']}-name">
-                                                    <input autocomplete="off" placeholder="{l s="Expiration date (month / year)" mod="emerchantpay"}" class="form-control" type="text" name="{$emerchantpay['name']['module']}-expiry">
-                                                    <input autocomplete="off" placeholder="{l s="CVV / CVV2 / CSC" mod="emerchantpay"}" class="form-control" name="{$emerchantpay['name']['module']}-cvc">
-                                                    <input class="form-control submit" type="submit" name="submit{$emerchantpay['name']['module']}Direct" value="{l s="Pay" mod="emerchantpay"}"/>
+                                                <form action="{$emerchantpay['payment']['urls']['direct']}"
+                                                      autocomplete="off" class="payment-form" method="post"
+                                                      enctype="multipart/form-data">
+                                                    <input autocomplete="off"
+                                                           placeholder="{l s="Card number"  mod="emerchantpay"}"
+                                                           class="form-control" type="text"
+                                                           name="{$emerchantpay['name']['module']}-number">
+                                                    <input autocomplete="off"
+                                                           placeholder="{l s="Card holder"  mod="emerchantpay"}"
+                                                           class="form-control" type="text"
+                                                           name="{$emerchantpay['name']['module']}-name">
+                                                    <input autocomplete="off"
+                                                           placeholder="{l s="Expiration date (month / year)" mod="emerchantpay"}"
+                                                           class="form-control" type="text"
+                                                           name="{$emerchantpay['name']['module']}-expiry">
+                                                    <input autocomplete="off"
+                                                           placeholder="{l s="CVV / CVV2 / CSC" mod="emerchantpay"}"
+                                                           class="form-control"
+                                                           name="{$emerchantpay['name']['module']}-cvc">
+                                                    <input class="form-control submit" type="submit"
+                                                           name="submit{$emerchantpay['name']['module']}Direct"
+                                                           value="{l s="Pay" mod="emerchantpay"}"/>
                                                 </form>
                                             </div>
                                         </div>
@@ -159,13 +192,15 @@
         #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link {
             padding-left: 33px;
         }
-            #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link span {
-                padding-left: 8px;
-            }
-            #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link::after {
-                line-height: 0;
-                top: 50% !important;
-            }
+
+        #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link span {
+            padding-left: 8px;
+        }
+
+        #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link::after {
+            line-height: 0;
+            top: 50% !important;
+        }
     </style>
 {/if}
 
@@ -175,70 +210,75 @@
     }
 
     #payment-method-{$emerchantpay['name']['module']}-checkout {
-        position:relative;
+        position: relative;
     }
-        #payment-method-{$emerchantpay['name']['module']}-checkout.payment_module {
-            padding-bottom: 20px;
-        }
 
-        #payment-method-{$emerchantpay['name']['module']}-checkout .center-wrapper {
-            position: relative;
-            display: block;
-            top: 50%;
-            margin-top: -1000px;
-            height: 2000px;
-            text-align: center;
-            line-height: 2000px;
-        }
+    #payment-method-{$emerchantpay['name']['module']}-checkout.payment_module {
+        padding-bottom: 20px;
+    }
 
-            #payment-method-{$emerchantpay['name']['module']}-checkout .center-wrapper .wrap {
-                line-height: 0;
-            }
+    #payment-method-{$emerchantpay['name']['module']}-checkout .center-wrapper {
+        position: relative;
+        display: block;
+        top: 50%;
+        margin-top: -1000px;
+        height: 2000px;
+        text-align: center;
+        line-height: 2000px;
+    }
 
-                #payment-method-{$emerchantpay['name']['module']}-checkout .center-wrapper .wrap img {
-                    width: 85%;
-                    max-width: 350px;
-                    vertical-align: middle;
-                }
+    #payment-method-{$emerchantpay['name']['module']}-checkout .center-wrapper .wrap {
+        line-height: 0;
+    }
 
-        #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link {
-            line-height: 50px;
-        }
+    #payment-method-{$emerchantpay['name']['module']}-checkout .center-wrapper .wrap img {
+        width: 85%;
+        max-width: 350px;
+        vertical-align: middle;
+    }
 
-            #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link:after {
-                display: block;
-                content: "\f054";
-                position: absolute;
-                right: 15px;
-                top: 25%;
-                margin-top: 0;
-                font-family: 'FontAwesome', sans-serif;
-                font-size: 25px;
-                height: 22px;
-                width: 14px;
-                color: #777777;
-            }
+    #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link {
+        line-height: 50px;
+    }
+
+    #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link:after {
+        display: block;
+        content: "\f054";
+        position: absolute;
+        right: 15px;
+        top: 25%;
+        margin-top: 0;
+        font-family: 'FontAwesome', sans-serif;
+        font-size: 25px;
+        height: 22px;
+        width: 14px;
+        color: #777777;
+    }
+
+    #payment-method-{$ecomprocessing['name']['module']}-direct {
+        padding-top: 30px !important;
+    }
 
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container {
         /*width:100%;*/
         background: #FFF;
-        border:1px solid #ddd;
-        border-radius:16px;
-        padding:22px 12px;
-        overflow:hidden;
+        border: 1px solid #ddd;
+        border-radius: 16px;
+        padding: 22px 12px;
+        overflow: hidden;
     }
 
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container .no-gutter {
-        margin:0;
-        padding:0;
+        margin: 0;
+        padding: 0;
     }
 
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container .payment-method-header h3 {
-        margin-bottom:18px;
+        margin-bottom: 18px;
     }
 
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container .payment-method-status .row-spacer {
-        margin-bottom:16px;
+        margin-bottom: 16px;
     }
 
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container input {
@@ -249,17 +289,17 @@
     }
 
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container .payment-method-content .card-wrapper {
-        display:block;
-        margin-bottom:16px;
+        display: block;
+        margin-bottom: 16px;
     }
 
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container .payment-method-content .form-wrapper .form-group {
-        margin: 0 auto;
+        margin: 16px auto 0 auto;
     }
 
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container .payment-method-content .form-wrapper .form-group input {
-        width:98%;
-        margin:0 auto 16px auto;
+        width: 98%;
+        margin: 0 auto 16px auto;
         height: 36px;
         padding: 0 8px;
     }
@@ -269,7 +309,7 @@
         border-radius: 6px !important;
         background: #5F604B;
         color: #fff;
-        height:40px;
+        height: 40px;
         line-height: 8px;
         cursor: pointer;
         cursor: hand;
@@ -285,13 +325,13 @@
 {if $emerchantpay['payment']['methods']['direct']}
     <script type="text/javascript">
         new Card({
-            form:       '#payment-method-{$emerchantpay['name']['module']}-direct .payment-form',
-            container:  '#payment-method-{$emerchantpay['name']['module']}-direct .card-wrapper',
+            form: '#payment-method-{$emerchantpay['name']['module']}-direct .payment-form',
+            container: '#payment-method-{$emerchantpay['name']['module']}-direct .card-wrapper',
             formSelectors: {
-                nameInput:  'input[name="{$emerchantpay['name']['module']}-name"]',
-                numberInput:'input[name="{$emerchantpay['name']['module']}-number"]',
-                cvcInput:   'input[name="{$emerchantpay['name']['module']}-cvc"]',
-                expiryInput:'input[name="{$emerchantpay['name']['module']}-expiry"]'
+                nameInput: 'input[name="{$emerchantpay['name']['module']}-name"]',
+                numberInput: 'input[name="{$emerchantpay['name']['module']}-number"]',
+                cvcInput: 'input[name="{$emerchantpay['name']['module']}-cvc"]',
+                expiryInput: 'input[name="{$emerchantpay['name']['module']}-expiry"]'
             },
             messages: {
                 legalText: '&copy;{$smarty.now|date_format: '%Y'} {$emerchantpay['name']['display']}<br/><br/>{$emerchantpay['name']['store']}'

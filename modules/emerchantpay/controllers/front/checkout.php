@@ -17,6 +17,10 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
 /**
  * Class eMerchantPayCheckoutModuleFrontController
  *
@@ -99,7 +103,7 @@ class eMerchantPayCheckoutModuleFrontController extends ModuleFrontController
                 true
             );
 
-			$this->setTemplate('checkout_confirmation.tpl');
+			$this->setTemplate('checkout.tpl');
 		}
 	}
 }

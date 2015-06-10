@@ -17,6 +17,10 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
 /**
  * Class eMerchantPayNotificationModuleFrontController
  *
@@ -45,6 +49,8 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
 	public function initContent()
 	{
 		parent::initContent();
+
+        $this->module->applyGenesisConfig();
 
 		if (Tools::getIsset('signature')) {
 			if (Tools::getIsset('wpf_unique_id')) {

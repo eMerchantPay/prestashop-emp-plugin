@@ -1383,7 +1383,7 @@ class eMerchantPay extends PaymentModule
      *
      * @return void
      */
-    private function applyGenesisConfig()
+    public function applyGenesisConfig()
     {
         \Genesis\Config::setEndpoint(
             'emerchantpay'
