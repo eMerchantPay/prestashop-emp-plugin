@@ -145,9 +145,7 @@
                                 <div class="row no-gutter">
                                     <div class="col-md-1 col-lg-2"></div>
                                     <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4 no-gutter">
-                                        <div class="">
-                                            <div class="card-wrapper"></div>
-                                        </div>
+                                        <div class="card-wrapper"></div>
                                     </div>
 
                                     <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4 no-gutter">
@@ -273,10 +271,6 @@
         padding: 0;
     }
 
-    #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container .payment-method-header h3 {
-        margin-bottom: 18px;
-    }
-
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container .payment-method-status .row-spacer {
         margin-bottom: 16px;
     }
@@ -290,6 +284,7 @@
 
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container .payment-method-content .card-wrapper {
         display: block;
+        padding-top: 16px;
         margin-bottom: 16px;
     }
 

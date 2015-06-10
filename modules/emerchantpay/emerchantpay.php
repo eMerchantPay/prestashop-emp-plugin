@@ -44,7 +44,7 @@ class eMerchantPay extends PaymentModule
         $this->tab          = 'payments_gateways';
         $this->displayName  = 'eMerchantPay Payment Gateway';
         $this->controllers  = array('checkout', 'notification', 'redirect', 'validation');
-        $this->version      = '1.2.1';
+        $this->version      = '1.2.2';
         $this->author       = 'eMerchantPay Ltd.';
 
         /* The parent construct is required for translations */
@@ -1342,7 +1342,7 @@ class eMerchantPay extends PaymentModule
 
         /** Check if SSL is enabled */
         if (!Configuration::get('PS_SSL_ENABLED') && $this->isDirectPaymentMethodAvailable()) {
-        	//$this->warning = $this->l( 'This plugin requires SSL enabled and PCI-DSS compliant server in order to accept customer\'s credit card information directly on your website!' );
+        	$this->warning = $this->l( 'This plugin requires SSL enabled and PCI-DSS compliant server in order to accept customer\'s credit card information directly on your website!' );
         }
 
         /* Bootstrap Genesis */
