@@ -17,6 +17,10 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
 /**
  * Class eMerchantPayValidationModuleFrontController
  *
@@ -101,9 +105,9 @@ class eMerchantPayValidationModuleFrontController extends ModuleFrontControllerC
 	 */
 	public function isRequiredFilled()
 	{
-		return Tools::getIsset('emerchantpay-cvc') &&
-		       Tools::getIsset('emerchantpay-name') &&
-               Tools::getIsset('emerchantpay-number') &&
-	           Tools::getIsset('emerchantpay-expiry');
+		return Tools::getIsset($this->module->name . '-cvc') &&
+		       Tools::getIsset($this->module->name . '-name') &&
+               Tools::getIsset($this->module->name . '-number') &&
+	           Tools::getIsset($this->module->name . '-expiry');
 	}
 }

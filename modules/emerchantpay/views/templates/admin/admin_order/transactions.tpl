@@ -16,7 +16,7 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  *}
 
-{if version_compare($ps_version, '1.5', '>=') && version_compare($ps_version, '1.6', '<') }
+{if version_compare($emerchantpay['presta']['version'], '1.5', '>=') && version_compare($emerchantpay['presta']['version'], '1.6', '<') }
 
     <style>
         .text-left { text-align:left; }
@@ -26,15 +26,15 @@
 
     <br/>
 
-    <fieldset {if isset($ps_version) && ($ps_version < '1.5')}style="width: 400px"{/if}>
-        <legend><img src="{$base_url}modules/{$module_name}/logo.png" style="width:16px" alt="" />{l s='eMerchantPay Transactions' mod='emerchantpay'}</legend>
+    <fieldset {if isset($emerchantpay['presta']['version']) && ($emerchantpay['presta']['version'] < '1.5')}style="width: 400px"{/if}>
+        <legend><img src="{$emerchantpay['presta']['url']}/modules/{$emerchantpay['name']['module']}/logo.png" style="width:16px" alt="" />{l s='eMerchantPay Transactions' mod='emerchantpay'}</legend>
         {* System errors, impacting the module functionallity *}
-        {if $module_warn}
-            <div class="warn">{$module_warn|escape:html:'UTF-8'}</div>
+        {if $emerchantpay['warning']}
+            <div class="warn">{$emerchantpay['warning']|escape:html:'UTF-8'}</div>
         {else}
             {* Transaction errors *}
-            {if $error_transaction}
-                <div class="error">{$error_transaction}</div>
+            {if $emerchantpay['transactions']['error']}
+                <div class="error">{$emerchantpay['transactions']['error']}</div>
             {/if}
 
             <div class="row">
@@ -72,7 +72,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    {foreach from=$transactions item=transaction}
+                    {foreach from=$emerchantpay['transactions']['tree'] item=transaction}
                         <tr class="treegrid-{$transaction['id_unique']} {if $transaction['id_parent']}treegrid-parent-{$transaction['id_parent']}{/if}">
                             <td class="text-left">{$transaction['id_unique']}</td>
                             <td class="text-left">{$transaction['type']}</td>
@@ -109,18 +109,18 @@
                             </td>
                         </tr>
                     {/foreach}
-                    <tr id="{$module_name}_action_bar" class="current-edit" style="display:none;">
-                        <td colspan="1" id="{$module_name}_transaction_amount_placeholder" style="vertical-align:middle">
-                            <label for="{$module_name}_transaction_amount" style="width:20%;">{l s="Amount:" mod="emerchantpay"}</label>
-                            <input type="text" id="{$module_name}_transaction_amount" name="{$module_name}_transaction_amount" placeholder="{l s="Amount..." mod="emerchantpay"}" value="{{$order_amount}}" style="width:70%;" />
+                    <tr id="{$emerchantpay['name']['module']}_action_bar" class="current-edit" style="display:none;">
+                        <td colspan="1" id="{$emerchantpay['name']['module']}_transaction_amount_placeholder" style="vertical-align:middle">
+                            <label for="{$emerchantpay['name']['module']}_transaction_amount" style="width:20%;">{l s="Amount:" mod="emerchantpay"}</label>
+                            <input type="text" id="{$emerchantpay['name']['module']}_transaction_amount" name="{$emerchantpay['name']['module']}_transaction_amount" placeholder="{l s="Amount..." mod="emerchantpay"}" value="{{$emerchantpay['transactions']['order']['amount']}}" style="width:70%;" />
                         </td>
-                        <td colspan="5" id="{$module_name}_transaction_usage_placeholder" style="vertical-align:middle">
-                            <label for="{$module_name}_transaction_usage" style="width:20%;">{l s="Usage:" mod="emerchantpay"}</label>
-                            <input type="text" id="{$module_name}_transaction_usage" name="{$module_name}_transaction_usage" placeholder="{l s="Usage..." mod="emerchantpay"}" style="width:70%;" />
+                        <td colspan="5" id="{$emerchantpay['name']['module']}_transaction_usage_placeholder" style="vertical-align:middle">
+                            <label for="{$emerchantpay['name']['module']}_transaction_usage" style="width:20%;">{l s="Usage:" mod="emerchantpay"}</label>
+                            <input type="text" id="{$emerchantpay['name']['module']}_transaction_usage" name="{$emerchantpay['name']['module']}_transaction_usage" placeholder="{l s="Usage..." mod="emerchantpay"}" style="width:70%;" />
                         </td>
                         <td colspan="3" style="text-align:center;vertical-align:middle">
-                            <input type="hidden" id="{$module_name}_transaction_id" name="{$module_name}_transaction_id" value="" />
-                            <input type="hidden" id="{$module_name}_transaction_type" name="{$module_name}_transaction_type" value="" />
+                            <input type="hidden" id="{$emerchantpay['name']['module']}_transaction_id" name="{$emerchantpay['name']['module']}_transaction_id" value="" />
+                            <input type="hidden" id="{$emerchantpay['name']['module']}_transaction_type" name="{$emerchantpay['name']['module']}_transaction_type" value="" />
                             <button type="submit" class="btn btn-success">
                                 <i class="fa fa-arrow-right fa-large"></i>
                                 {l s="Submit" mod="emerchantpay"}
@@ -147,28 +147,28 @@
         });
 
         function transactionBar(type, id_unique, amount) {
-            modalObj = $('#{$module_name}_action_bar');
+            modalObj = $('#{$emerchantpay['name']['module']}_action_bar');
 
             modalObj.fadeOut(300, function() {
                 switch(type) {
                     case 'capture':
-                        modalObj.find('#{$module_name}_transaction_amount_placeholder').css('visibility', 'visible');
+                        modalObj.find('#{$emerchantpay['name']['module']}_transaction_amount_placeholder').css('visibility', 'visible');
                         break;
                     case 'refund':
-                        modalObj.find('#{$module_name}_transaction_amount_placeholder').css('visibility', 'visible');
+                        modalObj.find('#{$emerchantpay['name']['module']}_transaction_amount_placeholder').css('visibility', 'visible');
                         break;
                     case 'void':
-                        modalObj.find('#{$module_name}_transaction_amount_placeholder').css('visibility', 'hidden');
+                        modalObj.find('#{$emerchantpay['name']['module']}_transaction_amount_placeholder').css('visibility', 'hidden');
                         break;
                     default:
                         return;
                 }
 
-                modalObj.find('#{$module_name}_transaction_type').attr('value', type);
+                modalObj.find('#{$emerchantpay['name']['module']}_transaction_type').attr('value', type);
 
-                modalObj.find('#{$module_name}_transaction_id').attr('value', id_unique);
+                modalObj.find('#{$emerchantpay['name']['module']}_transaction_id').attr('value', id_unique);
 
-                modalObj.find('#{$module_name}_transaction_amount').attr('value', amount);
+                modalObj.find('#{$emerchantpay['name']['module']}_transaction_amount').attr('value', amount);
             });
 
             modalObj.fadeIn(300, function() {
@@ -178,30 +178,30 @@
     </script>
 {/if}
 
-{if version_compare($ps_version, '1.6', '>=') && version_compare($ps_version, '1.7', '<') }
+{if version_compare($emerchantpay['presta']['version'], '1.6', '>=') && version_compare($emerchantpay['presta']['version'], '1.7', '<') }
 
     <div class="row">
         <div class="col-lg-12">
             <div class="panel">
                 <div class="panel-heading">
-                    <img src="{$base_url}modules/{$module_name}/logo.png" alt="" style="width:16px;" />
+                    <img src="{$emerchantpay['presta']['url']}modules/{$emerchantpay['name']['module']}/logo.png" alt="" style="width:16px;" />
                     <span>{l s='eMerchantPay Transactions' mod='emerchantpay'}</span>
                 </div>
                 <div class="panel-collapse collapse in">
 
                     {* System errors, impacting the module functionallity *}
-                    {if $module_warn}
+                    {if $emerchantpay['warning']}
                         <div class="alert alert-warning alert-dismissable error-wrapper">
                             <button type="button" class="close" data-dismiss="alert">&times;</button>
-                            {$module_warn|escape:html:'UTF-8'}
+                            {$emerchantpay['warning']|escape:html:'UTF-8'}
                         </div>
                     {/if}
 
                     {* Transaction errors *}
-                    {if $error_transaction}
+                    {if $emerchantpay['transactions']['error']}
                         <div class="alert alert-danger alert-dismissable error-wrapper">
                             <button type="button" class="close" data-dismiss="alert">&times;</button>
-                            {$error_transaction|escape:html:'UTF-8'}
+                            {$emerchantpay['transactions']['error']|escape:html:'UTF-8'}
                         </div>
                     {/if}
 
@@ -217,7 +217,7 @@
                         <div class="col-xs-3"></div>
                     </div>
 
-                    {if $transactions}
+                    {if $emerchantpay['transactions']['tree']}
                         <table class="table table-hover tree">
                             <thead>
                             <tr>
@@ -233,7 +233,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            {foreach from=$transactions item=transaction}
+                            {foreach from=$emerchantpay['transactions']['tree'] item=transaction}
                                 <tr class="treegrid-{$transaction['id_unique']} {if $transaction['id_parent']}treegrid-parent-{$transaction['id_parent']}{/if}">
                                     <td class="text-left">
                                         {$transaction['id_unique']}
@@ -292,32 +292,32 @@
             </div>
         </div>
     </div>
-    <div id="{$module_name}-modal" class="modal fade">
+    <div id="{$emerchantpay['name']['module']}-modal" class="modal fade">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
                         <i class="icon-times"></i>
                     </button>
-                    <img src="{$base_url}modules/{$module_name}/logo.png" style="width:16px;" />
-                    <h3 class="{$module_name}-modal-title" style="margin:0;display:inline-block;"></h3>
+                    <img src="{$emerchantpay['presta']['url']}modules/{$emerchantpay['name']['module']}/logo.png" style="width:16px;" />
+                    <h3 class="{$emerchantpay['name']['module']}-modal-title" style="margin:0;display:inline-block;"></h3>
                 </div>
                 <div class="modal-body">
-                    <form id="{$module_name}-modal-form" class="form modal-form" action="" method="post">
-                        <input type="hidden" name="{$module_name}_transaction_id" value="" />
-                        <input type="hidden" name="{$module_name}_transaction_type" value="" />
+                    <form id="{$emerchantpay['name']['module']}-modal-form" class="form modal-form" action="" method="post">
+                        <input type="hidden" name="{$emerchantpay['name']['module']}_transaction_id" value="" />
+                        <input type="hidden" name="{$emerchantpay['name']['module']}_transaction_type" value="" />
 
                         <div class="form-group amount-input">
                             <label for="comment">{l s="Amount:" mod="emerchantpay"}</label>
                             <div class="input-group">
-                                <div class="input-group-addon">{{$order_currency}}</div>
-                                <input type="text" class="form-control" name="{$module_name}_transaction_amount" placeholder="{l s="Amount..." mod="emerchantpay"}" value="{{$order_amount}}" />
+                                <div class="input-group-addon">{{$emerchantpay['transactions']['order']['currency']}}</div>
+                                <input type="text" class="form-control" name="{$emerchantpay['name']['module']}_transaction_amount" placeholder="{l s="Amount..." mod="emerchantpay"}" value="{{$emerchantpay['transactions']['order']['amount']}}" />
                             </div>
                         </div>
 
                         <div class="form-group usage-input">
                             <label for="form-message">{l s='Message (optional):' mod='emerchantpay'}</label>
-                            <textarea class="form-control form-message" rows="3" name="{$module_name}_transaction_usage"></textarea>
+                            <textarea class="form-control form-message" rows="3" name="{$emerchantpay['name']['module']}_transaction_usage"></textarea>
                         </div>
                     </form>
                 </div>
@@ -346,35 +346,35 @@
         });
 
         function transactionModal(type, id_unique, amount = 0) {
-            modalObj = $('#{$module_name}-modal');
+            modalObj = $('#{$emerchantpay['name']['module']}-modal');
 
             switch(type) {
                 case 'capture':
-                    modalObj.find('h3.{$module_name}-modal-title').text('{l s="Capture transaction" mod="emerchantpay"}');
+                    modalObj.find('h3.{$emerchantpay['name']['module']}-modal-title').text('{l s="Capture transaction" mod="emerchantpay"}');
                     modalObj.find('div.amount-input').show();
                     break;
                 case 'refund':
-                    modalObj.find('h3.{$module_name}-modal-title').text('{l s="Refund transaction" mod="emerchantpay"}');
+                    modalObj.find('h3.{$emerchantpay['name']['module']}-modal-title').text('{l s="Refund transaction" mod="emerchantpay"}');
                     modalObj.find('div.amount-input').show();
                     break;
                 case 'void':
-                    modalObj.find('h3.{$module_name}-modal-title').text('{l s="Cancel transaction" mod="emerchantpay"}');
+                    modalObj.find('h3.{$emerchantpay['name']['module']}-modal-title').text('{l s="Cancel transaction" mod="emerchantpay"}');
                     modalObj.find('div.amount-input').hide();
                     break;
                 default:
                     return;
             }
 
-            modalObj.find('input[name="{$module_name}_transaction_type"]').attr('value', type);
+            modalObj.find('input[name="{$emerchantpay['name']['module']}_transaction_type"]').attr('value', type);
 
-            modalObj.find('input[name="{$module_name}_transaction_id"]').attr('value', id_unique);
+            modalObj.find('input[name="{$emerchantpay['name']['module']}_transaction_id"]').attr('value', id_unique);
 
-            modalObj.find('input[name="{$module_name}_transaction_amount"]').attr('value', amount);
+            modalObj.find('input[name="{$emerchantpay['name']['module']}_transaction_amount"]').attr('value', amount);
 
             modalObj.modal('show');
 
             $('.btn-submit').click(function() {
-                $('#{$module_name}-modal-form').submit();
+                $('#{$emerchantpay['name']['module']}-modal-form').submit();
             });
         }
     </script>
