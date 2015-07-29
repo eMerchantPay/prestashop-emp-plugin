@@ -1,7 +1,7 @@
 Genesis client for Prestashop
 =============================
 
-This is a Payment Module for eMerchantPay that gives you the ability to process payments through eMerchantPay's Payment Gateway - Genesis.
+This is a Payment Module for Prestashop that gives you the ability to process payments through eMerchantPay's Payment Gateway - Genesis.
 
 Requirements
 ------------

@@ -44,7 +44,7 @@ class eMerchantPay extends PaymentModule
         $this->tab          = 'payments_gateways';
         $this->displayName  = 'eMerchantPay Payment Gateway';
         $this->controllers  = array('checkout', 'notification', 'redirect', 'validation');
-        $this->version      = '1.2.2';
+        $this->version      = '1.2.3';
         $this->author       = 'eMerchantPay Ltd.';
 
         /* The parent construct is required for translations */
@@ -491,9 +491,7 @@ class eMerchantPay extends PaymentModule
         }
 
         // Set WPF transaction types
-        $data->transaction_types = json_decode(
-            Configuration::get('EMERCHANTPAY_CHECKOUT_TRX_TYPES')
-        );
+        $data->transaction_types = $this->getCheckoutTransactionTypes();
 
         return $this->transaction_data = $data;
     }
@@ -1025,6 +1023,50 @@ class eMerchantPay extends PaymentModule
         return $this->display(__FILE__, $name);
     }
 
+    private function getCheckoutTransactionTypes()
+    {
+        $processed_list = array();
+
+        $selected_types = json_decode(
+            Configuration::get('EMERCHANTPAY_CHECKOUT_TRX_TYPES')
+        );
+
+        $alias_map = array(
+            \Genesis\API\Constants\Payment\Methods::ELV         =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::EPS         =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::GIRO_PAY    =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::PRZELEWY24  =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::QIWI        =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::SAFETY_PAY  =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::TELEINGRESO =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::TRUST_PAY   =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+        );
+
+        foreach ($selected_types as $selected_type) {
+            if (array_key_exists($selected_type, $alias_map)) {
+                $transaction_type = $alias_map[$selected_type];
+
+                $processed_list[$transaction_type]['name'] = $transaction_type;
+
+                $processed_list[$transaction_type]['parameters'][] = array(
+                    'payment_method' => $selected_type
+                );
+            } else {
+                $processed_list[] = $selected_type;
+            }
+        }
+
+        return $processed_list;
+    }
+
     /**
      * Get Module's configuration fields
      *
@@ -1219,20 +1261,20 @@ class eMerchantPay extends PaymentModule
                         'options' => array(
                             'query' => array(
                                 array(
-                                    'id' => 'authorize',
-                                    'name' => $this->l('Authorize')
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
+                                    'name'  => $this->l('Authorize')
                                 ),
                                 array(
-                                    'id' => 'authorize3d',
-                                    'name' => $this->l('Authorize 3D')
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
+                                    'name'  => $this->l('Authorize 3D')
                                 ),
                                 array(
-                                    'id' => 'sale',
-                                    'name' => $this->l('Sale')
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::SALE,
+                                    'name'  => $this->l('Sale')
                                 ),
                                 array(
-                                    'id' => 'sale3d',
-                                    'name' => $this->l('Sale 3D')
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::SALE_3D,
+                                    'name'  => $this->l('Sale 3D')
                                 )
                             ),
                             'id' => 'id',
@@ -1272,21 +1314,73 @@ class eMerchantPay extends PaymentModule
                         'options' => array(
                             'query' => array(
                                 array(
-                                    'id' => 'authorize',
-                                    'name' => $this->l('Authorize')
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::ABNIDEAL,
+                                    'name'  => $this->l('ABN iDEAL')
                                 ),
                                 array(
-                                    'id' => 'authorize3d',
-                                    'name' => $this->l('Authorize 3D')
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
+                                    'name'  => $this->l('Authorize')
                                 ),
                                 array(
-                                    'id' => 'sale',
-                                    'name' => $this->l('Sale')
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
+                                    'name'  => $this->l('Authorize 3D')
                                 ),
                                 array(
-                                    'id' => 'sale3d',
-                                    'name' => $this->l('Sale 3D')
-                                )
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::CASHU,
+                                    'name'  => $this->l('CashU')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Payment\Methods::ELV,
+                                    'name'  => $this->l('ELV')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Payment\Methods::EPS,
+                                    'name'  => $this->l('eps')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Payment\Methods::GIRO_PAY,
+                                    'name'  => $this->l('GiroPay')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::NETELLER,
+                                    'name'  => $this->l('Neteller')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Payment\Methods::QIWI,
+                                    'name'  => $this->l('Qiwi')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::PAYSAFECARD,
+                                    'name'  => $this->l('PaySafeCard')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Payment\Methods::PRZELEWY24,
+                                    'name'  => $this->l('Przelewy24')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Payment\Methods::SAFETY_PAY,
+                                    'name'  => $this->l('SafetyPay')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::SALE,
+                                    'name'  => $this->l('Sale')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::SALE_3D,
+                                    'name'  => $this->l('Sale 3D')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::SOFORT,
+                                    'name'  => $this->l('SOFORT')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Payment\Methods::TELEINGRESO,
+                                    'name'  => $this->l('teleingreso')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Payment\Methods::TRUST_PAY,
+                                    'name'  => $this->l('TrustPay')
+                                ),
                             ),
                             'id' => 'id',
                             'name' => 'name',
