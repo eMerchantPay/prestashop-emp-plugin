@@ -1480,19 +1480,21 @@ class eMerchantPay extends PaymentModule
     public function applyGenesisConfig()
     {
         \Genesis\Config::setEndpoint(
-            'emerchantpay'
+            \Genesis\API\Constants\Endpoints::EMERCHANTPAY
         );
+
         \Genesis\Config::setUsername(
-            Configuration::get('ECP_USERNAME')
+            Configuration::get('EMERCHANTPAY_USERNAME')
         );
         \Genesis\Config::setPassword(
-            Configuration::get('ECP_PASSWORD')
+            Configuration::get('EMERCHANTPAY_PASSWORD')
         );
         \Genesis\Config::setToken(
-            Configuration::get('ECP_TOKEN')
+            Configuration::get('EMERCHANTPAY_TOKEN')
         );
+
         \Genesis\Config::setEnvironment(
-            Configuration::get('ECP_ENVIRONMENT')
+            Configuration::get('EMERCHANTPAY_ENVIRONMENT')
         );
     }
 }
