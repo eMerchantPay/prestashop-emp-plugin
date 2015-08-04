@@ -17,7 +17,7 @@
  *}
 
 {if version_compare($emerchantpay['presta']['version'], '1.5', '>=') && version_compare($emerchantpay['presta']['version'], '1.6', '<') }
-    <div id="payment-method-{$emerchantpay['name']['module']}">
+    <div class="row" id="payment-method-{$emerchantpay['name']['module']}">
         {if $emerchantpay['payment']['methods']['checkout']}
             <div id="payment-method-{$emerchantpay['name']['module']}-checkout" class="payment_module">
                 <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']}">
@@ -253,8 +253,8 @@
         color: #777777;
     }
 
-    #payment-method-{$ecomprocessing['name']['module']}-direct {
-        padding-top: 30px !important;
+    #payment-method-{$emerchantpay['name']['module']}-direct {
+        padding-top: 16px !important;
     }
 
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container {
