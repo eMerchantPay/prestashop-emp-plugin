@@ -1032,8 +1032,6 @@ class eMerchantPay extends PaymentModule
         );
 
         $alias_map = array(
-            \Genesis\API\Constants\Payment\Methods::ELV         =>
-                \Genesis\API\Constants\Transaction\Types::PPRO,
             \Genesis\API\Constants\Payment\Methods::EPS         =>
                 \Genesis\API\Constants\Transaction\Types::PPRO,
             \Genesis\API\Constants\Payment\Methods::GIRO_PAY    =>
@@ -1328,10 +1326,6 @@ class eMerchantPay extends PaymentModule
                                 array(
                                     'id'    => \Genesis\API\Constants\Transaction\Types::CASHU,
                                     'name'  => $this->l('CashU')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Payment\Methods::ELV,
-                                    'name'  => $this->l('ELV')
                                 ),
                                 array(
                                     'id'    => \Genesis\API\Constants\Payment\Methods::EPS,
