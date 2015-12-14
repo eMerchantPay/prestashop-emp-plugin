@@ -1344,12 +1344,24 @@ class eMerchantPay extends PaymentModule
                                     'name'  => $this->l('Qiwi')
                                 ),
                                 array(
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE,
+                                    'name'  => $this->l('PayByVoucher (Sale)')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_YEEPAY,
+                                    'name'  => $this->l('PayByVoucher (oBeP)')
+                                ),
+                                array(
                                     'id'    => \Genesis\API\Constants\Transaction\Types::PAYSAFECARD,
                                     'name'  => $this->l('PaySafeCard')
                                 ),
                                 array(
                                     'id'    => \Genesis\API\Constants\Payment\Methods::PRZELEWY24,
                                     'name'  => $this->l('Przelewy24')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::POLI,
+                                    'name'  => $this->l('POLi')
                                 ),
                                 array(
                                     'id'    => \Genesis\API\Constants\Payment\Methods::SAFETY_PAY,
@@ -1374,6 +1386,10 @@ class eMerchantPay extends PaymentModule
                                 array(
                                     'id'    => \Genesis\API\Constants\Payment\Methods::TRUST_PAY,
                                     'name'  => $this->l('TrustPay')
+                                ),
+                                array(
+                                    'id'    => \Genesis\API\Constants\Transaction\Types::WEBMONEY,
+                                    'name'  => $this->l('WebMoney')
                                 ),
                             ),
                             'id' => 'id',
