@@ -28,7 +28,7 @@
             </div>
         {/if}
 
-        {if $emerchantpay['payment']['methods']['direct']}
+        {if ($emerchantpay['payment']['methods']['direct'] && $emerchantpay['ssl']['enabled'])}
             <div id="payment-method-{$emerchantpay['name']['module']}-direct" class="payment_module">
                 <div class="payment-method-container" style="margin-top:-15px;">
                     <div class="payment-method-header">
@@ -114,7 +114,7 @@
                 </div>
             </div>
         {/if}
-        {if $emerchantpay['payment']['methods']['direct']}
+        {if ($emerchantpay['payment']['methods']['direct'] && $emerchantpay['ssl']['enabled'])}
             <div id="payment-method-{$emerchantpay['name']['module']}-direct">
                 <div class="row">
                     <div class="col-xs-12">
@@ -317,7 +317,7 @@
 </style>
 
 {* Disable Card init if there is no Direct method available *}
-{if $emerchantpay['payment']['methods']['direct']}
+{if ($emerchantpay['payment']['methods']['direct'] && $emerchantpay['ssl']['enabled'])}
     <script type="text/javascript">
         new Card({
             form: '#payment-method-{$emerchantpay['name']['module']}-direct .payment-form',

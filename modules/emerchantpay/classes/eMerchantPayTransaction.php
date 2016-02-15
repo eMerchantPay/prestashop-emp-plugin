@@ -31,6 +31,7 @@ class eMerchantPayTransaction extends ObjectModel
 	public $id_unique;
 	public $id_parent;
 	public $ref_order;
+	public $transaction_id;
 	public $type;
 	public $status;
 	public $message;
@@ -47,17 +48,18 @@ class eMerchantPayTransaction extends ObjectModel
 		'table'  => 'emerchantpay_transactions',
 		'primary'=> 'id_entry',
 		'fields' => array(
-			'id_unique' => array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => true, 'size' => 254),
-			'id_parent' => array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => true, 'size' => 254),
-			'ref_order' => array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => true, 'size' => 9),
-			'type'      => array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => true, 'size' => 254),
-			'status'    => array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => true, 'size' => 254),
-			'message'   => array('type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 254),
-			'currency'  => array('type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 3),
-			'amount'    => array('type' => self::TYPE_FLOAT,  'validate' => 'isPrice'),
-            'terminal'  => array('type' => self::TYPE_STRING, 'validate' => 'isString'),
-			'date_add'  => array('type' => self::TYPE_DATE,   'validate' => 'isDate'),
-			'date_upd'  => array('type' => self::TYPE_DATE,   'validate' => 'isDate'),
+			'id_unique' 		=> array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => true, 'size' => 254),
+			'id_parent' 		=> array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => true, 'size' => 254),
+			'ref_order' 		=> array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => true, 'size' => 9),
+			'transaction_id' 	=> array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => false, 'size' => 254),
+			'type'      		=> array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => true, 'size' => 254),
+			'status'    		=> array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => true, 'size' => 254),
+			'message'   		=> array('type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 254),
+			'currency'  		=> array('type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 3),
+			'amount'    		=> array('type' => self::TYPE_FLOAT,  'validate' => 'isPrice'),
+            'terminal'  		=> array('type' => self::TYPE_STRING, 'validate' => 'isString'),
+			'date_add'  		=> array('type' => self::TYPE_DATE,   'validate' => 'isDate'),
+			'date_upd'  		=> array('type' => self::TYPE_DATE,   'validate' => 'isDate'),
 		),
 	);
 
@@ -144,7 +146,49 @@ class eMerchantPayTransaction extends ObjectModel
 		$orders->where('reference', '=', $transaction->ref_order);
 		return $orders->getFirst();
 	}
+	
+	/**
+	 * Get the sum of the ammount for a list of transaction types and status
+	 * @param int $order_reference
+	 * @param array $types
+	 * @param string $status
+	 * @return decimal
+	 */
+	private static function getTransactionsSumAmount($order_reference, $types, $status) {
+		$transactions = self::getTransactionsByTypeAndStatus($order_reference, $types, $status);
+		$totalAmount = 0;
+		
+		/** @var eMerchantPayTransaction $transaction */
+ 		foreach ($transactions as $transaction) {
+			$totalAmount +=  $transaction->getFields()['amount'];
+		}	
+		
+		return $totalAmount;
+	}
 
+	/**
+	 * Get the detailed transactions list of an order for transaction types and status
+	 * @param int $order_reference
+	 * @param array $types
+	 * @param string $status
+	 * @return array
+	 */
+	private static function getTransactionsByTypeAndStatus($order_reference, $types, $status) {
+		
+		return ObjectModel::hydrateCollection('eMerchantPayTransaction',
+			Db::getInstance()->executeS("
+				SELECT *
+				FROM `" . _DB_PREFIX_ . "emerchantpay_transactions`
+				WHERE (`ref_order` = '" . pSQL($order_reference) . "') and
+							(`type` in ('" . (is_array($types) ? implode("','", $types) : $types) . "')) and
+							(`status` = '" . $status . "') 
+							
+			")
+		);
+	}
+	
+	
+	
 	/**
 	 * Get the detailed payment of an order
 	 * @param int $order_reference
@@ -161,6 +205,21 @@ class eMerchantPayTransaction extends ObjectModel
 			")
 		);
 	}
+	
+	/**
+	 * Get a formatted transaction value for the Admin Transactions Panel
+	 * @param float $amount
+	 * @return string
+	 */
+	private static function formatTransactionValue($amount) {
+		/* DecimalSeparator   -> . 
+		   Thousand Separator -> empty 
+		   
+		   Otherwise an exception could be thrown from genesis
+		*/
+		return number_format($amount, 2, ".", "");	
+	}
+	
 
 	/**
 	 * Returns an array with tree-structure where
@@ -201,8 +260,6 @@ class eMerchantPayTransaction extends ObjectModel
 
 		// Process individual fields
 		foreach ($transactions as &$transaction) {
-			$transaction['amount'] = number_format($transaction['amount'], 2);
-
 			$transaction['date_add'] = date("H:i:s \n m/d/Y", strtotime($transaction['date_add']));
 
 			if (in_array( $transaction['type'], array( 'authorize', 'authorize3d')) && $transaction['status'] == 'approved') {
@@ -211,18 +268,39 @@ class eMerchantPayTransaction extends ObjectModel
 			else {
 				$transaction['can_capture'] = false;
 			}
-
-			if (in_array( $transaction['type'], array( 'authorize', 'authorize3d', 'capture', 'sale', 'sale3d', 'init_recurring_sale', 'recurring_sale' )) && $transaction['status'] == 'approved') {
+			
+			if ($transaction['can_capture']) {
+				$totalAuthorizedAmount = self::getTransactionsSumAmount($order->reference, array('authorize', 'authorize3d'), 'approved');
+				$totalCapturedAmount = self::getTransactionsSumAmount($order->reference, 'capture', 'approved');
+				$transaction['available_amount'] = $totalAuthorizedAmount - $totalCapturedAmount;
+			}
+			
+			if (in_array( $transaction['type'], array('capture', 'sale', 'sale3d', 'init_recurring_sale', 'recurring_sale' )) && $transaction['status'] == 'approved') {
 				$transaction['can_refund'] = true;
 			} else {
 				$transaction['can_refund'] = false;
 			}
-
+	
+			if ($transaction['can_refund']) {
+				$totalCapturedAmount = self::getTransactionsSumAmount($order->reference, 'capture', 'approved');
+				$totalRefundedAmount = self::getTransactionsSumAmount($order->reference, 'refund', 'approved');
+				$transaction['available_amount'] = $totalCapturedAmount - $totalRefundedAmount;
+			}
+			
 			if (in_array( $transaction['type'], array( 'authorize', 'authorize3d', 'capture', 'sale', 'sale3d', 'init_recurring_sale', 'recurring_sale', 'refund' )) && $transaction ) {
 				$transaction['can_void'] = true;
 			} else {
 				$transaction['can_void'] = false;
 			}
+			
+			$transaction['amount'] = self::formatTransactionValue($transaction['amount']);
+
+			if (!isset($transaction['available_amount']))
+				$transaction['available_amount'] = $transaction['amount'];
+				
+			$transaction['available_amount'] = self::formatTransactionValue($transaction['available_amount']);
+
+				
 		}
 
 		// Create the parent/child relations from a flat array
