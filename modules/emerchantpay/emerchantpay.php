@@ -232,13 +232,26 @@ class eMerchantPay extends PaymentModule
         $this->context->controller->addCSS(
             $this->getPathUri() . 'assets/css/treegrid.min.css', 'all'
         );
+        
+        $this->context->controller->addCSS(
+         		$this->getPathUri() . 'assets/js/bootstrap/bootstrapValidator.min.css'
+				);	
+        
         $this->context->controller->addJS(
             $this->getPathUri() . 'assets/js/treegrid/cookie.min.js'
         );
         $this->context->controller->addJS(
             $this->getPathUri() . 'assets/js/treegrid/treegrid.min.js'
         );
-
+        
+        $this->context->controller->addJS(
+            $this->getPathUri() . 'assets/js/bootstrap/bootstrapValidator.min.js'
+        );
+        
+        $this->context->controller->addJS(
+            $this->getPathUri() . 'assets/js/jQueryExtensions/jquery.number.min.js'
+        );
+        
         $currency = new Currency((int)$order->id_currency);
 
         $this->context->smarty->append(
@@ -246,9 +259,15 @@ class eMerchantPay extends PaymentModule
             array(
                 'transactions'  => array(
                     'order'             => array(
-                        'id'          => $order->id,
-                        'amount'      => $order->getTotalPaid(),
-                        'currency'    => $currency->iso_code,
+                        'id'          	=> $order->id,
+                        'amount'      	=> $order->getTotalPaid(),
+                        'currency'    	=> array(
+	                      		'iso_code' => $currency->iso_code,
+	                      		'sign' 		 => $currency->sign,
+	                      		'decimalPlaces' 	 => 2,
+	                      		'decimalSeparator' => '.', 
+	                      		'thousandSeparator' => '' /* must be empty, otherwise exception could be trown from Genesis */
+	                      )
                     ),
                     'error' => $this->getSessVar('error_transaction'),
                     'tree'  => eMerchantPayTransaction::getTransactionTree((int)$params['id_order']),
@@ -293,7 +312,10 @@ class eMerchantPay extends PaymentModule
                         'direct'    => $this->isDirectPaymentMethodAvailable(),
                         'checkout'  => $this->isCheckoutPaymentMethodAvailable()
                     ),
-                )
+                ),
+                'ssl' => array(
+                    'enabled'   	=> Configuration::get('PS_SSL_ENABLED')
+                ),
             ),
             true
         );
@@ -517,7 +539,8 @@ class eMerchantPay extends PaymentModule
 
             $response = $responseObj->getResponseObject();
 
-            $message = 'Unique Id: ' . $response->unique_id . PHP_EOL;
+            $message = 'Unique Id: ' . $response->unique_id . PHP_EOL .
+                       'Transaction Id: ' . $this->transaction_data->id . PHP_EOL;
 
             $this->validateOrder(
                 (int) $this->context->cart->id,
@@ -536,8 +559,9 @@ class eMerchantPay extends PaymentModule
 
             // Save the transaction to Db
             $transaction = new eMerchantPayTransaction();
-            $transaction->id_parent = 0;
+            $transaction->id_parent 		= 0;
             $transaction->ref_order = $new_order->reference;
+            $transaction->transaction_id = $this->transaction_data->id;
             $transaction->type      = 'checkout';
             $transaction->importResponse($response);
             $transaction->add();
@@ -655,6 +679,7 @@ class eMerchantPay extends PaymentModule
         $id_unique = Tools::getValue($this->name . '_transaction_id');
         $amount    = Tools::getValue($this->name . '_transaction_amount');
         $usage     = Tools::getValue($this->name . '_transaction_usage');
+        
         $ip_addr   = Tools::getRemoteAddr();
 
         // Apply settings
@@ -1199,7 +1224,7 @@ class eMerchantPay extends PaymentModule
                         'type' => 'text',
                         'label' => $this->l('Token'),
                         'desc' => $this->l(
-                            'Enter your Token, required for accessing the Genesis Gateway'
+                            'Enter your Token, required for accessing the Genesis Gateway.'
                         ),
                         'name' => 'EMERCHANTPAY_TOKEN',
                         'size' => 20,
@@ -1426,7 +1451,7 @@ class eMerchantPay extends PaymentModule
             'id_language'   => $this->context->language->id,
             'languages'     => $this->context->controller->getLanguages(),
         );
-
+        
         return $helper->generateForm(
             array($form_structure)
         );
@@ -1444,8 +1469,8 @@ class eMerchantPay extends PaymentModule
             include_once dirname(__FILE__) . '/backward_compatibility/backward.php';
         }
 
-        /** Check if SSL is enabled */
-        if (!Configuration::get('PS_SSL_ENABLED') && $this->isDirectPaymentMethodAvailable()) {
+        /** Check if SSL is enabled and only DirectPayment Method is Enabled */
+        if (!Configuration::get('PS_SSL_ENABLED') && $this->isDirectPaymentMethodAvailable() && !$this->isCheckoutPaymentMethodAvailable()) {
         	$this->warning = $this->l( 'This plugin requires SSL enabled and PCI-DSS compliant server in order to accept customer\'s credit card information directly on your website!' );
         }
 
@@ -1465,6 +1490,9 @@ class eMerchantPay extends PaymentModule
         if (!class_exists('\Genesis\Genesis')) {
             $this->warning = 'Sorry, there was a problem initializing Genesis client, please verify your installation!';
         }
+        
+        /* Check and update database if necessary */
+        eMerchantPayInstall::doProcessSchemaUpdate();
 
         /* Verify system requirements */
         try {
