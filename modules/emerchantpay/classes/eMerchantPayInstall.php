@@ -47,18 +47,19 @@ class eMerchantPayInstall
         $schema = '
             CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'emerchantpay_transactions`
               (
-                 `id_entry`  INT NOT NULL auto_increment,
-                 `id_unique` VARCHAR(255) NOT NULL,
-                 `id_parent` VARCHAR(255) NOT NULL,
-                 `ref_order` VARCHAR(9) NOT NULL,
-                 `type`      VARCHAR(255) NOT NULL,
-                 `status`    VARCHAR(255) NOT NULL,
-                 `message`   VARCHAR(255) NULL,
-                 `currency`  VARCHAR(3) NULL,
-                 `amount`    DECIMAL(10, 2) NULL,
-                 `terminal`  VARCHAR(255) NULL,
-                 `date_add`  DATETIME DEFAULT NULL,
-                 `date_upd`  TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                 `id_entry`  		INT NOT NULL auto_increment,
+                 `id_unique` 		VARCHAR(255) NOT NULL,
+                 `id_parent` 		VARCHAR(255) NOT NULL,
+                 `ref_order` 		VARCHAR(9) NOT NULL,
+                 `transaction_id` 	VARCHAR(255) NULL,
+                 `type`      		VARCHAR(255) NOT NULL,
+                 `status`    		VARCHAR(255) NOT NULL,
+                 `message`   		VARCHAR(255) NULL,
+                 `currency`  		VARCHAR(3) NULL,
+                 `amount`    		DECIMAL(10, 2) NULL,
+                 `terminal`  		VARCHAR(255) NULL,
+                 `date_add`  		DATETIME DEFAULT NULL,
+                 `date_upd`  		TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                  PRIMARY KEY (`id_entry`)
               )
             engine=`' . _MYSQL_ENGINE_ . '`
@@ -67,6 +68,20 @@ class eMerchantPayInstall
 		if (!Db::getInstance()->execute($schema)) {
 			$this->status = false;
             throw new PrestaShopException('Module Install: Unable to create MySQL Database');
+		}
+	}
+	
+	/**
+	 * Updates the scheme, if a new version of the module is directly copied in the root folder
+	 * without deintalling the old one and installing the new one
+	 */
+	public static function doProcessSchemaUpdate() 
+	{
+		if (!Db::getInstance()->Execute('SELECT transaction_id from `'._DB_PREFIX_.'emerchantpay_transactions`'))        
+		{     
+			$sqlAddTransactionIdField = 'ALTER TABLE `'._DB_PREFIX_.'emerchantpay_transactions` ADD `transaction_id` VARCHAR(255) NOT NULL AFTER `ref_order`';
+			   
+			Db::getInstance()->Execute($sqlAddTransactionIdField);           	       
 		}
 	}
 

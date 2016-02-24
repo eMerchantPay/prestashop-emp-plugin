@@ -17,7 +17,7 @@
  *}
 
 {if version_compare($emerchantpay['presta']['version'], '1.5', '>=') && version_compare($emerchantpay['presta']['version'], '1.6', '<') }
-    <div id="payment-method-{$emerchantpay['name']['module']}">
+    <div class="row" id="payment-method-{$emerchantpay['name']['module']}">
         {if $emerchantpay['payment']['methods']['checkout']}
             <div id="payment-method-{$emerchantpay['name']['module']}-checkout" class="payment_module">
                 <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']}">
@@ -28,7 +28,7 @@
             </div>
         {/if}
 
-        {if $emerchantpay['payment']['methods']['direct']}
+        {if ($emerchantpay['payment']['methods']['direct'] && $emerchantpay['ssl']['enabled'])}
             <div id="payment-method-{$emerchantpay['name']['module']}-direct" class="payment_module">
                 <div class="payment-method-container" style="margin-top:-15px;">
                     <div class="payment-method-header">
@@ -114,7 +114,7 @@
                 </div>
             </div>
         {/if}
-        {if $emerchantpay['payment']['methods']['direct']}
+        {if ($emerchantpay['payment']['methods']['direct'] && $emerchantpay['ssl']['enabled'])}
             <div id="payment-method-{$emerchantpay['name']['module']}-direct">
                 <div class="row">
                     <div class="col-xs-12">
@@ -253,8 +253,8 @@
         color: #777777;
     }
 
-    #payment-method-{$ecomprocessing['name']['module']}-direct {
-        padding-top: 30px !important;
+    #payment-method-{$emerchantpay['name']['module']}-direct {
+        padding-top: 16px !important;
     }
 
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container {
@@ -317,7 +317,7 @@
 </style>
 
 {* Disable Card init if there is no Direct method available *}
-{if $emerchantpay['payment']['methods']['direct']}
+{if ($emerchantpay['payment']['methods']['direct'] && $emerchantpay['ssl']['enabled'])}
     <script type="text/javascript">
         new Card({
             form: '#payment-method-{$emerchantpay['name']['module']}-direct .payment-form',

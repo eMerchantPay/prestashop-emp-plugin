@@ -37,10 +37,16 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
      * @var array
      */
     public $types = array(
-        \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
-        \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
-        \Genesis\API\Constants\Transaction\Types::SALE,
-        \Genesis\API\Constants\Transaction\Types::SALE_3D
+        \Genesis\API\Constants\Transaction\Types::ABNIDEAL,
+		\Genesis\API\Constants\Transaction\Types::AUTHORIZE,
+		\Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
+		\Genesis\API\Constants\Transaction\Types::CASHU,
+		\Genesis\API\Constants\Transaction\Types::NETELLER,
+		\Genesis\API\Constants\Transaction\Types::PAYSAFECARD,
+		\Genesis\API\Constants\Transaction\Types::PPRO,
+		\Genesis\API\Constants\Transaction\Types::SALE,
+		\Genesis\API\Constants\Transaction\Types::SALE_3D,
+		\Genesis\API\Constants\Transaction\Types::SOFORT,
     );
 
 	/**

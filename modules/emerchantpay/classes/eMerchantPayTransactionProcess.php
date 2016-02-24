@@ -98,9 +98,15 @@ class eMerchantPayTransactionProcess
 
 		if (isset($data->transaction_types)) {
 			foreach ($data->transaction_types as $type) {
-				$genesis
-                    ->request()
-						->addTransactionType($type);
+				if (is_array($type)) {
+                    $genesis
+                        ->request()
+                            ->addTransactionType($type['name'], $type['parameters']);
+                } else {
+                    $genesis
+                        ->request()
+                            ->addTransactionType($type);
+                }
 			}
 		}
 
@@ -128,16 +134,16 @@ class eMerchantPayTransactionProcess
 	{
 		switch ( $data->transaction_type ) {
 			default:
-			case 'authorize':
+			case \Genesis\API\Constants\Transaction\Types::AUTHORIZE:
 				$genesis = new \Genesis\Genesis( 'Financial\Cards\Authorize' );
 				break;
-			case 'authorize3d':
+			case \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D:
 				$genesis = new \Genesis\Genesis( 'Financial\Cards\Authorize3D' );
 				break;
-			case 'sale':
+			case \Genesis\API\Constants\Transaction\Types::SALE:
 				$genesis = new \Genesis\Genesis( 'Financial\Cards\Sale' );
 				break;
-			case 'sale3d':
+			case \Genesis\API\Constants\Transaction\Types::SALE_3D:
 				$genesis = new \Genesis\Genesis( 'Financial\Cards\Sale3D' );
 				break;
 		}
