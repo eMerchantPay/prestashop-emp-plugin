@@ -150,44 +150,45 @@ class eMerchantPayTransaction extends ObjectModel
 	/**
 	 * Get the sum of the ammount for a list of transaction types and status
 	 * @param int $order_reference
+	 * @param string $parent_transaction_id
 	 * @param array $types
 	 * @param string $status
 	 * @return decimal
 	 */
-	private static function getTransactionsSumAmount($order_reference, $types, $status) {
-		$transactions = self::getTransactionsByTypeAndStatus($order_reference, $types, $status);
+	private static function getTransactionsSumAmount($order_reference, $parent_transaction_id, $types, $status) {
+		$transactions = self::getTransactionsByTypeAndStatus($order_reference, $parent_transaction_id, $types, $status);
 		$totalAmount = 0;
-		
-		/** @var eMerchantPayTransaction $transaction */
- 		foreach ($transactions as $transaction) {
+
+		/** @var $transaction */
+		foreach ($transactions as $transaction) {
 			$totalAmount +=  $transaction->getFields()['amount'];
-		}	
-		
+		}
+
 		return $totalAmount;
 	}
 
 	/**
 	 * Get the detailed transactions list of an order for transaction types and status
 	 * @param int $order_reference
+	 * @param string $parent_transaction_id
 	 * @param array $types
 	 * @param string $status
 	 * @return array
 	 */
-	private static function getTransactionsByTypeAndStatus($order_reference, $types, $status) {
-		
+	private static function getTransactionsByTypeAndStatus($order_reference, $parent_transaction_id, $types, $status) {
+
 		return ObjectModel::hydrateCollection('eMerchantPayTransaction',
 			Db::getInstance()->executeS("
 				SELECT *
 				FROM `" . _DB_PREFIX_ . "emerchantpay_transactions`
-				WHERE (`ref_order` = '" . pSQL($order_reference) . "') and
-							(`type` in ('" . (is_array($types) ? implode("','", $types) : $types) . "')) and
-							(`status` = '" . $status . "') 
-							
+				WHERE (`ref_order` = '" . pSQL($order_reference) . "') and " .
+				(!empty($parent_transaction_id)	? " (`id_parent` = '" . $parent_transaction_id . "') and " : "") . "
+						(`type` in ('" . (is_array($types) ? implode("','", $types) : $types) . "')) and
+						(`status` = '" . $status . "')
+
 			")
 		);
 	}
-	
-	
 	
 	/**
 	 * Get the detailed payment of an order
@@ -270,8 +271,8 @@ class eMerchantPayTransaction extends ObjectModel
 			}
 			
 			if ($transaction['can_capture']) {
-				$totalAuthorizedAmount = self::getTransactionsSumAmount($order->reference, array('authorize', 'authorize3d'), 'approved');
-				$totalCapturedAmount = self::getTransactionsSumAmount($order->reference, 'capture', 'approved');
+				$totalAuthorizedAmount = self::getTransactionsSumAmount($order->reference, $transaction['id_parent'], array('authorize', 'authorize3d'), 'approved');
+				$totalCapturedAmount = self::getTransactionsSumAmount($order->reference, $transaction['id_unique'], 'capture', 'approved');
 				$transaction['available_amount'] = $totalAuthorizedAmount - $totalCapturedAmount;
 			}
 			
@@ -282,8 +283,8 @@ class eMerchantPayTransaction extends ObjectModel
 			}
 	
 			if ($transaction['can_refund']) {
-				$totalCapturedAmount = self::getTransactionsSumAmount($order->reference, 'capture', 'approved');
-				$totalRefundedAmount = self::getTransactionsSumAmount($order->reference, 'refund', 'approved');
+				$totalCapturedAmount = $transaction['amount'];
+				$totalRefundedAmount = self::getTransactionsSumAmount($order->reference, $transaction['id_unique'], 'refund', 'approved');
 				$transaction['available_amount'] = $totalCapturedAmount - $totalRefundedAmount;
 			}
 			
