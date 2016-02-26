@@ -44,7 +44,11 @@ class eMerchantPay extends PaymentModule
         $this->tab          = 'payments_gateways';
         $this->displayName  = 'eMerchantPay Payment Gateway';
         $this->controllers  = array('checkout', 'notification', 'redirect', 'validation');
+<<<<<<< HEAD
         $this->version      = '1.2.3';
+=======
+        $this->version      = '1.2.4';
+>>>>>>> develop
         $this->author       = 'eMerchantPay Ltd.';
 
         /* The parent construct is required for translations */
