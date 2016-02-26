@@ -412,13 +412,6 @@
             transactionAmount = formatTransactionAmount($('#{$emerchantpay['name']['module']}_transaction_amount').val());
 
             destroyBootstrapValidator(submitFormId);
-<<<<<<< HEAD
-
-            submitForm.bootstrapValidator({
-            fields: {
-                fieldAmount: {
-                        selector: '#{$emerchantpay['name']['module']}_transaction_amount',
-=======
 						
             var transactionAmountControlSelector = '#{$emerchantpay['name']['module']}_transaction_amount';
             
@@ -432,7 +425,6 @@
             fields: {
                 fieldAmount: {
                         selector: transactionAmountControlSelector,
->>>>>>> develop
                         container: '#{$emerchantpay['name']['module']}-amount-error-container',
                         trigger: 'keyup',
                         validators: {
@@ -469,11 +461,8 @@
                 /* submits the transaction form (No validators have failed) */
                 submitForm.bootstrapValidator('defaultSubmit');
             });
-<<<<<<< HEAD
-=======
             
             return true;
->>>>>>> develop
         }
 
         function executeBootstrapFieldValidator(formId, validatorFieldName) {
@@ -508,19 +497,12 @@
             });
 
             modalObj.on('shown.bs.modal', function() {
-<<<<<<< HEAD
-                    /* Bootstrap validator must be created here (not on document.ready), because of the initialization on */
-                    createBootstrapValidator('#{$emerchantpay['name']['module']}-modal-form');
-
-                    executeBootstrapFieldValidator('#{$emerchantpay['name']['module']}-modal-form', 'fieldAmount');
-=======
                 /* enable the submit button just in case (if the bootstrapValidator is enabled it will disable the button if necessary */
                 $('#{$emerchantpay['name']['module']}-modal-submit').removeAttr('disabled');
                 
                 if (createBootstrapValidator('#{$emerchantpay['name']['module']}-modal-form')) {
                     executeBootstrapFieldValidator('#{$emerchantpay['name']['module']}-modal-form', 'fieldAmount');
                 }
->>>>>>> develop
             });
 
             transactionAmountInput.number(true, modalPopupDecimalValueFormatConsts.decimalPlaces,
