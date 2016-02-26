@@ -418,7 +418,7 @@
             var shouldCreateValidator = $.exists(transactionAmountControlSelector);
             
             /* it is not needed to create attach the bootstapValidator, when the field to validate is not visible (Void Transaction) */
-            if (!$.exists(transactionAmountControlSelector)) 
+            if (!shouldCreateValidator) 
                 return false;
 								
             submitForm.bootstrapValidator({
