@@ -1491,9 +1491,16 @@ class eMerchantPay extends PaymentModule
             $this->warning = 'Sorry, there was a problem initializing Genesis client, please verify your installation!';
         }
         
-        /* Check and update database if necessary */
-        eMerchantPayInstall::doProcessSchemaUpdate();
-
+        /* Catch Block added -> Prestashop 1.6.0 calls Model Constructor even when the Module is not yet installed */
+        try {
+            /* Check and update database if necessary */
+            eMerchantPayInstall::doProcessSchemaUpdate();
+        }
+        catch (\Exception $e) {
+           /* just ignore and log exception - Init Method is called on Upload Module (it should be called after Module is installed) */
+           $this->logError($e);
+        } 
+				
         /* Verify system requirements */
         try {
             \Genesis\Utils\Requirements::verify();
