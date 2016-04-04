@@ -40,12 +40,16 @@ class eMerchantPay extends PaymentModule
     public function __construct()
     {
         /* Initial Module Setup */
-        $this->name         = 'emerchantpay';
-        $this->tab          = 'payments_gateways';
-        $this->displayName  = 'eMerchantPay Payment Gateway';
-        $this->controllers  = array('checkout', 'notification', 'redirect', 'validation');
-        $this->version      = '1.2.5';
-        $this->author       = 'eMerchantPay Ltd.';
+        $this->name                   = 'emerchantpay';
+        $this->tab                    = 'payments_gateways';
+        $this->displayName            = 'eMerchantPay Payment Gateway';
+        $this->controllers            = array('checkout', 'notification', 'redirect', 'validation');
+        $this->version                = '1.2.5';
+        $this->author                 = 'eMerchantPay Ltd.';
+        $this->need_instance          = 1;
+        $this->ps_versions_compliancy = array('min' => '1.5', 'max' => _PS_VERSION_); 
+        $this->bootstrap              = true;
+        $this->module_key             = '30288d67740c20403574a3bc800965aa';
 
         /* The parent construct is required for translations */
         $this->page         = basename(__FILE__, '.php');
