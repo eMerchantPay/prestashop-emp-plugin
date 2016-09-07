@@ -178,7 +178,7 @@
     </script>
 {/if}
 
-{if version_compare($emerchantpay['presta']['version'], '1.6', '>=') && version_compare($emerchantpay['presta']['version'], '1.7', '<') }
+{if version_compare($emerchantpay['presta']['version'], '1.6', '>=')}
 
     <div class="row">
         <div class="col-lg-12">
