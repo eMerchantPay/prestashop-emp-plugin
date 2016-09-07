@@ -53,7 +53,7 @@ class eMerchantPay extends PaymentModule
 
         /* The parent construct is required for translations */
         $this->page         = basename(__FILE__, '.php');
-        $this->description  = $this->l('Accept payments through eMerchantPay\'s Payment Gateway - Genesis');
+        $this->description  = 'Accept payments through eMerchantPay\'s Payment Gateway - Genesis';
 
         /* Use Bootstrap */
         $this->bootstrap = true;
@@ -195,7 +195,7 @@ class eMerchantPay extends PaymentModule
 
     /**
      * Hook AdminOrder to display the saved transactions,
-     * related to the order
+     * related to the order (Used for 1.5.x and 1.6.x)
      *
      * @param array $params
      *
@@ -236,26 +236,26 @@ class eMerchantPay extends PaymentModule
         $this->context->controller->addCSS(
             $this->getPathUri() . 'assets/css/treegrid.min.css', 'all'
         );
-        
+
         $this->context->controller->addCSS(
-         		$this->getPathUri() . 'assets/js/bootstrap/bootstrapValidator.min.css'
-				);	
-        
+            $this->getPathUri() . 'assets/js/bootstrap/bootstrapValidator.min.css'
+        );
+
         $this->context->controller->addJS(
             $this->getPathUri() . 'assets/js/treegrid/cookie.min.js'
         );
         $this->context->controller->addJS(
             $this->getPathUri() . 'assets/js/treegrid/treegrid.min.js'
         );
-        
+
         $this->context->controller->addJS(
             $this->getPathUri() . 'assets/js/bootstrap/bootstrapValidator.min.js'
         );
-        
+
         $this->context->controller->addJS(
             $this->getPathUri() . 'assets/js/jQueryExtensions/jquery.number.min.js'
         );
-        
+
         $currency = new Currency((int)$order->id_currency);
 
         $this->context->smarty->append(
@@ -266,12 +266,12 @@ class eMerchantPay extends PaymentModule
                         'id'          	=> $order->id,
                         'amount'      	=> $order->getTotalPaid(),
                         'currency'    	=> array(
-	                      		'iso_code' => $currency->iso_code,
-	                      		'sign' 		 => $currency->sign,
-	                      		'decimalPlaces' 	 => 2,
-	                      		'decimalSeparator' => '.', 
-	                      		'thousandSeparator' => '' /* must be empty, otherwise exception could be trown from Genesis */
-	                      )
+                            'iso_code' => $currency->iso_code,
+                            'sign' 		 => $currency->sign,
+                            'decimalPlaces' 	 => 2,
+                            'decimalSeparator' => '.',
+                            'thousandSeparator' => '' /* must be empty, otherwise exception could be trown from Genesis */
+                        )
                     ),
                     'error' => $this->getSessVar('error_transaction'),
                     'tree'  => eMerchantPayTransaction::getTransactionTree((int)$params['id_order']),
@@ -281,6 +281,116 @@ class eMerchantPay extends PaymentModule
         );
 
         return $this->fetchTemplate('/views/templates/admin/admin_order/transactions.tpl');
+    }
+
+    /**
+     * Hook AdminOrder to display the saved transactions,
+     * related to the order (Used for 1.7.x)
+     *
+     * @param array $params
+     *
+     * @return string HTML source
+     */
+    public function hookDisplayAdminOrder($params)
+    {
+        return $this->hookAdminOrder($params);
+    }
+
+    /**
+     * Hook Payment Options to display the payment methods on the checkout page,
+     * (Used for 1.7.x)
+     *
+     * @param array $params
+     *
+     * @return array
+     */
+    public function hookPaymentOptions($params)
+    {
+        if (!$this->isAvailable()) {
+            return null;
+        }
+
+        if (!$this->checkCurrency($params['cart'])) {
+            return;
+        }
+
+        if (!isset($_SESSION)) {
+            session_start();
+        }
+
+        $this->context->controller->addJS(
+            $this->getPathUri() . 'assets/js/card/card.min.js'
+        );
+
+        $this->context->smarty->append(
+            'emerchantpay',
+            array(
+                'payment'   => array(
+                    'methods'       => array(
+                        'direct'    => $this->isDirectPaymentMethodAvailable(),
+                        'checkout'  => $this->isCheckoutPaymentMethodAvailable()
+                    ),
+                    'errors'        => array(
+                        'direct'    => $this->getSessVar('error_direct'),
+                        'checkout'  => $this->getSessVar('error_checkout')
+                    )
+                ),
+                'ssl' => array(
+                    'enabled'       => $this->getIsSSLEnabled()
+                ),
+            ),
+            true
+        );
+
+        $paymentOptions = array();
+
+        if ($this->isCheckoutPaymentMethodAvailable()) {
+            $checkoutMethodOption = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
+            $checkoutMethodOption
+                ->setCallToActionText('Pay safely with eMerchantPay Checkout')
+                ->setAction(
+                    $this->context->link->getModuleLink(
+                        $this->name,
+                        'validation',
+                        array(
+                            'submit' . $this->name . 'Checkout' => 1
+                        ),
+                        true
+                    )
+                )
+                ->setAdditionalInformation(
+                    $this->context->smarty->fetch(
+                        'module:emerchantpay/views/templates/hook/payment/checkout.tpl'
+                    )
+                );
+
+            $paymentOptions[] = $checkoutMethodOption;
+        }
+
+        if ($this->isDirectPaymentMethodAvailable() && $this->getIsSSLEnabled()) {
+            $directMethodOption = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
+            $directMethodOption
+                ->setCallToActionText('Pay safely with eMerchantPay Direct')
+                ->setAction(
+                    $this->context->link->getModuleLink(
+                        $this->name,
+                        'validation',
+                        array(
+                            'submit' . $this->name . 'Direct' => 1
+                        ),
+                        true
+                    )
+                )
+                ->setAdditionalInformation(
+                    $this->context->smarty->fetch(
+                        'module:emerchantpay/views/templates/hook/payment/direct.tpl'
+                    )
+                );
+
+            $paymentOptions[] = $directMethodOption;
+        }
+
+        return $paymentOptions;
     }
 
     /**
@@ -318,7 +428,7 @@ class eMerchantPay extends PaymentModule
                     ),
                 ),
                 'ssl' => array(
-                    'enabled'   	=> Configuration::get('PS_SSL_ENABLED')
+                    'enabled'   	=> $this->getIsSSLEnabled()
                 ),
             ),
             true
@@ -351,6 +461,29 @@ class eMerchantPay extends PaymentModule
             $this->context->controller->addJS(
                 $this->getPathUri() . 'assets/js/bootstrap/bootstrap.alert.min.js'
             );
+        }
+
+        $this->context->controller->addJS(
+            $this->getPathUri() . 'assets/js/card/card.min.js'
+        );
+    }
+
+    /**
+     * Load the CSS/JS needed in advance to ensure that
+     * when the form is called through hookPayment we
+     * have loaded the CSS/JS.
+     * (Used for 1.7.x)
+     *
+     * @return void
+     */
+    public function hookHeader()
+    {
+        if (!$this->isAvailable()) {
+            return;
+        }
+
+        if (!$this->isDirectPaymentMethodAvailable()) {
+            return;
         }
 
         $this->context->controller->addJS(
@@ -1474,7 +1607,7 @@ class eMerchantPay extends PaymentModule
         }
 
         /** Check if SSL is enabled and only DirectPayment Method is Enabled */
-        if (!Configuration::get('PS_SSL_ENABLED') && $this->isDirectPaymentMethodAvailable() && !$this->isCheckoutPaymentMethodAvailable()) {
+        if (!$this->getIsSSLEnabled() && $this->isDirectPaymentMethodAvailable() && !$this->isCheckoutPaymentMethodAvailable()) {
         	$this->warning = $this->l( 'This plugin requires SSL enabled and PCI-DSS compliant server in order to accept customer\'s credit card information directly on your website!' );
         }
 
@@ -1545,5 +1678,10 @@ class eMerchantPay extends PaymentModule
         \Genesis\Config::setEnvironment(
             Configuration::get('EMERCHANTPAY_ENVIRONMENT')
         );
+    }
+
+    protected function getIsSSLEnabled()
+    {
+        return Configuration::get('PS_SSL_ENABLED');
     }
 }
