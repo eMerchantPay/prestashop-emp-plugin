@@ -318,14 +318,16 @@ class eMerchantPay extends PaymentModule
             session_start();
         }
 
-        $this->context->controller->addJS(
-            $this->getPathUri() . 'assets/js/card/card.min.js'
-        );
-
         $this->context->smarty->append(
             'emerchantpay',
             array(
                 'payment'   => array(
+                    'option' => array(
+                        'selected_id' =>
+                            Tools::getIsset('select_payment_option')
+                                ? Tools::getValue('select_payment_option')
+                                : ''
+                    ),
                     'methods'       => array(
                         'direct'    => $this->isDirectPaymentMethodAvailable(),
                         'checkout'  => $this->isCheckoutPaymentMethodAvailable()
@@ -342,52 +344,61 @@ class eMerchantPay extends PaymentModule
             true
         );
 
+        $paymentMethods = array(
+            array(
+                'title' => 'Pay safely with eMerchantPay Checkout',
+                'name'  => 'checkout',
+                'clientSideEvents' => array(
+                    'onFormSubmit' => 'return doBeforeSubmitEMerchantPayCheckoutPaymentForm(this);"'
+                ),
+                'availabilityClosure' => function() {
+                    return $this->isCheckoutPaymentMethodAvailable();
+                }
+            ),
+            array(
+                'title' => 'Pay safely with eMerchantPay Direct',
+                'name'  => 'direct',
+                'clientSideEvents' => array(
+                    'onFormSubmit' => 'return doBeforeSubmitEMerchantPayDirectPaymentForm(this);"'
+                ),
+                'availabilityClosure' => function() {
+                    return $this->isDirectPaymentMethodAvailable() && $this->getIsSSLEnabled();
+                }
+            ),
+        );
+
         $paymentOptions = array();
 
-        if ($this->isCheckoutPaymentMethodAvailable()) {
-            $checkoutMethodOption = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
-            $checkoutMethodOption
-                ->setCallToActionText('Pay safely with eMerchantPay Checkout')
-                ->setAction(
-                    $this->context->link->getModuleLink(
-                        $this->name,
-                        'validation',
-                        array(
-                            'submit' . $this->name . 'Checkout' => 1
-                        ),
-                        true
-                    )
-                )
-                ->setAdditionalInformation(
-                    $this->context->smarty->fetch(
-                        'module:emerchantpay/views/templates/hook/payment/checkout.tpl'
-                    )
+        foreach ($paymentMethods as $paymentMethod) {
+            $availabilityClosure = $paymentMethod['availabilityClosure'];
+            if (!is_callable($availabilityClosure) || $availabilityClosure()) {
+                $submitFormAction = $this->context->link->getModuleLink(
+                    $this->name,
+                    'validation',
+                    array(),
+                    true
                 );
-
-            $paymentOptions[] = $checkoutMethodOption;
-        }
-
-        if ($this->isDirectPaymentMethodAvailable() && $this->getIsSSLEnabled()) {
-            $directMethodOption = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
-            $directMethodOption
-                ->setCallToActionText('Pay safely with eMerchantPay Direct')
-                ->setAction(
-                    $this->context->link->getModuleLink(
-                        $this->name,
-                        'validation',
-                        array(
-                            'submit' . $this->name . 'Direct' => 1
-                        ),
-                        true
+                $paymentMethodInputName = 'submit' . $this->name . ucfirst($paymentMethod['name']);
+                $paymentMethodOption = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
+                $paymentMethodOption
+                    ->setCallToActionText($paymentMethod['title'])
+                    ->setForm(
+                        '<form
+                            class="payment-option-form-"' . $this->name . '"
+                            method="post"
+                            action="' . $submitFormAction . '"
+                            onsubmit="' . $paymentMethod['clientSideEvents']['onFormSubmit'] . '">
+                            <input type="hidden" name="' . $paymentMethodInputName .'" value="1" />
+                         </form>'
                     )
-                )
-                ->setAdditionalInformation(
-                    $this->context->smarty->fetch(
-                        'module:emerchantpay/views/templates/hook/payment/direct.tpl'
-                    )
-                );
+                    ->setAdditionalInformation(
+                        $this->context->smarty->fetch(
+                            "module:{$this->name}/views/templates/hook/payment/{$paymentMethod['name']}.tpl"
+                        )
+                    );
 
-            $paymentOptions[] = $directMethodOption;
+                $paymentOptions[] = $paymentMethodOption;
+            }
         }
 
         return $paymentOptions;
@@ -712,15 +723,11 @@ class eMerchantPay extends PaymentModule
             $this->logError($e);
 
             $this->setSessVar('error_checkout',
-                $this->l("Please, make sure you've entered all of the required data correctly, e.g. Email, Phone, Billing/Shipping Address.")
+                'Please, make sure you\'ve entered correct credentials for accessing the gateway and all of the required data, e.g. Email, Phone, Billing/Shipping Address.'
             );
         }
 
-        Tools::redirect(
-            $this->context->link->getModuleLink($this->name, 'checkout')
-        );
-
-        return false;
+        return null;
     }
 
     /**
@@ -742,6 +749,28 @@ class eMerchantPay extends PaymentModule
             );
 
             $response = $responseObj->getResponseObject();
+
+            $positiveStates = array(
+                \Genesis\API\Constants\Transaction\States::APPROVED,
+                \Genesis\API\Constants\Transaction\States::PENDING_ASYNC
+            );
+
+            if (!in_array($response->status, $positiveStates)) {
+                $this->setSessVar('error_direct',
+                    isset($response->message)
+                        ? $response->message
+                        : $this->l('Your payment was declined! Please, check your card data and try again!')
+                );
+
+                $this->redirectToPage(
+                    'order.php',
+                    array(
+                        'step'                  => '3',
+                        'select_payment_option' => Tools::getValue('select_payment_option')
+                    )
+                );
+                return;
+            }
 
             $message = 'TransactionId: ' . $response->unique_id . PHP_EOL;
 
@@ -789,20 +818,24 @@ class eMerchantPay extends PaymentModule
             } else {
                 $this->redirectToPage('order-confirmation.php');
             }
-        } catch (\Genesis\Exceptions\ErrorAPI $api) {
-            $this->logError($api);
-
-            $this->setSessVar('error_direct', $api->getMessage());
-
-            $this->redirectToPage('order.php', array('step' => '3'));
         } catch (\Exception $e) {
             $this->logError($e);
 
-            $this->setSessVar('error_direct',
-                $this->l('There was a problem processing your transaction, please try again!')
-            );
+            if ($e instanceof \Genesis\Exceptions\ErrorAPI) {
+                $this->setSessVar('error_direct', $e->getMessage());
+            } else {
+                $this->setSessVar('error_direct',
+                    $this->l('There was a problem processing your transaction, please try again! ' . $e->getMessage())
+                );
+            }
 
-            $this->redirectToPage('order.php', array('step' => '3'));
+            $this->redirectToPage(
+                'order.php',
+                array(
+                    'step'                  => '3',
+                    'select_payment_option' => Tools::getValue('select_payment_option')
+                )
+            );
         }
     }
 
