@@ -72,9 +72,19 @@ class eMerchantPayValidationModuleFrontController extends ModuleFrontControllerC
 			Tools::redirect($url);
 		}
 		else {
-			Tools::redirect(
-				$this->context->link->getModuleLink($this->module->name, 'checkout')
-			);
+			if (version_compare(_PS_VERSION_, '1.7', '<')) {
+				Tools::redirect(
+					$this->context->link->getModuleLink($this->module->name, 'checkout')
+				);
+			} else {
+				$this->module->redirectToPage(
+					'order.php',
+					array(
+						'step' 					=> 3,
+						'select_payment_option' => Tools::getValue('select_payment_option')
+					)
+				);
+			}
 		}
 
 	}
@@ -92,7 +102,13 @@ class eMerchantPayValidationModuleFrontController extends ModuleFrontControllerC
                                                $this->module->l('Please fill all of the required fields!')
             );
 
-			$this->module->redirectToPage('order.php', array('step' => '3'));
+			$this->module->redirectToPage(
+				'order.php',
+				array(
+					'step' => '3',
+					'select_payment_option' => Tools::getValue('select_payment_option')
+				)
+			);
 		}
 
         $this->module->doPayment();
@@ -105,9 +121,9 @@ class eMerchantPayValidationModuleFrontController extends ModuleFrontControllerC
 	 */
 	public function isRequiredFilled()
 	{
-		return Tools::getIsset($this->module->name . '-cvc') &&
-		       Tools::getIsset($this->module->name . '-name') &&
-               Tools::getIsset($this->module->name . '-number') &&
-	           Tools::getIsset($this->module->name . '-expiry');
+		return Tools::getIsset($this->module->name . '-cvc') && !empty(Tools::getValue($this->module->name . '-cvc')) &&
+		       Tools::getIsset($this->module->name . '-name') && !empty(Tools::getValue($this->module->name . '-name')) &&
+               Tools::getIsset($this->module->name . '-number') && !empty(Tools::getValue($this->module->name . '-number')) &&
+	           Tools::getIsset($this->module->name . '-expiry') && !empty(Tools::getValue($this->module->name . '-expiry'));
 	}
 }
