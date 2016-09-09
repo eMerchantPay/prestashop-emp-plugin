@@ -18,7 +18,7 @@
 
 {if version_compare($emerchantpay['presta']['version'], '1.5', '>=') && version_compare($emerchantpay['presta']['version'], '1.6', '<') }
 
-    <style>
+    <style type="text/css">
         .text-left { text-align:left; }
         .text-center { text-align:center; }
         .text-right { text-align:right; }
