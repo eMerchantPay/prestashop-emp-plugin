@@ -631,7 +631,7 @@ class eMerchantPay extends PaymentModule
             $data->billing->address2  = $invoice->address2;
             $data->billing->postcode  = $invoice->postcode;
             $data->billing->city      = $invoice->city;
-            $data->billing->state     = State::getNameById($invoice->id_state);
+            $data->billing->state     = $this->getStateIsoCodeById($invoice->id_state);
             $data->billing->country   = \Genesis\Utils\Country::getCountryISO($invoice->country);
         }
 
@@ -644,7 +644,7 @@ class eMerchantPay extends PaymentModule
             $data->shipping->address2  = $shipping->address2;
             $data->shipping->postcode  = $shipping->postcode;
             $data->shipping->city      = $shipping->city;
-            $data->shipping->state     = State::getNameById($shipping->id_state);
+            $data->shipping->state     = $this->getStateIsoCodeById($shipping->id_state);
             $data->shipping->country   = \Genesis\Utils\Country::getCountryISO($shipping->country);
         }
 
@@ -1713,8 +1713,26 @@ class eMerchantPay extends PaymentModule
         );
     }
 
+    /**
+     * Determines if the Store is running over secured connection
+     * @return bool
+     */
     protected function getIsSSLEnabled()
     {
         return Configuration::get('PS_SSL_ENABLED');
+    }
+
+    /**
+     * Get a state iso with by its id
+     *
+     * @param int $id_state
+     * @return string
+     */
+    public static function getStateIsoCodeById($id_state)
+    {
+        return Db::getInstance()->getValue('
+		SELECT `iso_code`
+		FROM `'._DB_PREFIX_.'state`
+		WHERE `id_state` = '.(int)$id_state);
     }
 }
