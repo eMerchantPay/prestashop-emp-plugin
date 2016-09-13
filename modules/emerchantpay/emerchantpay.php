@@ -37,6 +37,22 @@ class eMerchantPay extends PaymentModule
     /**
      * Constructor
      */
+
+    /**
+     * Configurable module settings
+     */
+    const SETTING_EMERCHANTPAY_USERNAME              = 'EMERCHANTPAY_USERNAME';
+    const SETTING_EMERCHANTPAY_PASSWORD              = 'EMERCHANTPAY_PASSWORD';
+    const SETTING_EMERCHANTPAY_TOKEN                 = 'EMERCHANTPAY_TOKEN';
+    const SETTING_EMERCHANTPAY_ENVIRONMENT           = 'EMERCHANTPAY_ENVIRONMENT';
+    const SETTING_EMERCHANTPAY_DIRECT                = 'EMERCHANTPAY_DIRECT';
+    const SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE       = 'EMERCHANTPAY_DIRECT_TRX_TYPE';
+    const SETTING_EMERCHANTPAY_CHECKOUT              = 'EMERCHANTPAY_CHECKOUT';
+    const SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES    = 'EMERCHANTPAY_CHECKOUT_TRX_TYPES';
+    const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE = 'EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE';
+    const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND  = 'EMERCHANTPAY_ALLOW_PARTIAL_REFUND';
+    const SETTING_EMERCHANTPAY_ALLOW_VOID            = 'EMERCHANTPAY_ALLOW_VOID';
+
     public function __construct()
     {
         /* Initial Module Setup */
@@ -91,6 +107,8 @@ class eMerchantPay extends PaymentModule
                 'warning'   => $this->warning
             )
         );
+
+        $this->doMigrateSettings();
     }
 
     /**
@@ -113,7 +131,7 @@ class eMerchantPay extends PaymentModule
         // Create Tables
         $install->createSchema();
 
-        return $pre_install && $install->isSuccessful();
+        return $pre_install && $install->isSuccessful() && $this->setDefaultSettingsToDB();
     }
 
     /**
@@ -162,7 +180,7 @@ class eMerchantPay extends PaymentModule
      */
     public function isDirectPaymentMethodAvailable()
     {
-        return (Configuration::get('EMERCHANTPAY_DIRECT') == 'true' ? true : false);
+        return $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_DIRECT);
     }
 
     /**
@@ -172,7 +190,7 @@ class eMerchantPay extends PaymentModule
      */
     public function isCheckoutPaymentMethodAvailable()
     {
-        return (Configuration::get('EMERCHANTPAY_CHECKOUT') == 'true' ? true : false);
+        return $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_CHECKOUT);
     }
 
     /**
@@ -187,7 +205,7 @@ class eMerchantPay extends PaymentModule
     public function isAsyncTransaction()
     {
         if ($this->isDirectPaymentMethodAvailable()) {
-            return (stripos(Configuration::get('EMERCHANTPAY_DIRECT_TRX_TYPE'), '3d') !== false) ? true : false;
+            return (stripos(Configuration::get(self::SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE), '3d') !== false) ? true : false;
         }
 
         return false;
@@ -272,6 +290,16 @@ class eMerchantPay extends PaymentModule
                             'decimalSeparator' => '.',
                             'thousandSeparator' => '' /* must be empty, otherwise exception could be trown from Genesis */
                         )
+                    ),
+                    'options' => array(
+                       'allow_partial_capture' => $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE),
+                       'allow_partial_refund'  => $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND),
+                       'allow_void'            => $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ALLOW_VOID)
+                    ),
+                    'text' => array(
+                       'denied_partial_capture' => $this->l('Partial Capture is currently disabled! You can enable this option in the Module Settings.'),
+                       'denied_partial_refund' => $this->l('Partial Refund is currently disabled! You can enable this option in the Module Settings.'),
+                       'denied_void' => $this->l('Cancel Transaction are currently disabled! You can enable this option in the Module Settings.'),
                     ),
                     'error' => $this->getSessVar('error_transaction'),
                     'tree'  => eMerchantPayTransaction::getTransactionTree((int)$params['id_order']),
@@ -577,7 +605,7 @@ class eMerchantPay extends PaymentModule
 
         // Parameters
         $data->id               = md5(mt_rand() . microtime(true) . uniqid());
-        $data->transaction_type = Configuration::get('EMERCHANTPAY_DIRECT_TRX_TYPE');
+        $data->transaction_type = Configuration::get(self::SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE);
         $data->usage            = $this->l('Prestashop Transaction');
 
         $description = '';
@@ -1223,7 +1251,7 @@ class eMerchantPay extends PaymentModule
         $processed_list = array();
 
         $selected_types = json_decode(
-            Configuration::get('EMERCHANTPAY_CHECKOUT_TRX_TYPES')
+            Configuration::get(self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES)
         );
 
         $alias_map = array(
@@ -1268,14 +1296,17 @@ class eMerchantPay extends PaymentModule
     public function getConfigKeys()
     {
         return array(
-            'EMERCHANTPAY_USERNAME',
-            'EMERCHANTPAY_PASSWORD',
-            'EMERCHANTPAY_TOKEN',
-            'EMERCHANTPAY_ENVIRONMENT',
-            'EMERCHANTPAY_DIRECT',
-            'EMERCHANTPAY_DIRECT_TRX_TYPE',
-            'EMERCHANTPAY_CHECKOUT',
-            'EMERCHANTPAY_CHECKOUT_TRX_TYPES'
+            self::SETTING_EMERCHANTPAY_USERNAME,
+            self::SETTING_EMERCHANTPAY_PASSWORD,
+            self::SETTING_EMERCHANTPAY_TOKEN,
+            self::SETTING_EMERCHANTPAY_ENVIRONMENT,
+            self::SETTING_EMERCHANTPAY_DIRECT,
+            self::SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE,
+            self::SETTING_EMERCHANTPAY_CHECKOUT,
+            self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
+            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE,
+            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND,
+            self::SETTING_EMERCHANTPAY_ALLOW_VOID
         );
     }
 
@@ -1289,7 +1320,7 @@ class eMerchantPay extends PaymentModule
         $config_key_value = array();
 
         foreach ($this->getConfigKeys() as $config_key) {
-            if (in_array($config_key, array('EMERCHANTPAY_CHECKOUT_TRX_TYPES'))) {
+            if (in_array($config_key, array(self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES))) {
                 $config_key_value[$config_key . '[]'] = json_decode(Configuration::get($config_key));
             } else {
                 $config_key_value[$config_key] = Configuration::get($config_key);
@@ -1313,13 +1344,13 @@ class eMerchantPay extends PaymentModule
             foreach ($this->getConfigKeys() as $key) {
                 $value = Tools::getValue($key);
 
-                if (in_array($key, array('EMERCHANTPAY_CHECKOUT_TRX_TYPES'))) {
+                if (in_array($key, array(self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES))) {
                     $value = json_encode($value);
                 }
 
                 if (!Validate::isConfigName($key)) {
                     $output = $this->displayError($this->l('Invalid config name: ' . $key));
-                } elseif (empty($value)) {
+                } elseif (is_string($value) && strlen($value) == 0) {
                     $output = $this->displayError($this->l('Invalid content for: ' . $key));
                 } else {
                     Configuration::updateValue($key, $value);
@@ -1376,7 +1407,7 @@ class eMerchantPay extends PaymentModule
                         'desc' => $this->l(
                             'Enter your Username, required for accessing the Genesis Gateway'
                         ),
-                        'name' => 'EMERCHANTPAY_USERNAME',
+                        'name' => self::SETTING_EMERCHANTPAY_USERNAME,
                         'size' => 20,
                         'required' => true
                     ),
@@ -1386,7 +1417,7 @@ class eMerchantPay extends PaymentModule
                         'desc' => $this->l(
                             'Enter your Password, required for accessing the Genesis Gateway'
                         ),
-                        'name' => 'EMERCHANTPAY_PASSWORD',
+                        'name' => self::SETTING_EMERCHANTPAY_PASSWORD,
                         'size' => 20,
                         'required' => true
                     ),
@@ -1396,7 +1427,7 @@ class eMerchantPay extends PaymentModule
                         'desc' => $this->l(
                             'Enter your Token, required for accessing the Genesis Gateway.'
                         ),
-                        'name' => 'EMERCHANTPAY_TOKEN',
+                        'name' => self::SETTING_EMERCHANTPAY_TOKEN,
                         'size' => 20,
                         'required' => true
                     ),
@@ -1407,7 +1438,7 @@ class eMerchantPay extends PaymentModule
                             'Select the environment you wish to use for processing your transactions.' . PHP_EOL .
                             'Note: Its recommended to use the Sandbox environment every-time you alter your settings, in order to ensure everything works as intended.'
                         ),
-                        'name' => 'EMERCHANTPAY_ENVIRONMENT',
+                        'name' => self::SETTING_EMERCHANTPAY_ENVIRONMENT,
                         'options' => array(
                             'query' => array(
                                 array(
@@ -1424,23 +1455,19 @@ class eMerchantPay extends PaymentModule
                         )
                     ),
                     array(
-                        'type' => 'radio',
+                        'type' => 'switch',
                         'label' => 'Direct (Hosted) Payment Method',
                         'desc' => $this->l(
                             'Enable/Disable the Direct API - allow customers to enter their CreditCard information on your website.' . PHP_EOL .
                             'Note: You need PCI-DSS certificate in order to enable this feature.'
                         ),
-                        'name' => 'EMERCHANTPAY_DIRECT',
+                        'name' => self::SETTING_EMERCHANTPAY_DIRECT,
                         'values' => array(
                             array(
-                                'id' => 'on',
-                                'value' => 'true',
-                                'label' => $this->l('Enable'),
+                                'value' => '1',
                             ),
                             array(
-                                'id' => 'off',
-                                'value' => 'false',
-                                'label' => $this->l('Disable'),
+                                'value' => '0'
                             )
                         )
                     ),
@@ -1450,7 +1477,7 @@ class eMerchantPay extends PaymentModule
                         'desc' => $this->l(
                             'Select the transaction type you want to use for Direct processing.'
                         ),
-                        'name' => 'EMERCHANTPAY_DIRECT_TRX_TYPE',
+                        'name' => self::SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE,
                         'options' => array(
                             'query' => array(
                                 array(
@@ -1475,23 +1502,19 @@ class eMerchantPay extends PaymentModule
                         )
                     ),
                     array(
-                        'type' => 'radio',
+                        'type' => 'switch',
                         'label' => 'Checkout (Remote) Payment Method',
                         'desc' => $this->l(
                             'Enable/Disable the Checkout payment method - receive credit-card payments, without the need of PCI-DSS certificate or HTTPS.' . PHP_EOL .
                             'Note: Upon checkout, the customer will be redirected to a secure payment form, located on our servers and we will notify you, once the payment reached a final status'
                         ),
-                        'name' => 'EMERCHANTPAY_CHECKOUT',
+                        'name' => self::SETTING_EMERCHANTPAY_CHECKOUT,
                         'values' => array(
                             array(
-                                'id' => 'on',
-                                'value' => 'true',
-                                'label' => $this->l('Enable'),
+                                'value' => '1'
                             ),
                             array(
-                                'id' => 'off',
-                                'value' => 'false',
-                                'label' => $this->l('Disable'),
+                                'value' => '0'
                             )
                         )
                     ),
@@ -1501,8 +1524,8 @@ class eMerchantPay extends PaymentModule
                         'desc' => $this->l(
                             'Select the transaction types you want to use during Checkout session.'
                         ),
-                        'id' => 'EMERCHANTPAY_CHECKOUT_TRX_TYPES',
-                        'name' => 'EMERCHANTPAY_CHECKOUT_TRX_TYPES[]',
+                        'id' => self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
+                        'name' => self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES . '[]',
                         'multiple' => true,
                         'options' => array(
                             'query' => array(
@@ -1589,6 +1612,54 @@ class eMerchantPay extends PaymentModule
                             ),
                             'id' => 'id',
                             'name' => 'name',
+                        )
+                    ),
+                    array(
+                        'type' => 'switch',
+                        'label' => 'Partial Capture',
+                        'desc' => $this->l(
+                            'Use this option to allow / deny Partial Capture Transactions'
+                        ),
+                        'name' => self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE,
+                        'values' => array(
+                            array(
+                                'value' => '1'
+                            ),
+                            array(
+                                'value' => '0'
+                            )
+                        )
+                    ),
+                    array(
+                        'type' => 'switch',
+                        'label' => 'Partial Refund',
+                        'desc' => $this->l(
+                            'Use this option to allow / deny Partial Refund Transactions'
+                        ),
+                        'name' => self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND,
+                        'values' => array(
+                            array(
+                                'value' => '1'
+                            ),
+                            array(
+                                'value' => '0'
+                            )
+                        )
+                    ),
+                    array(
+                        'type' => 'switch',
+                        'label' => 'Cancel Transaction',
+                        'desc' => $this->l(
+                            'Use this option to allow / deny Cancel Transactions'
+                        ),
+                        'name' => self::SETTING_EMERCHANTPAY_ALLOW_VOID,
+                        'values' => array(
+                            array(
+                                'value' => '1'
+                            ),
+                            array(
+                                'value' => '0'
+                            )
                         )
                     ),
                 ),
@@ -1734,5 +1805,71 @@ class eMerchantPay extends PaymentModule
 		SELECT `iso_code`
 		FROM `'._DB_PREFIX_.'state`
 		WHERE `id_state` = '.(int)$id_state);
+    }
+
+    /**
+     * Migrates old Toggle Button values (true => 1; false => 0)
+     * @return void
+     */
+    protected function doMigrateSettings()
+    {
+        $toggleSettingKeys = array(
+            self::SETTING_EMERCHANTPAY_DIRECT,
+            self::SETTING_EMERCHANTPAY_CHECKOUT
+        );
+
+        foreach ($toggleSettingKeys as $toggleSettingKey) {
+            $settingValue = strtolower(Configuration::get($toggleSettingKey));
+            if ($settingValue == 'true') {
+                Configuration::updateValue($toggleSettingKey, '1');
+            } elseif ($settingValue == 'false') {
+                Configuration::updateValue($toggleSettingKey, '0');
+            }
+        }
+    }
+
+    /**
+     * Prepares default values for some configuration keys
+     *
+     * @return bool
+     */
+    protected function setDefaultSettingsToDB()
+    {
+        $defaultConfigItems = array(
+            self::SETTING_EMERCHANTPAY_DIRECT          => '0',
+            self::SETTING_EMERCHANTPAY_CHECKOUT        => '0',
+            self::SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE =>
+                \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
+            self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES => array(
+                \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
+                \Genesis\API\Constants\Transaction\Types::SALE,
+            ),
+            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE => '1',
+            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND  => '1',
+            self::SETTING_EMERCHANTPAY_ALLOW_VOID  => '1'
+        );
+
+        try {
+            foreach ($defaultConfigItems as $key => $value) {
+                $value = is_array($value) ? json_encode($value) : $value;
+                Configuration::updateValue($key, $value);
+            }
+
+            return true;
+        } catch (Exception $e) {
+            $this->logError($e);
+            return false;
+        }
+    }
+
+    /**
+     * Retrieves a bool setting value by key
+     *
+     * @param string $key
+     * @return bool
+     */
+    protected function getBoolConfigurationValue($key)
+    {
+        return Configuration::get($key) == '1';
     }
 }
