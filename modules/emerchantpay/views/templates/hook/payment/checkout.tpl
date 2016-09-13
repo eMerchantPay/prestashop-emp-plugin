@@ -17,7 +17,7 @@
  *}
 
 {if version_compare($emerchantpay['presta']['version'], '1.5', '>=') && version_compare($emerchantpay['presta']['version'], '1.6', '<') }
-    <div class="row" id="payment-method-{$emerchantpay['name']['module']}">
+    <div class="row" class="payment-method-{$emerchantpay['name']['module']}">
         {if $emerchantpay['payment']['methods']['checkout']}
             <div id="payment-method-{$emerchantpay['name']['module']}-checkout" class="payment_module">
                 <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']}">
@@ -28,10 +28,16 @@
             </div>
         {/if}
     </div>
+
+    <style type="text/css">
+        .payment-method-{$emerchantpay['name']['module']} {
+            margin-bottom: 16px;
+        }
+    </style>
 {/if}
 
 {if version_compare($emerchantpay['presta']['version'], '1.6', '>=') && version_compare($emerchantpay['presta']['version'], '1.7', '<') }
-    <div id="payment-method-{$emerchantpay['name']['module']}">
+    <div class="payment-method-{$emerchantpay['name']['module']}">
         {if $emerchantpay['payment']['methods']['checkout']}
             <div id="payment-method-{$emerchantpay['name']['module']}-checkout">
                 <div class="row">
@@ -48,7 +54,11 @@
             </div>
         {/if}
     </div>
-    <style>
+    <style type="text/css">
+        .payment-method-{$emerchantpay['name']['module']} {
+            margin-bottom: 16px;
+        }
+
         #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link {
             padding-left: 33px;
         }
@@ -65,8 +75,17 @@
 {/if}
 
 {if version_compare($emerchantpay['presta']['version'], '1.7', '>=') && version_compare($emerchantpay['presta']['version'], '1.8', '<') }
-    <div id="payment-method-{$emerchantpay['name']['module']}">
+    <div class="payment-method-{$emerchantpay['name']['module']}">
         {if $emerchantpay['payment']['methods']['checkout']}
+            {if $emerchantpay['payment']['errors']['checkout']}
+                <div class="row row-spacer" style="margin-bottom: 10pt;">
+                    <div class="alert alert-warning alert-dismissable error-wrapper">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        {$emerchantpay['payment']['errors']['checkout']|escape:html:'UTF-8'}
+                    </div>
+                </div>
+            {/if}
+
             <div id="payment-method-{$emerchantpay['name']['module']}-checkout">
                 <div class="payment-method-container">
                     <div class="row">
@@ -83,13 +102,10 @@
             </div>
         {/if}
     </div>
+    {include file='module:emerchantpay/views/templates/hook/payment/footer.tpl'}
 {/if}
 
-<style>
-    #payment-method-{$emerchantpay['name']['module']} {
-        margin-bottom: 16px;
-    }
-
+<style type="text/css">
     #payment-method-{$emerchantpay['name']['module']}-checkout {
         position: relative;
     }

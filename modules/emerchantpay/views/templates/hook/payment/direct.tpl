@@ -17,7 +17,7 @@
  *}
 
 {if version_compare($emerchantpay['presta']['version'], '1.5', '>=') && version_compare($emerchantpay['presta']['version'], '1.6', '<') }
-    <div class="row" id="payment-method-{$emerchantpay['name']['module']}">
+    <div class="row" class="payment-method-{$emerchantpay['name']['module']}">
         {if ($emerchantpay['payment']['methods']['direct'] && $emerchantpay['ssl']['enabled'])}
             <div id="payment-method-{$emerchantpay['name']['module']}-direct" class="payment_module">
                 <div class="payment-method-container" style="margin-top:-15px;">
@@ -85,10 +85,16 @@
             </div>
         {/if}
     </div>
+
+    <style type="text/css">
+        .payment-method-{$emerchantpay['name']['module']} {
+            margin-bottom: 16px;
+        }
+    </style>
 {/if}
 
 {if version_compare($emerchantpay['presta']['version'], '1.6', '>=') && version_compare($emerchantpay['presta']['version'], '1.7', '<') }
-    <div id="payment-method-{$emerchantpay['name']['module']}">
+    <div class="payment-method-{$emerchantpay['name']['module']}">
         {if ($emerchantpay['payment']['methods']['direct'] && $emerchantpay['ssl']['enabled'])}
             <div id="payment-method-{$emerchantpay['name']['module']}-direct">
                 <div class="row">
@@ -162,7 +168,11 @@
             </div>
         {/if}
     </div>
-    <style>
+    <style type="text/css">
+        .payment-method-{$emerchantpay['name']['module']} {
+            margin-bottom: 16px;
+        }
+
         #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link {
             padding-left: 33px;
         }
@@ -179,7 +189,7 @@
 {/if}
 
 {if version_compare($emerchantpay['presta']['version'], '1.7', '>=') && version_compare($emerchantpay['presta']['version'], '1.8', '<') }
-    <div id="payment-method-{$emerchantpay['name']['module']}">
+    <div class="payment-method-{$emerchantpay['name']['module']}">
         {if ($emerchantpay['payment']['methods']['direct'] && $emerchantpay['ssl']['enabled'])}
             <div id="payment-method-{$emerchantpay['name']['module']}-direct">
                 <div class="row">
@@ -219,19 +229,19 @@
                                             <form autocomplete="off" class="payment-form" method="post">
                                                 <input autocomplete="off"
                                                        placeholder="{l s="Card number"  mod="emerchantpay"}"
-                                                       class="form-control" type="text"
+                                                       class="form-control" type="text" required
                                                        name="{$emerchantpay['name']['module']}-number">
                                                 <input autocomplete="off"
                                                        placeholder="{l s="Card holder"  mod="emerchantpay"}"
-                                                       class="form-control" type="text"
+                                                       class="form-control" type="text" required
                                                        name="{$emerchantpay['name']['module']}-name">
                                                 <input autocomplete="off"
                                                        placeholder="{l s="Expiration date (month / year)" mod="emerchantpay"}"
-                                                       class="form-control" type="text"
+                                                       class="form-control" type="text" required
                                                        name="{$emerchantpay['name']['module']}-expiry">
                                                 <input autocomplete="off"
                                                        placeholder="{l s="CVV / CVV2 / CSC" mod="emerchantpay"}"
-                                                       class="form-control"
+                                                       class="form-control" type="text" required
                                                        name="{$emerchantpay['name']['module']}-cvc">
                                             </form>
                                         </div>
@@ -247,6 +257,10 @@
         {/if}
     </div>
 
+    {if !$emerchantpay['payment']['methods']['checkout']}
+        {include file='module:emerchantpay/views/templates/hook/payment/footer.tpl'}
+    {/if}
+
     <style type="text/css">
         #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container input {
             margin: 5pt 0;
@@ -255,10 +269,6 @@
 {/if}
 
 <style type="text/css">
-    #payment-method-{$emerchantpay['name']['module']} {
-        margin-bottom: 16px;
-    }
-
     #payment-method-{$emerchantpay['name']['module']}-direct {
         padding-top: 16px !important;
     }

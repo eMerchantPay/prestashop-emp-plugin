@@ -16,7 +16,7 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  *}
 
-<style>
+<style type="text/css">
     #center_column a {
         text-decoration:underline;
     }

@@ -16,6 +16,6 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  *}
 
-{include file="modules/{$emerchantpay['name']['module']}/views/templates/hook/payment/checkout.tpl"}
+{include file="./payment/checkout.tpl"}
 
-{include file="modules/{$emerchantpay['name']['module']}/views/templates/hook/payment/direct.tpl"}
+{include file="./payment/direct.tpl"}
