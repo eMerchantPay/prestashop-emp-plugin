@@ -49,6 +49,9 @@ class eMerchantPay extends PaymentModule
     const SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE       = 'EMERCHANTPAY_DIRECT_TRX_TYPE';
     const SETTING_EMERCHANTPAY_CHECKOUT              = 'EMERCHANTPAY_CHECKOUT';
     const SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES    = 'EMERCHANTPAY_CHECKOUT_TRX_TYPES';
+    const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE = 'EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE';
+    const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND  = 'EMERCHANTPAY_ALLOW_PARTIAL_REFUND';
+    const SETTING_EMERCHANTPAY_ALLOW_VOID            = 'EMERCHANTPAY_ALLOW_VOID';
 
     public function __construct()
     {
@@ -287,6 +290,16 @@ class eMerchantPay extends PaymentModule
                             'decimalSeparator' => '.',
                             'thousandSeparator' => '' /* must be empty, otherwise exception could be trown from Genesis */
                         )
+                    ),
+                    'options' => array(
+                       'allow_partial_capture' => $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE),
+                       'allow_partial_refund'  => $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND),
+                       'allow_void'            => $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ALLOW_VOID)
+                    ),
+                    'text' => array(
+                       'denied_partial_capture' => $this->l('Partial Capture is currently disabled! You can enable this option in the Module Settings.'),
+                       'denied_partial_refund' => $this->l('Partial Refund is currently disabled! You can enable this option in the Module Settings.'),
+                       'denied_void' => $this->l('Cancel Transaction are currently disabled! You can enable this option in the Module Settings.'),
                     ),
                     'error' => $this->getSessVar('error_transaction'),
                     'tree'  => eMerchantPayTransaction::getTransactionTree((int)$params['id_order']),
@@ -1290,7 +1303,10 @@ class eMerchantPay extends PaymentModule
             self::SETTING_EMERCHANTPAY_DIRECT,
             self::SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE,
             self::SETTING_EMERCHANTPAY_CHECKOUT,
-            self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES
+            self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
+            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE,
+            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND,
+            self::SETTING_EMERCHANTPAY_ALLOW_VOID
         );
     }
 
@@ -1598,6 +1614,54 @@ class eMerchantPay extends PaymentModule
                             'name' => 'name',
                         )
                     ),
+                    array(
+                        'type' => 'switch',
+                        'label' => 'Partial Capture',
+                        'desc' => $this->l(
+                            'Use this option to allow / deny Partial Capture Transactions'
+                        ),
+                        'name' => self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE,
+                        'values' => array(
+                            array(
+                                'value' => '1'
+                            ),
+                            array(
+                                'value' => '0'
+                            )
+                        )
+                    ),
+                    array(
+                        'type' => 'switch',
+                        'label' => 'Partial Refund',
+                        'desc' => $this->l(
+                            'Use this option to allow / deny Partial Refund Transactions'
+                        ),
+                        'name' => self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND,
+                        'values' => array(
+                            array(
+                                'value' => '1'
+                            ),
+                            array(
+                                'value' => '0'
+                            )
+                        )
+                    ),
+                    array(
+                        'type' => 'switch',
+                        'label' => 'Cancel Transaction',
+                        'desc' => $this->l(
+                            'Use this option to allow / deny Cancel Transactions'
+                        ),
+                        'name' => self::SETTING_EMERCHANTPAY_ALLOW_VOID,
+                        'values' => array(
+                            array(
+                                'value' => '1'
+                            ),
+                            array(
+                                'value' => '0'
+                            )
+                        )
+                    ),
                 ),
                 'submit' => array(
                     'title' => $this->l('Save'),
@@ -1779,7 +1843,10 @@ class eMerchantPay extends PaymentModule
             self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES => array(
                 \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
                 \Genesis\API\Constants\Transaction\Types::SALE,
-            )
+            ),
+            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE => '1',
+            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND  => '1',
+            self::SETTING_EMERCHANTPAY_ALLOW_VOID  => '1'
         );
 
         try {

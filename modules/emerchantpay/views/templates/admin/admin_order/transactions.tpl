@@ -256,7 +256,12 @@
                                     <td class="text-center">
                                         {if $transaction['can_capture']}
                                             <div class="transaction-action-button">
-                                                <a class="btn btn-transaction btn-success button-capture button" role="button" data-type="capture" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['available_amount']}">
+                                                <a class="btn btn-transaction btn-success button-capture button" role="button" data-type="capture" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['available_amount']}"
+                                                    {if !$emerchantpay['transactions']['options']['allow_partial_capture']}
+                                                        data-toggle="tooltip" data-placement="bottom"
+                                                        title="{$emerchantpay['transactions']['text']['denied_partial_capture']|escape:html:'UTF-8'}"
+                                                    {/if}
+                                                    >
                                                     <i class="icon-check icon-large"></i>
                                                 </a>
                                             </div>
@@ -265,7 +270,12 @@
                                     <td class="text-center">
                                         {if $transaction['can_refund']}
                                             <div class="transaction-action-button">
-                                                <a class="btn btn-transaction btn-warning button-refund button" role="button" data-type="refund" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['available_amount']}">
+                                                <a class="btn btn-transaction btn-warning button-refund button" role="button" data-type="refund" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['available_amount']}"
+                                                    {if !$emerchantpay['transactions']['options']['allow_partial_refund']}
+                                                        data-toggle="tooltip" data-placement="bottom"
+                                                        title="{$emerchantpay['transactions']['text']['denied_partial_refund']|escape:html:'UTF-8'}"
+                                                    {/if}
+                                                    >
                                                     <i class="icon-reply icon-large"></i>
                                                 </a>
                                             </div>
@@ -274,7 +284,12 @@
                                     <td class="text-center">
                                         {if $transaction['can_void']}
                                             <div class="transaction-action-button">
-                                                <a class="btn btn-transaction btn-danger button-void button" role="button" data-type="void" data-id-unique="{$transaction['id_unique']}" data-amount="0">
+                                                <a class="btn btn-transaction btn-danger button-void button" role="button" data-type="void" data-id-unique="{$transaction['id_unique']}" data-amount="0"
+                                                    {if !$emerchantpay['transactions']['options']['allow_void']}
+                                                        data-disabled="disabled" style="cursor: default" data-toggle="tooltip" data-placement="bottom"
+                                                        title="{$emerchantpay['transactions']['text']['denied_void']|escape:html:'UTF-8'}"
+                                                    {/if}
+                                                    >
                                                     <i class="icon-remove icon-large"></i>
                                                 </a>
                                             </div>
@@ -309,10 +324,21 @@
 
                         <div id="{$emerchantpay['name']['module']}_capture_trans_info" class="row" style="display: none;">
                             <div class="col-xs-12">
-                                <div class="alert alert-info">
+                                <div class="alert alert-warning">
                                     {l s="You are allowed to process only full capture through this panel!" mod="emerchantpay"}
                                     <br/>
                                     {l s="For further Information please contact your Account Manager." mod="emerchantpay"}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="{$emerchantpay['name']['module']}_refund_trans_info" class="row" style="display: none;">
+                            <div class="col-xs-12">
+                                <div class="alert alert-warning">
+                                    You are allowed to process only full refund through this panel!
+                                    <br/>
+                                    This option can be enabled in the <strong>Module Settings</strong>, but it depends on the <strong>acquirer</strong>
+                                    For further Information please contact your <strong>Account Manager</strong>
                                 </div>
                             </div>
                         </div>
@@ -366,6 +392,8 @@
             jQuery.exists = function(selector) {
                     return ($(selector).length > 0);
             }
+
+            $('[data-toggle="tooltip"]').tooltip();
 
             $.fn.bootstrapValidator.i18n.transactionAmount = $.extend($.fn.bootstrapValidator.i18n.transactionAmount || {}, {
                 'default': 'Please enter a valid transaction amount. (Ex. %s)'
@@ -482,6 +510,10 @@
             });
 
             $('.btn-transaction').click(function() {
+                if ($(this).is("[data-disabled]")) {
+                    return;
+                }
+
                 transactionModal($(this).attr('data-type'), $(this).attr('data-id-unique'), $(this).attr('data-amount'));
             });
 
@@ -516,30 +548,50 @@
 
             modalObj = $('#{$emerchantpay['name']['module']}-modal');
 
-                        var modalTitle = modalObj.find('h3.{$emerchantpay['name']['module']}-modal-title'),
-                            modalAmountInputContainer = modalObj.find('div.amount-input'),
-                            captureTransactionInfoHolder = $('#{$emerchantpay['name']['module']}_capture_trans_info', modalObj),
-                            cancelTransactionWarningHolder = $('#{$emerchantpay['name']['module']}_cancel_trans_warning', modalObj),
-                            transactionAmountInput = $('#{$emerchantpay['name']['module']}_transaction_amount', modalObj);
+            var modalTitle = modalObj.find('h3.{$emerchantpay['name']['module']}-modal-title'),
+                modalAmountInputContainer = modalObj.find('div.amount-input'),
+                captureTransactionInfoHolder = $('#{$emerchantpay['name']['module']}_capture_trans_info', modalObj),
+                refundTransactionInfoHolder = $('#{$emerchantpay['name']['module']}_refund_trans_info', modalObj),
+                cancelTransactionWarningHolder = $('#{$emerchantpay['name']['module']}_cancel_trans_warning', modalObj),
+                transactionAmountInput = $('#{$emerchantpay['name']['module']}_transaction_amount', modalObj);
 
             switch(type) {
                 case 'capture':
                       modalTitle.text('{l s="Capture transaction" mod="emerchantpay"}');
-                      updateTransModalControlState([captureTransactionInfoHolder, modalAmountInputContainer], true);
-                      updateTransModalControlState([cancelTransactionWarningHolder], false);
-                      transactionAmountInput.attr('readonly', 'readonly');
+                      {if !$emerchantpay['transactions']['options']['allow_partial_capture']}
+                          updateTransModalControlState([captureTransactionInfoHolder], true);
+                      {else}
+                          updateTransModalControlState([captureTransactionInfoHolder], false);
+                      {/if}
+                      updateTransModalControlState([modalAmountInputContainer], true);
+                      updateTransModalControlState([refundTransactionInfoHolder, cancelTransactionWarningHolder], false);
+
+                      {if !$emerchantpay['transactions']['options']['allow_partial_capture']}
+                          transactionAmountInput.attr('readonly', 'readonly');
+                      {else}
+                          transactionAmountInput.removeAttr('readonly');
+                      {/if}
                       break;
 
                 case 'refund':
                       modalTitle.text('{l s="Refund transaction" mod="emerchantpay"}');
                       updateTransModalControlState([captureTransactionInfoHolder, cancelTransactionWarningHolder], false);
+                      {if !$emerchantpay['transactions']['options']['allow_partial_refund']}
+                          updateTransModalControlState([refundTransactionInfoHolder], true);
+                      {else}
+                          updateTransModalControlState([refundTransactionInfoHolder], false);
+                      {/if}
                       updateTransModalControlState([modalAmountInputContainer], true);
-                      transactionAmountInput.removeAttr('readonly');
+                      {if !$emerchantpay['transactions']['options']['allow_partial_refund']}
+                          transactionAmountInput.attr('readonly', 'readonly');
+                      {else}
+                          transactionAmountInput.removeAttr('readonly');
+                      {/if}
                       break;
 
                 case 'void':
                       modalTitle.text('{l s="Cancel transaction" mod="emerchantpay"}');
-                      updateTransModalControlState([captureTransactionInfoHolder, modalAmountInputContainer], false);
+                      updateTransModalControlState([captureTransactionInfoHolder, refundTransactionInfoHolder, modalAmountInputContainer], false);
                       updateTransModalControlState([cancelTransactionWarningHolder], true);
                       break;
                 default:
