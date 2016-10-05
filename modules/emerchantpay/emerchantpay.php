@@ -561,7 +561,7 @@ class eMerchantPay extends PaymentModule
             case Configuration::get('PS_OS_PREPARATION'):
                 $status = 'pending';
                 break;
-            case Configuration::get('PS_OS_PAYMENT'):
+            case Configuration::get('PS_OS_WS_PAYMENT'):
                 $status = 'success';
                 break;
             default:
@@ -906,7 +906,7 @@ class eMerchantPay extends PaymentModule
             $transaction_response->ref_order = $transaction->ref_order;
             $transaction_response->importResponse($response->getResponseObject());
             $transaction_response->updateOrderHistory(
-                Configuration::get('PS_OS_PAYMENT'), true
+                Configuration::get('PS_OS_WS_PAYMENT'), true
             );
             $transaction_response->add();
         } catch (\Exception $e) {
@@ -1053,7 +1053,7 @@ class eMerchantPay extends PaymentModule
     {
         switch ($status) {
             case \Genesis\API\Constants\Transaction\States::APPROVED:
-                return Configuration::get('PS_OS_PAYMENT');
+                return Configuration::get('PS_OS_WS_PAYMENT');
                 break;
             case \Genesis\API\Constants\Transaction\States::REFUNDED:
                 return Configuration::get('PS_OS_REFUND');
@@ -1080,7 +1080,7 @@ class eMerchantPay extends PaymentModule
     {
         switch ($transaction_type) {
             case \Genesis\API\Constants\Transaction\Types::CAPTURE:
-                return Configuration::get('PS_OS_PAYMENT');
+                return Configuration::get('PS_OS_WS_PAYMENT');
                 break;
             case \Genesis\API\Constants\Transaction\Types::REFUND:
                 return Configuration::get('PS_OS_REFUND');
