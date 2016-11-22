@@ -103,7 +103,11 @@ class eMerchantPayCheckoutModuleFrontController extends ModuleFrontController
                 true
             );
 
-			$this->setTemplate('checkout.tpl');
+			if (version_compare(_PS_VERSION_, '1.7', '<')) {
+                $this->setTemplate('checkout.tpl');
+			} else {
+                $this->setTemplate('module:emerchantpay/views/templates/front/checkoutpage.tpl');
+			}
 		}
 	}
 }
