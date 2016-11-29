@@ -644,10 +644,10 @@ class eMerchantPay extends PaymentModule
         if (Tools::getIsset('emerchantpay-expiry')) {
             $data->expiration = Tools::getValue('emerchantpay-expiry');
 
-            list($month, $year) = explode(' / ', $data->expiration);
+            list($month, $year) = explode('/', $data->expiration);
 
-            $data->expiration_month = $month;
-            $data->expiration_year  = substr(date('Y'), 0, 2) . substr($year, -2);
+            $data->expiration_month = trim($month);
+            $data->expiration_year  = substr(date('Y'), 0, 2) . substr(trim($year), -2);
         }
 
         // Billing
