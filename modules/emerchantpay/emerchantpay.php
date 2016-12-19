@@ -525,10 +525,20 @@ class eMerchantPay extends PaymentModule
             return;
         }
 
-        $legacy_uri = $this->getPathUri() . 'assets/js/card/card.min.js';
+        $cartJSLegacyUri = $this->getPathUri() . 'assets/js/card/card.min.js';
 
-        if ($uri = $this->context->controller->getAssetUriFromLegacyDeprecatedMethod($legacy_uri)) {
-            $this->context->controller->registerJavascript(sha1($uri), $uri, ['position' => 'head']);
+        if (method_exists($this->context->controller, 'getAssetUriFromLegacyDeprecatedMethod')) {
+            if ($cardJSUri = $this->context->controller->getAssetUriFromLegacyDeprecatedMethod($cartJSLegacyUri)) {
+                $this->context->controller->registerJavascript(
+                    sha1($cardJSUri),
+                    $cardJSUri,
+                    array(
+                        'position' => 'head'
+                    )
+                );
+            }
+        } else {
+            $this->context->controller->addJS($cartJSLegacyUri);
         }
     }
 
