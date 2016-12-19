@@ -525,9 +525,21 @@ class eMerchantPay extends PaymentModule
             return;
         }
 
-        $this->context->controller->addJS(
-            $this->getPathUri() . 'assets/js/card/card.min.js'
-        );
+        $cartJSLegacyUri = $this->getPathUri() . 'assets/js/card/card.min.js';
+
+        if (method_exists($this->context->controller, 'getAssetUriFromLegacyDeprecatedMethod')) {
+            if ($cardJSUri = $this->context->controller->getAssetUriFromLegacyDeprecatedMethod($cartJSLegacyUri)) {
+                $this->context->controller->registerJavascript(
+                    sha1($cardJSUri),
+                    $cardJSUri,
+                    array(
+                        'position' => 'head'
+                    )
+                );
+            }
+        } else {
+            $this->context->controller->addJS($cartJSLegacyUri);
+        }
     }
 
     /**
