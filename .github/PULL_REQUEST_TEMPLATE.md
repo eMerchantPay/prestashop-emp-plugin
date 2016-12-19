@@ -2,7 +2,7 @@
 * Description of changes 2
 * Description of changes 3, etc
 
-Fixes eMerchantPay/\<project_name_here\>#number
+Fixes eMerchantPay/prestashop-emerchantpay-plugin#number
 
 -----------------
 
