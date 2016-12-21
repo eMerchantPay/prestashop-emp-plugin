@@ -60,7 +60,7 @@ class eMerchantPay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'eMerchantPay Payment Gateway';
         $this->controllers            = array('checkout', 'notification', 'redirect', 'validation');
-        $this->version                = '1.3.1';
+        $this->version                = '1.3.2';
         $this->author                 = 'eMerchantPay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => _PS_VERSION_); 
@@ -917,6 +917,10 @@ class eMerchantPay extends PaymentModule
             $transaction_response->id_parent = $transaction->id_unique;
             $transaction_response->ref_order = $transaction->ref_order;
             $transaction_response->importResponse($response->getResponseObject());
+            if ($transaction->terminal) {
+                $transaction_response->terminal = $transaction->terminal;
+            }
+
             $transaction_response->updateOrderHistory(
                 Configuration::get('PS_OS_WS_PAYMENT'), true
             );
