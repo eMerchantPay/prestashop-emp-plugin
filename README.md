@@ -1,4 +1,4 @@
-Genesis client for Prestashop
+eMerchantPay Gateway Module for Prestashop
 =============================
 
 This is a Payment Module for Prestashop that gives you the ability to process payments through eMerchantPay's Payment Gateway - Genesis.
@@ -6,7 +6,7 @@ This is a Payment Module for Prestashop that gives you the ability to process pa
 Requirements
 ------------
 
-* Prestashop 1.5.x - 1.6.x - 1.7.x
+* Prestashop 1.5.x - 1.6.x - 1.7.x (Tested up to __1.7.0.2__)
 * [GenesisPHP v1.4](https://github.com/GenesisGateway/genesis_php) - (Integrated in Module)
 * PCI-certified server in order to use ```eMerchantPay Direct```
 
@@ -48,6 +48,19 @@ __Recommended if you do not have FTP account to upload the plugin code directly 
 
 __Note__: If you have payment restrictions in place, you'll have to add the newly installed payment method to the ```Currencies``` / ```Countries``` / ```Groups``` you wish to appear on.
 
+Enable PrestaShop SSL
+------------
+This steps should be followed if you wish to use the ```eMerchantPay Direct``` Method.
+
+* Ensure you have installed a valid __SSL Certificate__ on your __PCI-DSS Certified__ Web Server and you have configured your __Virtual Host__ properly.
+* Login to your PrestaShop Admin Panel
+* Navigate to ```Shop Parameters``` -> ```General```
+* Click the link ```Please click here to check if your shop supports HTTPS``` near to the ```Enable SSL``` option
+* Set ```Enable SSL``` to __Yes__
+* Click ```Save```
+* Set ```Enable SSL on all pages``` to __Yes__
+* Click again the ```Save``` button
+* It is recommended to add a __Rewrite Rule__ from ```http``` to ```https``` or to add a __Permanent Redirect__ to ```https``` in your virtual host
 
 _Note_: If you have trouble with your credentials or terminal configuration, get in touch with our [support] team
 

@@ -74,7 +74,11 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
             true
 		);
 
-		$this->setTemplate('redirect.tpl');
+		if (version_compare(_PS_VERSION_, '1.7', '<')) {
+			$this->setTemplate('redirect.tpl');
+		} else {
+			$this->setTemplate('module:emerchantpay/views/templates/front/redirectpage.tpl');
+		}
 	}
 
 	/**

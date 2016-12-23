@@ -52,6 +52,7 @@ class eMerchantPay extends PaymentModule
     const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE = 'EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE';
     const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND  = 'EMERCHANTPAY_ALLOW_PARTIAL_REFUND';
     const SETTING_EMERCHANTPAY_ALLOW_VOID            = 'EMERCHANTPAY_ALLOW_VOID';
+    const SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT   = 'EMERCHANTPAY_ADD_JQUERY_CHECKOUT';
 
     public function __construct()
     {
@@ -60,7 +61,7 @@ class eMerchantPay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'eMerchantPay Payment Gateway';
         $this->controllers            = array('checkout', 'notification', 'redirect', 'validation');
-        $this->version                = '1.3.1';
+        $this->version                = '1.3.2';
         $this->author                 = 'eMerchantPay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => _PS_VERSION_); 
@@ -525,9 +526,18 @@ class eMerchantPay extends PaymentModule
             return;
         }
 
-        $this->context->controller->addJS(
-            $this->getPathUri() . 'assets/js/card/card.min.js'
-        );
+        $cardJSUri = $this->getPathUri() . 'assets/js/card/card.min.js';
+
+        if ($this->isPrestaVersion17()) {
+            if ($this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT)) {
+                $this->registerCore17Javascript(
+                    $this->getJQueryUri()
+                );
+            }
+            $this->registerCore17Javascript($cardJSUri);
+        } else {
+            $this->context->controller->addJS($cardJSUri);
+        }
     }
 
     /**
@@ -561,7 +571,7 @@ class eMerchantPay extends PaymentModule
             case Configuration::get('PS_OS_PREPARATION'):
                 $status = 'pending';
                 break;
-            case Configuration::get('PS_OS_PAYMENT'):
+            case Configuration::get('PS_OS_WS_PAYMENT'):
                 $status = 'success';
                 break;
             default:
@@ -644,10 +654,10 @@ class eMerchantPay extends PaymentModule
         if (Tools::getIsset('emerchantpay-expiry')) {
             $data->expiration = Tools::getValue('emerchantpay-expiry');
 
-            list($month, $year) = explode(' / ', $data->expiration);
+            list($month, $year) = explode('/', $data->expiration);
 
-            $data->expiration_month = $month;
-            $data->expiration_year  = substr(date('Y'), 0, 2) . substr($year, -2);
+            $data->expiration_month = trim($month);
+            $data->expiration_year  = substr(date('Y'), 0, 2) . substr(trim($year), -2);
         }
 
         // Billing
@@ -905,8 +915,12 @@ class eMerchantPay extends PaymentModule
             $transaction_response->id_parent = $transaction->id_unique;
             $transaction_response->ref_order = $transaction->ref_order;
             $transaction_response->importResponse($response->getResponseObject());
+            if ($transaction->terminal) {
+                $transaction_response->terminal = $transaction->terminal;
+            }
+
             $transaction_response->updateOrderHistory(
-                Configuration::get('PS_OS_PAYMENT'), true
+                Configuration::get('PS_OS_WS_PAYMENT'), true
             );
             $transaction_response->add();
         } catch (\Exception $e) {
@@ -1053,7 +1067,7 @@ class eMerchantPay extends PaymentModule
     {
         switch ($status) {
             case \Genesis\API\Constants\Transaction\States::APPROVED:
-                return Configuration::get('PS_OS_PAYMENT');
+                return Configuration::get('PS_OS_WS_PAYMENT');
                 break;
             case \Genesis\API\Constants\Transaction\States::REFUNDED:
                 return Configuration::get('PS_OS_REFUND');
@@ -1080,7 +1094,7 @@ class eMerchantPay extends PaymentModule
     {
         switch ($transaction_type) {
             case \Genesis\API\Constants\Transaction\Types::CAPTURE:
-                return Configuration::get('PS_OS_PAYMENT');
+                return Configuration::get('PS_OS_WS_PAYMENT');
                 break;
             case \Genesis\API\Constants\Transaction\Types::REFUND:
                 return Configuration::get('PS_OS_REFUND');
@@ -1306,7 +1320,8 @@ class eMerchantPay extends PaymentModule
             self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE,
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND,
-            self::SETTING_EMERCHANTPAY_ALLOW_VOID
+            self::SETTING_EMERCHANTPAY_ALLOW_VOID,
+            self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT
         );
     }
 
@@ -1669,6 +1684,31 @@ class eMerchantPay extends PaymentModule
             ),
         );
 
+        /**
+         * Option for registering jQuery to Checkout Page
+         *
+         * Note: 1.7.x does not register jQuery on the Checkout Page, so we are adding this option
+         * in order to be disabled if jQuery has been added from other module
+         */
+        if ($this->isPrestaVersion17()) {
+            $form_structure['form']['input'][] = array(
+                'type' => 'switch',
+                'label' => 'Include jQuery Plugin to Checkout Page',
+                'desc' => $this->l(
+                    'Use this option to allow / deny jQuery Plugin Registration. This option should be enabled unless jQuery has already been registered.'
+                ),
+                'name' => self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT,
+                'values' => array(
+                    array(
+                        'value' => '1'
+                    ),
+                    array(
+                        'value' => '0'
+                    )
+                )
+            );
+        }
+
         $helper = new HelperForm();
         // Title and toolbar
         $helper->title          = $this->displayName;
@@ -1846,7 +1886,8 @@ class eMerchantPay extends PaymentModule
             ),
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE => '1',
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND  => '1',
-            self::SETTING_EMERCHANTPAY_ALLOW_VOID  => '1'
+            self::SETTING_EMERCHANTPAY_ALLOW_VOID            => '1',
+            self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT   => '1'
         );
 
         try {
@@ -1871,5 +1912,51 @@ class eMerchantPay extends PaymentModule
     protected function getBoolConfigurationValue($key)
     {
         return Configuration::get($key) == '1';
+    }
+
+    /**
+     * Registers Javascript File on the current page
+     * Note: used for PrestaShop 1.7.x
+     *
+     * @param string|null $relativePath
+     * @param array $params
+     */
+    protected function registerCore17Javascript($relativePath, $params = array('position' => 'head'))
+    {
+        if (!$relativePath) {
+            return;
+        }
+
+        $this->context->controller->registerJavascript(
+            sha1($relativePath),
+            $relativePath,
+            $params
+        );
+    }
+
+    /**
+     * Retrieves if the current PrestaSHop Version is 1.7.x
+     *
+     * @return bool
+     */
+    protected function isPrestaVersion17()
+    {
+        return
+            version_compare(_PS_VERSION_, '1.7', '>=') &&
+            version_compare(_PS_VERSION_, '1.8', '<');
+    }
+
+    /**
+     * Retrieves the current jQuery path
+     *
+     * @return null|string
+     */
+    protected function getJQueryUri()
+    {
+        if (defined('_PS_JQUERY_VERSION_')) {
+            return _PS_JS_DIR_. "jquery/jquery-" . _PS_JQUERY_VERSION_ . ".min.js";
+        }
+
+        return null;
     }
 }
