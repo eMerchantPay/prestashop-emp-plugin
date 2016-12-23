@@ -52,6 +52,7 @@ class eMerchantPay extends PaymentModule
     const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE = 'EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE';
     const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND  = 'EMERCHANTPAY_ALLOW_PARTIAL_REFUND';
     const SETTING_EMERCHANTPAY_ALLOW_VOID            = 'EMERCHANTPAY_ALLOW_VOID';
+    const SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT   = 'EMERCHANTPAY_ADD_JQUERY_CHECKOUT';
 
     public function __construct()
     {
@@ -1322,7 +1323,8 @@ class eMerchantPay extends PaymentModule
             self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE,
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND,
-            self::SETTING_EMERCHANTPAY_ALLOW_VOID
+            self::SETTING_EMERCHANTPAY_ALLOW_VOID,
+            self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT
         );
     }
 
@@ -1685,6 +1687,31 @@ class eMerchantPay extends PaymentModule
             ),
         );
 
+        /**
+         * Option for registering jQuery to Checkout Page
+         *
+         * Note: 1.7.x does not registers jQUery on the Checkout Page, so we are adding this option
+         * in order to be disabled if jQuery has been added from other module
+         */
+        if (version_compare(_PS_VERSION_, '1.7', '>=')) {
+            $form_structure['form']['input'][] = array(
+                'type' => 'switch',
+                'label' => 'Include jQuery Plugin to Checkout Page',
+                'desc' => $this->l(
+                    'Use this option to allow / deny jQuery Plugin Registration. This option should be enabled unless jQuery has already been registered.'
+                ),
+                'name' => self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT,
+                'values' => array(
+                    array(
+                        'value' => '1'
+                    ),
+                    array(
+                        'value' => '0'
+                    )
+                )
+            );
+        }
+
         $helper = new HelperForm();
         // Title and toolbar
         $helper->title          = $this->displayName;
@@ -1862,7 +1889,8 @@ class eMerchantPay extends PaymentModule
             ),
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE => '1',
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND  => '1',
-            self::SETTING_EMERCHANTPAY_ALLOW_VOID  => '1'
+            self::SETTING_EMERCHANTPAY_ALLOW_VOID            => '1',
+            self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT   => '1'
         );
 
         try {
