@@ -526,20 +526,17 @@ class eMerchantPay extends PaymentModule
             return;
         }
 
-        $cartJSLegacyUri = $this->getPathUri() . 'assets/js/card/card.min.js';
+        $cardJSUri = $this->getPathUri() . 'assets/js/card/card.min.js';
 
-        if (method_exists($this->context->controller, 'getAssetUriFromLegacyDeprecatedMethod')) {
-            if ($cardJSUri = $this->context->controller->getAssetUriFromLegacyDeprecatedMethod($cartJSLegacyUri)) {
-                $this->context->controller->registerJavascript(
-                    sha1($cardJSUri),
-                    $cardJSUri,
-                    array(
-                        'position' => 'head'
-                    )
+        if ($this->isPrestaVersion17()) {
+            if ($this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT)) {
+                $this->registerCore17Javascript(
+                    $this->getJQueryUri()
                 );
             }
+            $this->registerCore17Javascript($cardJSUri);
         } else {
-            $this->context->controller->addJS($cartJSLegacyUri);
+            $this->context->controller->addJS($cardJSUri);
         }
     }
 
@@ -1690,10 +1687,10 @@ class eMerchantPay extends PaymentModule
         /**
          * Option for registering jQuery to Checkout Page
          *
-         * Note: 1.7.x does not registers jQUery on the Checkout Page, so we are adding this option
+         * Note: 1.7.x does not register jQuery on the Checkout Page, so we are adding this option
          * in order to be disabled if jQuery has been added from other module
          */
-        if (version_compare(_PS_VERSION_, '1.7', '>=')) {
+        if ($this->isPrestaVersion17()) {
             $form_structure['form']['input'][] = array(
                 'type' => 'switch',
                 'label' => 'Include jQuery Plugin to Checkout Page',
@@ -1915,5 +1912,51 @@ class eMerchantPay extends PaymentModule
     protected function getBoolConfigurationValue($key)
     {
         return Configuration::get($key) == '1';
+    }
+
+    /**
+     * Registers Javascript File on the current page
+     * Note: used for PrestaShop 1.7.x
+     *
+     * @param string|null $relativePath
+     * @param array $params
+     */
+    protected function registerCore17Javascript($relativePath, $params = array('position' => 'head'))
+    {
+        if (!$relativePath) {
+            return;
+        }
+
+        $this->context->controller->registerJavascript(
+            sha1($relativePath),
+            $relativePath,
+            $params
+        );
+    }
+
+    /**
+     * Retrieves if the current PrestaSHop Version is 1.7.x
+     *
+     * @return bool
+     */
+    protected function isPrestaVersion17()
+    {
+        return
+            version_compare(_PS_VERSION_, '1.7', '>=') &&
+            version_compare(_PS_VERSION_, '1.8', '<');
+    }
+
+    /**
+     * Retrieves the current jQuery path
+     *
+     * @return null|string
+     */
+    protected function getJQueryUri()
+    {
+        if (defined('_PS_JQUERY_VERSION_')) {
+            return _PS_JS_DIR_. "jquery/jquery-" . _PS_JQUERY_VERSION_ . ".min.js";
+        }
+
+        return null;
     }
 }
