@@ -20,10 +20,12 @@
     <script type="text/javascript">
         {if $emerchantpay['payment']['option']['selected_id'] != ''}
             $(document).ready(function() {
-                var paymentOptionAdditionalInfoContainer = $('#{$emerchantpay['payment']['option']['selected_id']}-additional-information');
-                if (!paymentOptionAdditionalInfoContainer.is(':visible')) {
-                    paymentOptionAdditionalInfoContainer.slideDown('slow');
-                }
+                setTimeout(function() {
+                    var paymentOptionAdditionalInfoContainer = $('#{$emerchantpay['payment']['option']['selected_id']}-additional-information');
+                    if (!paymentOptionAdditionalInfoContainer.is(':visible')) {
+                        paymentOptionAdditionalInfoContainer.slideDown('slow');
+                    }
+                }, 3000);
             });
         {/if}
         function doBeforeSubmitEMerchantPayCheckoutPaymentForm(sender) {

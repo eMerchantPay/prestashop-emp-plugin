@@ -52,6 +52,7 @@ class eMerchantPay extends PaymentModule
     const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE = 'EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE';
     const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND  = 'EMERCHANTPAY_ALLOW_PARTIAL_REFUND';
     const SETTING_EMERCHANTPAY_ALLOW_VOID            = 'EMERCHANTPAY_ALLOW_VOID';
+    const SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT   = 'EMERCHANTPAY_ADD_JQUERY_CHECKOUT';
 
     public function __construct()
     {
@@ -525,20 +526,17 @@ class eMerchantPay extends PaymentModule
             return;
         }
 
-        $cartJSLegacyUri = $this->getPathUri() . 'assets/js/card/card.min.js';
+        $cardJSUri = $this->getPathUri() . 'assets/js/card/card.min.js';
 
-        if (method_exists($this->context->controller, 'getAssetUriFromLegacyDeprecatedMethod')) {
-            if ($cardJSUri = $this->context->controller->getAssetUriFromLegacyDeprecatedMethod($cartJSLegacyUri)) {
-                $this->context->controller->registerJavascript(
-                    sha1($cardJSUri),
-                    $cardJSUri,
-                    array(
-                        'position' => 'head'
-                    )
+        if ($this->isPrestaVersion17()) {
+            if ($this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT)) {
+                $this->registerCore17Javascript(
+                    $this->getJQueryUri()
                 );
             }
+            $this->registerCore17Javascript($cardJSUri);
         } else {
-            $this->context->controller->addJS($cartJSLegacyUri);
+            $this->context->controller->addJS($cardJSUri);
         }
     }
 
@@ -1322,7 +1320,8 @@ class eMerchantPay extends PaymentModule
             self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE,
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND,
-            self::SETTING_EMERCHANTPAY_ALLOW_VOID
+            self::SETTING_EMERCHANTPAY_ALLOW_VOID,
+            self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT
         );
     }
 
@@ -1685,6 +1684,31 @@ class eMerchantPay extends PaymentModule
             ),
         );
 
+        /**
+         * Option for registering jQuery to Checkout Page
+         *
+         * Note: 1.7.x does not register jQuery on the Checkout Page, so we are adding this option
+         * in order to be disabled if jQuery has been added from other module
+         */
+        if ($this->isPrestaVersion17()) {
+            $form_structure['form']['input'][] = array(
+                'type' => 'switch',
+                'label' => 'Include jQuery Plugin to Checkout Page',
+                'desc' => $this->l(
+                    'Use this option to allow / deny jQuery Plugin Registration. This option should be enabled unless jQuery has already been registered.'
+                ),
+                'name' => self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT,
+                'values' => array(
+                    array(
+                        'value' => '1'
+                    ),
+                    array(
+                        'value' => '0'
+                    )
+                )
+            );
+        }
+
         $helper = new HelperForm();
         // Title and toolbar
         $helper->title          = $this->displayName;
@@ -1862,7 +1886,8 @@ class eMerchantPay extends PaymentModule
             ),
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE => '1',
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND  => '1',
-            self::SETTING_EMERCHANTPAY_ALLOW_VOID  => '1'
+            self::SETTING_EMERCHANTPAY_ALLOW_VOID            => '1',
+            self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT   => '1'
         );
 
         try {
@@ -1887,5 +1912,51 @@ class eMerchantPay extends PaymentModule
     protected function getBoolConfigurationValue($key)
     {
         return Configuration::get($key) == '1';
+    }
+
+    /**
+     * Registers Javascript File on the current page
+     * Note: used for PrestaShop 1.7.x
+     *
+     * @param string|null $relativePath
+     * @param array $params
+     */
+    protected function registerCore17Javascript($relativePath, $params = array('position' => 'head'))
+    {
+        if (!$relativePath) {
+            return;
+        }
+
+        $this->context->controller->registerJavascript(
+            sha1($relativePath),
+            $relativePath,
+            $params
+        );
+    }
+
+    /**
+     * Retrieves if the current PrestaSHop Version is 1.7.x
+     *
+     * @return bool
+     */
+    protected function isPrestaVersion17()
+    {
+        return
+            version_compare(_PS_VERSION_, '1.7', '>=') &&
+            version_compare(_PS_VERSION_, '1.8', '<');
+    }
+
+    /**
+     * Retrieves the current jQuery path
+     *
+     * @return null|string
+     */
+    protected function getJQueryUri()
+    {
+        if (defined('_PS_JQUERY_VERSION_')) {
+            return _PS_JS_DIR_. "jquery/jquery-" . _PS_JQUERY_VERSION_ . ".min.js";
+        }
+
+        return null;
     }
 }
