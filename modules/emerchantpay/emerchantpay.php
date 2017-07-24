@@ -21,6 +21,9 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+use \Genesis\API\Constants\Transaction\Types as GenesisTransactionTypes;
+use \Genesis\API\Constants\Payment\Methods as GenesisPaymentMethods;
+
 /**
  * The main eMerchantPay class that handles
  * all the logic related to the payment module
@@ -593,6 +596,17 @@ class eMerchantPay extends PaymentModule
     }
 
     /**
+     * Generate transaction id
+     *
+     * @param $length
+     * @return string
+     */
+    private function generateTransactionId ($length = 30)
+    {
+        return substr(md5(mt_rand() . microtime(true) . uniqid()), 0, $length);
+    }
+
+    /**
      * Collect and process the data required for the initial payment.
      *
      * @return stdClass Processed data
@@ -614,7 +628,7 @@ class eMerchantPay extends PaymentModule
         $data = new stdClass();
 
         // Parameters
-        $data->id               = md5(mt_rand() . microtime(true) . uniqid());
+        $data->id               = $this->generateTransactionId();
         $data->transaction_type = Configuration::get(self::SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE);
         $data->usage            = $this->l('Prestashop Transaction');
 
@@ -1283,9 +1297,45 @@ class eMerchantPay extends PaymentModule
                 \Genesis\API\Constants\Transaction\Types::PPRO,
             \Genesis\API\Constants\Payment\Methods::TRUST_PAY   =>
                 \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::BCMC        =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::MYBANK      =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::IDEAL       =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+        );
+
+        $orderItemsList = $this->getItemList();
+        $userIdHash = $this->getCurrentUserIdHash();
+
+        $transactionsCustomParams = array(
+            \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE => array(
+                'card_type'   =>
+                    \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\CardTypes::VIRTUAL,
+                'redeem_type' =>
+                    \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\RedeemTypes::INSTANT
+            ),
+            \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_YEEPAY => array(
+                'card_type'        =>
+                    \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\CardTypes::VIRTUAL,
+                'redeem_type'      =>
+                    \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\RedeemTypes::INSTANT,
+                'product_name'     => $orderItemsList,
+                'product_category' => $orderItemsList
+            ),
+            \Genesis\API\Constants\Transaction\Types::CITADEL_PAYIN => array(
+                'merchant_customer_id' => $userIdHash
+            ),
+            \Genesis\API\Constants\Transaction\Types::IDEBIT_PAYIN => array(
+                'customer_account_id' => $userIdHash
+            ),
+            \Genesis\API\Constants\Transaction\Types::INSTA_DEBIT_PAYIN => array(
+                'customer_account_id' => $userIdHash
+            )
         );
 
         foreach ($selected_types as $selected_type) {
+
             if (array_key_exists($selected_type, $alias_map)) {
                 $transaction_type = $alias_map[$selected_type];
 
@@ -1294,12 +1344,64 @@ class eMerchantPay extends PaymentModule
                 $processed_list[$transaction_type]['parameters'][] = array(
                     'payment_method' => $selected_type
                 );
-            } else {
-                $processed_list[] = $selected_type;
+                continue;
             }
+
+            if (array_key_exists($selected_type, $transactionsCustomParams)) {
+
+                $processed_list[$selected_type]['name'] = $selected_type;
+
+                $processed_list[$selected_type]['parameters'] = $transactionsCustomParams[$selected_type];
+
+                continue;
+            }
+
+            $processed_list[] = $selected_type;
+
         }
 
         return $processed_list;
+    }
+
+    /**
+     * Get current user id. Returns user id or empty if no user is logged in.
+     *
+     * @return mixed
+     */
+    private function getCurrentUserId()
+    {
+        return $this->context->customer->id;
+    }
+
+    /**
+     *  Get current user hash.
+     *  Generate hash from transaction id if no user logged in
+     *
+     * @param int $length
+     * @return string
+     */
+    private function getCurrentUserIdHash ($length = 20)
+    {
+        $userId = self::getCurrentUserId();
+        $userHash = $userId > 0 ? sha1($userId) : $this->generateTransactionId();
+        return substr($userHash, 0, $length);
+    }
+
+    /**
+     * Get list of items in the order
+     *
+     * @return string Formatted List of Items
+     */
+    public function getItemList()
+    {
+
+        $description = '';
+
+        foreach ($this->context->cart->getProducts() as $product) {
+            $description .= sprintf("%s (%s) x %d\r\n", $product['name'], $product['category'], $product['cart_quantity']);
+        }
+
+        return $description;
     }
 
     /**
@@ -1403,6 +1505,202 @@ class eMerchantPay extends PaymentModule
     }
 
     /**
+     * Get form credentials fields (User, Pass, Token ...)
+     *
+     * @return array
+     */
+    private function getFormCredentialsFields () {
+        return array(
+            array(
+                'type' => 'text',
+                'label' => $this->l('Username'),
+                'desc' => $this->l(
+                    'Enter your Username, required for accessing the Genesis Gateway'
+                ),
+                'name' => self::SETTING_EMERCHANTPAY_USERNAME,
+                'size' => 20,
+                'required' => true
+            ),
+            array(
+                'type' => 'text',
+                'label' => $this->l('Password'),
+                'desc' => $this->l(
+                    'Enter your Password, required for accessing the Genesis Gateway'
+                ),
+                'name' => self::SETTING_EMERCHANTPAY_PASSWORD,
+                'size' => 20,
+                'required' => true
+            ),
+            array(
+                'type' => 'text',
+                'label' => $this->l('Token'),
+                'desc' => $this->l(
+                    'Enter your Token, required for accessing the Genesis Gateway.'
+                ),
+                'name' => self::SETTING_EMERCHANTPAY_TOKEN,
+                'size' => 20,
+                'required' => true
+            ),
+            array(
+                'type' => 'select',
+                'label' => $this->l('Environment'),
+                'desc' => $this->l(
+                    'Select the environment you wish to use for processing your transactions.' . PHP_EOL .
+                    'Note: Its recommended to use the Sandbox environment every-time you alter your settings, in order to ensure everything works as intended.'
+                ),
+                'name' => self::SETTING_EMERCHANTPAY_ENVIRONMENT,
+                'options' => array(
+                    'query' => array(
+                        array(
+                            'id' => 'sandbox',
+                            'name' => $this->l('Sandbox')
+                        ),
+                        array(
+                            'id' => 'production',
+                            'name' => $this->l('Production')
+                        )
+                    ),
+                    'id' => 'id',
+                    'name' => 'name',
+                )
+            ),
+        );
+    }
+
+    /**
+     * Generate form select options from array.
+     * Array key will be used as id attribute, value as name
+     *
+     * @param $options
+     * @param string $id
+     * @param string $name
+     * @return mixed
+     */
+    private function generateOptionsFromArray ($options, $id = 'id', $name = 'name') {
+        foreach ($options as $key => &$value) {
+            $value = array(
+                $id => $key,
+                $name => $value
+            );
+        }
+
+        return $options;
+    }
+
+    /**
+     * Get form transactions fields
+     *
+     * @return array
+     */
+    private function getFormTransactionFields () {
+        return array(
+            array(
+                'type' => 'switch',
+                'label' => 'Direct (Hosted) Payment Method',
+                'desc' => $this->l(
+                    'Enable/Disable the Direct API - allow customers to enter their CreditCard information on your website.' . PHP_EOL .
+                    'Note: You need PCI-DSS certificate in order to enable this feature.'
+                ),
+                'name' => self::SETTING_EMERCHANTPAY_DIRECT,
+                'values' => array(
+                    array(
+                        'value' => '1',
+                    ),
+                    array(
+                        'value' => '0'
+                    )
+                )
+            ),
+            array(
+                'type' => 'select',
+                'label' => $this->l('Direct Transaction Type'),
+                'desc' => $this->l(
+                    'Select the transaction type you want to use for Direct processing.'
+                ),
+                'name' => self::SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE,
+                'options' => array(
+                    'query' => $this->generateOptionsFromArray(
+                        array(
+                            GenesisTransactionTypes::AUTHORIZE    => $this->l('Authorize'),
+                            GenesisTransactionTypes::AUTHORIZE_3D => $this->l('Authorize 3D'),
+                            GenesisTransactionTypes::SALE         => $this->l('Sale'),
+                            GenesisTransactionTypes::SALE_3D      => $this->l('Sale 3D')
+                        )
+                    ),
+                    'id' => 'id',
+                    'name' => 'name',
+                )
+            ),
+            array(
+                'type' => 'switch',
+                'label' => 'Checkout (Remote) Payment Method',
+                'desc' => $this->l(
+                    'Enable/Disable the Checkout payment method - receive credit-card payments, without the need of PCI-DSS certificate or HTTPS.' . PHP_EOL .
+                    'Note: Upon checkout, the customer will be redirected to a secure payment form, located on our servers and we will notify you, once the payment reached a final status'
+                ),
+                'name' => self::SETTING_EMERCHANTPAY_CHECKOUT,
+                'values' => array(
+                    array(
+                        'value' => '1'
+                    ),
+                    array(
+                        'value' => '0'
+                    )
+                )
+            ),
+            array(
+                'type' => 'select',
+                'label' => $this->l('Checkout Transaction Types'),
+                'desc' => $this->l(
+                    'Select the transaction types you want to use during Checkout session.'
+                ),
+                'id' => self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
+                'name' => self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES . '[]',
+                'multiple' => true,
+                'options' => array(
+                    'query' => $this->generateOptionsFromArray(
+                        array(
+                            GenesisTransactionTypes::ABNIDEAL            => $this->l('ABN iDEAL'),
+                            GenesisTransactionTypes::AUTHORIZE           => $this->l('Authorize'),
+                            GenesisTransactionTypes::AUTHORIZE_3D        => $this->l('Authorize 3D'),
+                            GenesisTransactionTypes::CASHU               => $this->l('CashU'),
+                            GenesisTransactionTypes::CITADEL_PAYIN       => $this->l('Citadel'),
+                            GenesisPaymentMethods::EPS                   => $this->l('eps'),
+                            GenesisTransactionTypes::EZEEWALLET          => $this->l('eZeeWallet'),
+                            GenesisPaymentMethods::GIRO_PAY              => $this->l('GiroPay'),
+                            GenesisTransactionTypes::IDEBIT_PAYIN        => $this->l('iDebit'),
+                            GenesisTransactionTypes::INPAY               => $this->l('INPay'),
+                            GenesisTransactionTypes::INSTA_DEBIT_PAYIN   => $this->l('InstaDebit'),
+                            GenesisPaymentMethods::BCMC                  => $this->l('Mr.Cash'),
+                            GenesisPaymentMethods::MYBANK                => $this->l('MyBank'),
+                            GenesisTransactionTypes::NETELLER            => $this->l('Neteller'),
+                            GenesisTransactionTypes::P24                 => $this->l('P24'),
+                            GenesisTransactionTypes::PAYBYVOUCHER_SALE   => $this->l('PayByVoucher (Sale)'),
+                            GenesisTransactionTypes::PAYBYVOUCHER_YEEPAY => $this->l('PayByVoucher (oBeP)'),
+                            GenesisTransactionTypes::PAYPAL_EXPRESS      => $this->l('PayPal Express'),
+                            GenesisTransactionTypes::PAYSAFECARD         => $this->l('PaySafeCard'),
+                            GenesisTransactionTypes::POLI                => $this->l('POLi'),
+                            GenesisPaymentMethods::PRZELEWY24            => $this->l('Przelewy24'),
+                            GenesisPaymentMethods::QIWI                  => $this->l('Qiwi'),
+                            GenesisPaymentMethods::SAFETY_PAY            => $this->l('SafetyPay'),
+                            GenesisTransactionTypes::SALE                => $this->l('Sale'),
+                            GenesisTransactionTypes::SALE_3D             => $this->l('Sale 3D'),
+                            GenesisTransactionTypes::SDD_SALE            => $this->l('Sepa Direct Debit'),
+                            GenesisTransactionTypes::SOFORT              => $this->l('SOFORT'),
+                            GenesisPaymentMethods::TELEINGRESO           => $this->l('teleingreso'),
+                            GenesisTransactionTypes::TRUSTLY_SALE        => $this->l('Trustly'),
+                            GenesisPaymentMethods::TRUST_PAY             => $this->l('TrustPay'),
+                            GenesisTransactionTypes::WEBMONEY            => $this->l('WebMoney'),
+                        )
+                    ),
+                    'id' => 'id',
+                    'name' => 'name',
+                )
+            ),
+        );
+    }
+
+    /**
      * Generate the Module Settings HTML via HelperForm()
      *
      * @return mixed HTML Content
@@ -1416,219 +1714,6 @@ class eMerchantPay extends PaymentModule
                     'icon' => 'icon-cog'
                 ),
                 'input' => array(
-                    array(
-                        'type' => 'text',
-                        'label' => $this->l('Username'),
-                        'desc' => $this->l(
-                            'Enter your Username, required for accessing the Genesis Gateway'
-                        ),
-                        'name' => self::SETTING_EMERCHANTPAY_USERNAME,
-                        'size' => 20,
-                        'required' => true
-                    ),
-                    array(
-                        'type' => 'text',
-                        'label' => $this->l('Password'),
-                        'desc' => $this->l(
-                            'Enter your Password, required for accessing the Genesis Gateway'
-                        ),
-                        'name' => self::SETTING_EMERCHANTPAY_PASSWORD,
-                        'size' => 20,
-                        'required' => true
-                    ),
-                    array(
-                        'type' => 'text',
-                        'label' => $this->l('Token'),
-                        'desc' => $this->l(
-                            'Enter your Token, required for accessing the Genesis Gateway.'
-                        ),
-                        'name' => self::SETTING_EMERCHANTPAY_TOKEN,
-                        'size' => 20,
-                        'required' => true
-                    ),
-                    array(
-                        'type' => 'select',
-                        'label' => $this->l('Environment'),
-                        'desc' => $this->l(
-                            'Select the environment you wish to use for processing your transactions.' . PHP_EOL .
-                            'Note: Its recommended to use the Sandbox environment every-time you alter your settings, in order to ensure everything works as intended.'
-                        ),
-                        'name' => self::SETTING_EMERCHANTPAY_ENVIRONMENT,
-                        'options' => array(
-                            'query' => array(
-                                array(
-                                    'id' => 'sandbox',
-                                    'name' => $this->l('Sandbox')
-                                ),
-                                array(
-                                    'id' => 'production',
-                                    'name' => $this->l('Production')
-                                )
-                            ),
-                            'id' => 'id',
-                            'name' => 'name',
-                        )
-                    ),
-                    array(
-                        'type' => 'switch',
-                        'label' => 'Direct (Hosted) Payment Method',
-                        'desc' => $this->l(
-                            'Enable/Disable the Direct API - allow customers to enter their CreditCard information on your website.' . PHP_EOL .
-                            'Note: You need PCI-DSS certificate in order to enable this feature.'
-                        ),
-                        'name' => self::SETTING_EMERCHANTPAY_DIRECT,
-                        'values' => array(
-                            array(
-                                'value' => '1',
-                            ),
-                            array(
-                                'value' => '0'
-                            )
-                        )
-                    ),
-                    array(
-                        'type' => 'select',
-                        'label' => $this->l('Direct Transaction Type'),
-                        'desc' => $this->l(
-                            'Select the transaction type you want to use for Direct processing.'
-                        ),
-                        'name' => self::SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE,
-                        'options' => array(
-                            'query' => array(
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
-                                    'name'  => $this->l('Authorize')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
-                                    'name'  => $this->l('Authorize 3D')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::SALE,
-                                    'name'  => $this->l('Sale')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::SALE_3D,
-                                    'name'  => $this->l('Sale 3D')
-                                )
-                            ),
-                            'id' => 'id',
-                            'name' => 'name',
-                        )
-                    ),
-                    array(
-                        'type' => 'switch',
-                        'label' => 'Checkout (Remote) Payment Method',
-                        'desc' => $this->l(
-                            'Enable/Disable the Checkout payment method - receive credit-card payments, without the need of PCI-DSS certificate or HTTPS.' . PHP_EOL .
-                            'Note: Upon checkout, the customer will be redirected to a secure payment form, located on our servers and we will notify you, once the payment reached a final status'
-                        ),
-                        'name' => self::SETTING_EMERCHANTPAY_CHECKOUT,
-                        'values' => array(
-                            array(
-                                'value' => '1'
-                            ),
-                            array(
-                                'value' => '0'
-                            )
-                        )
-                    ),
-                    array(
-                        'type' => 'select',
-                        'label' => $this->l('Checkout Transaction Types'),
-                        'desc' => $this->l(
-                            'Select the transaction types you want to use during Checkout session.'
-                        ),
-                        'id' => self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
-                        'name' => self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES . '[]',
-                        'multiple' => true,
-                        'options' => array(
-                            'query' => array(
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::ABNIDEAL,
-                                    'name'  => $this->l('ABN iDEAL')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
-                                    'name'  => $this->l('Authorize')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
-                                    'name'  => $this->l('Authorize 3D')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::CASHU,
-                                    'name'  => $this->l('CashU')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Payment\Methods::EPS,
-                                    'name'  => $this->l('eps')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Payment\Methods::GIRO_PAY,
-                                    'name'  => $this->l('GiroPay')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::NETELLER,
-                                    'name'  => $this->l('Neteller')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Payment\Methods::QIWI,
-                                    'name'  => $this->l('Qiwi')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE,
-                                    'name'  => $this->l('PayByVoucher (Sale)')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_YEEPAY,
-                                    'name'  => $this->l('PayByVoucher (oBeP)')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::PAYSAFECARD,
-                                    'name'  => $this->l('PaySafeCard')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Payment\Methods::PRZELEWY24,
-                                    'name'  => $this->l('Przelewy24')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::POLI,
-                                    'name'  => $this->l('POLi')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Payment\Methods::SAFETY_PAY,
-                                    'name'  => $this->l('SafetyPay')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::SALE,
-                                    'name'  => $this->l('Sale')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::SALE_3D,
-                                    'name'  => $this->l('Sale 3D')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::SOFORT,
-                                    'name'  => $this->l('SOFORT')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Payment\Methods::TELEINGRESO,
-                                    'name'  => $this->l('teleingreso')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Payment\Methods::TRUST_PAY,
-                                    'name'  => $this->l('TrustPay')
-                                ),
-                                array(
-                                    'id'    => \Genesis\API\Constants\Transaction\Types::WEBMONEY,
-                                    'name'  => $this->l('WebMoney')
-                                ),
-                            ),
-                            'id' => 'id',
-                            'name' => 'name',
-                        )
-                    ),
                     array(
                         'type' => 'switch',
                         'label' => 'Partial Capture',
@@ -1682,6 +1767,13 @@ class eMerchantPay extends PaymentModule
                     'title' => $this->l('Save'),
                 )
             ),
+        );
+
+        /** Add form fields */
+        $form_structure['form']['input'] = array_merge(
+            $this->getFormCredentialsFields(),
+            $this->getFormTransactionFields(),
+            $form_structure['form']['input']
         );
 
         /**

@@ -266,7 +266,7 @@ class eMerchantPayTransactionProcess
 	 */
 	public static function void($data)
 	{
-		$genesis = new \Genesis\Genesis('Financial\Void');
+		$genesis = new \Genesis\Genesis('Financial\Cancel');
 
 		$genesis
             ->request()
