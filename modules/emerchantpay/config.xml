@@ -2,7 +2,7 @@
 <module>
 	<name>emerchantpay</name>
 	<displayName><![CDATA[eMerchantPay Payment Gateway]]></displayName>
-	<version><![CDATA[1.3.2]]></version>
+	<version><![CDATA[1.4.0]]></version>
 	<description><![CDATA[Accept payments through eMerchantPay&#039;s Payment Gateway - Genesis]]></description>
 	<author><![CDATA[eMerchantPay Ltd.]]></author>
 	<tab><![CDATA[payments_gateways]]></tab>

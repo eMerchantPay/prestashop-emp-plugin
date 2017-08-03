@@ -86,4 +86,29 @@ class Methods
      * PPRO transaction
      */
     const TRUST_PAY = 'trustpay';
+
+    /**
+     * Mr.Cash
+     *
+     * PPRO transaction
+     */
+    const BCMC = 'bcmc';
+
+    /**
+     * MyBank
+     *
+     * PPRO transaction
+     */
+    const MYBANK = 'mybank';
+
+    /**
+     * Returns all available payment methods
+     * @return array
+     */
+    public static function getMethods()
+    {
+        $methods = \Genesis\Utils\Common::getClassConstants(__CLASS__);
+
+        return array_values($methods);
+    }
 }
