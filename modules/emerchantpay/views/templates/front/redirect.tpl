@@ -58,8 +58,7 @@
         <div class="row">
             <div class="col-xs-12">
                 <p>
-                    {l s='Please check your input and try again! If you would like to restore your cart, you can click' mod='emerchantpay'}
-                    <a href="{$emerchantpay['redirect']['url']['restore']}">{l s='here' mod='emerchantpay'}</a>
+                    {l s='Please check your input and try again!' mod='emerchantpay'}
 
                     <br /><br />{l s='If the problem persists, you can contact our' mod='emerchantpay'}
                     <a href="{$emerchantpay['redirect']['url']['support']}">{l s='customer support' mod='emerchantpay'}</a>.
@@ -82,10 +81,11 @@
         <div class="row">
             <div class="col-xs-12">
                 <p>
-                    {l s='You have successfully cancelled your order. If you like to restore your cart, please click ' mod='emerchantpay'}
-                    <a href="{$emerchantpay['redirect']['url']['restore']}">{l s='here' mod='emerchantpay'}</a>.
+                    {l s='You have successfully cancelled your order.' mod='emerchantpay'}
 
-                    <br/><br/>{l s='Or you can go back to your order' mod='emerchantpay'}
+                    <br/><br/>{l s='You can redo your ' mod='emerchantpay'}
+                    <a href="{$emerchantpay['redirect']['url']['order']}">{l s='order' mod='emerchantpay'}</a>
+                    {l s=' with different details or review your order' mod='emerchantpay'}
                     <a href="{$emerchantpay['redirect']['url']['history']}">{l s='history' mod='emerchantpay'}</a>.
                 </p>
             </div>
