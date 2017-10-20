@@ -21,9 +21,6 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-use \Genesis\API\Constants\Transaction\Types as GenesisTransactionTypes;
-use \Genesis\API\Constants\Payment\Methods as GenesisPaymentMethods;
-
 /**
  * The main eMerchantPay class that handles
  * all the logic related to the payment module
@@ -1621,10 +1618,10 @@ class eMerchantPay extends PaymentModule
                 'options' => array(
                     'query' => $this->generateOptionsFromArray(
                         array(
-                            GenesisTransactionTypes::AUTHORIZE    => $this->l('Authorize'),
-                            GenesisTransactionTypes::AUTHORIZE_3D => $this->l('Authorize 3D'),
-                            GenesisTransactionTypes::SALE         => $this->l('Sale'),
-                            GenesisTransactionTypes::SALE_3D      => $this->l('Sale 3D')
+                            \Genesis\API\Constants\Transaction\Types::AUTHORIZE    => $this->l('Authorize'),
+                            \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D => $this->l('Authorize 3D'),
+                            \Genesis\API\Constants\Transaction\Types::SALE         => $this->l('Sale'),
+                            \Genesis\API\Constants\Transaction\Types::SALE_3D      => $this->l('Sale 3D')
                         )
                     ),
                     'id' => 'id',
@@ -1660,37 +1657,37 @@ class eMerchantPay extends PaymentModule
                 'options' => array(
                     'query' => $this->generateOptionsFromArray(
                         array(
-                            GenesisTransactionTypes::ABNIDEAL            => $this->l('ABN iDEAL'),
-                            GenesisTransactionTypes::AUTHORIZE           => $this->l('Authorize'),
-                            GenesisTransactionTypes::AUTHORIZE_3D        => $this->l('Authorize 3D'),
-                            GenesisTransactionTypes::CASHU               => $this->l('CashU'),
-                            GenesisTransactionTypes::CITADEL_PAYIN       => $this->l('Citadel'),
-                            GenesisPaymentMethods::EPS                   => $this->l('eps'),
-                            GenesisTransactionTypes::EZEEWALLET          => $this->l('eZeeWallet'),
-                            GenesisPaymentMethods::GIRO_PAY              => $this->l('GiroPay'),
-                            GenesisTransactionTypes::IDEBIT_PAYIN        => $this->l('iDebit'),
-                            GenesisTransactionTypes::INPAY               => $this->l('INPay'),
-                            GenesisTransactionTypes::INSTA_DEBIT_PAYIN   => $this->l('InstaDebit'),
-                            GenesisPaymentMethods::BCMC                  => $this->l('Mr.Cash'),
-                            GenesisPaymentMethods::MYBANK                => $this->l('MyBank'),
-                            GenesisTransactionTypes::NETELLER            => $this->l('Neteller'),
-                            GenesisTransactionTypes::P24                 => $this->l('P24'),
-                            GenesisTransactionTypes::PAYBYVOUCHER_SALE   => $this->l('PayByVoucher (Sale)'),
-                            GenesisTransactionTypes::PAYBYVOUCHER_YEEPAY => $this->l('PayByVoucher (oBeP)'),
-                            GenesisTransactionTypes::PAYPAL_EXPRESS      => $this->l('PayPal Express'),
-                            GenesisTransactionTypes::PAYSAFECARD         => $this->l('PaySafeCard'),
-                            GenesisTransactionTypes::POLI                => $this->l('POLi'),
-                            GenesisPaymentMethods::PRZELEWY24            => $this->l('Przelewy24'),
-                            GenesisPaymentMethods::QIWI                  => $this->l('Qiwi'),
-                            GenesisPaymentMethods::SAFETY_PAY            => $this->l('SafetyPay'),
-                            GenesisTransactionTypes::SALE                => $this->l('Sale'),
-                            GenesisTransactionTypes::SALE_3D             => $this->l('Sale 3D'),
-                            GenesisTransactionTypes::SDD_SALE            => $this->l('Sepa Direct Debit'),
-                            GenesisTransactionTypes::SOFORT              => $this->l('SOFORT'),
-                            GenesisPaymentMethods::TELEINGRESO           => $this->l('teleingreso'),
-                            GenesisTransactionTypes::TRUSTLY_SALE        => $this->l('Trustly'),
-                            GenesisPaymentMethods::TRUST_PAY             => $this->l('TrustPay'),
-                            GenesisTransactionTypes::WEBMONEY            => $this->l('WebMoney'),
+                            \Genesis\API\Constants\Transaction\Types::ABNIDEAL            => $this->l('ABN iDEAL'),
+                            \Genesis\API\Constants\Transaction\Types::AUTHORIZE           => $this->l('Authorize'),
+                            \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D        => $this->l('Authorize 3D'),
+                            \Genesis\API\Constants\Transaction\Types::CASHU               => $this->l('CashU'),
+                            \Genesis\API\Constants\Transaction\Types::CITADEL_PAYIN       => $this->l('Citadel'),
+                            \Genesis\API\Constants\Payment\Methods::EPS                   => $this->l('eps'),
+                            \Genesis\API\Constants\Transaction\Types::EZEEWALLET          => $this->l('eZeeWallet'),
+                            \Genesis\API\Constants\Payment\Methods::GIRO_PAY              => $this->l('GiroPay'),
+                            \Genesis\API\Constants\Transaction\Types::IDEBIT_PAYIN        => $this->l('iDebit'),
+                            \Genesis\API\Constants\Transaction\Types::INPAY               => $this->l('INPay'),
+                            \Genesis\API\Constants\Transaction\Types::INSTA_DEBIT_PAYIN   => $this->l('InstaDebit'),
+                            \Genesis\API\Constants\Payment\Methods::BCMC                  => $this->l('Mr.Cash'),
+                            \Genesis\API\Constants\Payment\Methods::MYBANK                => $this->l('MyBank'),
+                            \Genesis\API\Constants\Transaction\Types::NETELLER            => $this->l('Neteller'),
+                            \Genesis\API\Constants\Transaction\Types::P24                 => $this->l('P24'),
+                            \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE   => $this->l('PayByVoucher (Sale)'),
+                            \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_YEEPAY => $this->l('PayByVoucher (oBeP)'),
+                            \Genesis\API\Constants\Transaction\Types::PAYPAL_EXPRESS      => $this->l('PayPal Express'),
+                            \Genesis\API\Constants\Transaction\Types::PAYSAFECARD         => $this->l('PaySafeCard'),
+                            \Genesis\API\Constants\Transaction\Types::POLI                => $this->l('POLi'),
+                            \Genesis\API\Constants\Payment\Methods::PRZELEWY24            => $this->l('Przelewy24'),
+                            \Genesis\API\Constants\Payment\Methods::QIWI                  => $this->l('Qiwi'),
+                            \Genesis\API\Constants\Payment\Methods::SAFETY_PAY            => $this->l('SafetyPay'),
+                            \Genesis\API\Constants\Transaction\Types::SALE                => $this->l('Sale'),
+                            \Genesis\API\Constants\Transaction\Types::SALE_3D             => $this->l('Sale 3D'),
+                            \Genesis\API\Constants\Transaction\Types::SDD_SALE            => $this->l('Sepa Direct Debit'),
+                            \Genesis\API\Constants\Transaction\Types::SOFORT              => $this->l('SOFORT'),
+                            \Genesis\API\Constants\Payment\Methods::TELEINGRESO           => $this->l('teleingreso'),
+                            \Genesis\API\Constants\Transaction\Types::TRUSTLY_SALE        => $this->l('Trustly'),
+                            \Genesis\API\Constants\Payment\Methods::TRUST_PAY             => $this->l('TrustPay'),
+                            \Genesis\API\Constants\Transaction\Types::WEBMONEY            => $this->l('WebMoney'),
                         )
                     ),
                     'id' => 'id',
