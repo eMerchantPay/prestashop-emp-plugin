@@ -34,6 +34,8 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
 	protected $context;
     /** @var array  */
     protected $statuses = array('success', 'failure', 'cancel');
+    /** @var array  */
+    protected $actionsToRestoreCart = array('failure', 'cancel');
 
 	/**
 	 * @see FrontController::initContent()
@@ -47,11 +49,9 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
 
 		parent::initContent();
 
-		if (Tools::getIsset('restore')) {
-			if (Tools::getValue('restore') == 'cart') {
-				$this->restoreCustomerCart();
-			}
-		}
+        if ($this->shouldRestoreCustomerCart()) {
+            $this->restoreCustomerCart();
+        }
 
         if (!in_array(Tools::getValue('action'), $this->statuses)) {
             $this->module->redirectToPage('history.php');
@@ -61,8 +61,9 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
             'emerchantpay',
 			array(
                 'redirect'  => array(
-                    'status'        => Tools::getValue('action'),
-                    'url'   => array(
+                    'status' => Tools::getValue('action'),
+                    'url'    => array(
+                        'order'     => $this->getOrderUrl(),
                         'history'   => $this->context->link->getPageLink('history.php'),
                         'restore'   => $this->context->link->getModuleLink(
                             $this->module->name, 'redirect', array('restore' => 'cart')
@@ -81,35 +82,64 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
 		}
 	}
 
-	/**
-	 * Restore customer's cart
-	 *
-	 * @return void
-	 */
-	private function restoreCustomerCart()
-	{
-		$order = Order::getCustomerOrders($this->context->customer->id, false, $this->context);
+    /**
+     * Checks if cart should be restored.
+     *
+     * @return bool
+     */
+    protected function shouldRestoreCustomerCart()
+    {
+        return Tools::getValue('restore') === 'cart' ||
+               in_array(
+                   Tools::getValue( 'action' ),
+                   $this->actionsToRestoreCart
+               );
+    }
 
-		$order = reset($order);
+    /**
+     * @return string
+     */
+    protected function getOrderUrl()
+    {
+        return Configuration::get('PS_ORDER_PROCESS_TYPE') == PS_ORDER_PROCESS_OPC ?
+            $this->context->link->getPageLink('order-opc.php', array('step' => '3')) :
+            $this->context->link->getPageLink('order.php', array('step' => '3'));
+    }
 
-		$oldCart = new Cart((int)Order::getCartIdStatic($order['id_order'], $this->context->customer->id));
+    /**
+     * Restore customer's cart
+     *
+     * @return void
+     */
+    protected function restoreCustomerCart()
+    {
+        $order = Order::getCustomerOrders($this->context->customer->id, false, $this->context);
+        $order = reset($order);
 
-		$duplication = $oldCart->duplicate();
+        $duplication = $this->getCart(
+            $order['id_order']
+        )->duplicate();
 
-		if ($duplication && Validate::isLoadedObject($duplication['cart']))
-		{
-			$this->context->cookie->id_cart = $duplication['cart']->id;
-			$this->context->cookie->write();
+        if ($duplication && Validate::isLoadedObject($duplication['cart']))
+        {
+            $this->context->cart = $duplication['cart'];
+            $this->context->cookie->id_cart = $duplication['cart']->id;
+            $this->context->cookie->write();
+        }
+    }
 
-			if (Configuration::get('PS_ORDER_PROCESS_TYPE') == PS_ORDER_PROCESS_OPC) {
-				$this->module->redirectToPage('order-opc.php', array('step' => '3'));
-			}
-			else {
-				$this->module->redirectToPage('order.php', array('step' => '3'));
-			}
-		}
-
-		// If all else fails, redirect the customer to their OrderHistory
-		$this->module->redirectToPage('history.php');
-	}
+    /**
+     * @param int $orderId
+     *
+     * @return Cart
+     */
+    protected function getCart($orderId)
+    {
+        return new Cart(
+            (int) Order::getCartIdStatic(
+                $orderId,
+                $this->context->customer->id
+            )
+        );
+    }
 }
