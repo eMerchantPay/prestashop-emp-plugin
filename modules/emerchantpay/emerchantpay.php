@@ -61,7 +61,7 @@ class eMerchantPay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'eMerchantPay Payment Gateway';
         $this->controllers            = array('checkout', 'notification', 'redirect', 'validation');
-        $this->version                = '1.4.1';
+        $this->version                = '1.4.2';
         $this->author                 = 'eMerchantPay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => _PS_VERSION_); 
@@ -673,6 +673,8 @@ class eMerchantPay extends PaymentModule
 
         // Billing
         if ($invoice) {
+            $countryCode = $this->getCountryIsoCodeById($invoice->id_country);
+
             $data->billing            = new stdClass();
             $data->billing->firstname = $invoice->firstname;
             $data->billing->lastname  = $invoice->lastname;
@@ -681,11 +683,15 @@ class eMerchantPay extends PaymentModule
             $data->billing->postcode  = $invoice->postcode;
             $data->billing->city      = $invoice->city;
             $data->billing->state     = $this->getStateIsoCodeById($invoice->id_state);
-            $data->billing->country   = \Genesis\Utils\Country::getCountryISO($invoice->country);
+            $data->billing->country   = $countryCode;
         }
 
         // Shipping
         if ($shipping) {
+            if ($this->shouldGetCountryIsoCode($invoice, $shipping)) {
+                $countryCode = $this->getCountryIsoCodeById($shipping->id_country);
+            }
+
             $data->shipping            = new stdClass();
             $data->shipping->firstname = $shipping->firstname;
             $data->shipping->lastname  = $shipping->lastname;
@@ -694,7 +700,7 @@ class eMerchantPay extends PaymentModule
             $data->shipping->postcode  = $shipping->postcode;
             $data->shipping->city      = $shipping->city;
             $data->shipping->state     = $this->getStateIsoCodeById($shipping->id_state);
-            $data->shipping->country   = \Genesis\Utils\Country::getCountryISO($shipping->country);
+            $data->shipping->country   = $countryCode;
         }
 
         // URL endpoints (Async transactions)
@@ -713,6 +719,17 @@ class eMerchantPay extends PaymentModule
         $data->transaction_types = $this->getCheckoutTransactionTypes();
 
         return $this->transaction_data = $data;
+    }
+
+    /**
+     * @param Address $invoice
+     * @param Address $shipping
+     *
+     * @return bool
+     */
+    protected function shouldGetCountryIsoCode($invoice, $shipping)
+    {
+        return !$invoice || $invoice->id_country !== $shipping->id_country;
     }
 
     /**
@@ -1923,17 +1940,33 @@ class eMerchantPay extends PaymentModule
     }
 
     /**
-     * Get a state iso with by its id
+     * Get a state iso by its id
      *
-     * @param int $id_state
+     * @param int $state_id
+     *
      * @return string
      */
-    public static function getStateIsoCodeById($id_state)
+    public static function getStateIsoCodeById($state_id)
     {
         return Db::getInstance()->getValue('
 		SELECT `iso_code`
 		FROM `'._DB_PREFIX_.'state`
-		WHERE `id_state` = '.(int)$id_state);
+		WHERE `id_state` = ' . (int)$state_id);
+    }
+
+    /**
+     * Get a country iso by its id
+     *
+     * @param int $country_id
+     *
+     * @return string
+     */
+    public static function getCountryIsoCodeById($country_id)
+    {
+        return Db::getInstance()->getValue('
+		SELECT `iso_code`
+		FROM `'._DB_PREFIX_.'country`
+		WHERE `id_country` = ' . (int)$country_id);
     }
 
     /**

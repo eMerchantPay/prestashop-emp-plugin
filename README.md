@@ -6,7 +6,7 @@ This is a Payment Module for Prestashop that gives you the ability to process pa
 Requirements
 ------------
 
-* Prestashop 1.5.x - 1.6.x - 1.7.x (Tested up to __1.7.1.2__)
+* Prestashop 1.5.x - 1.6.x - 1.7.x (Tested up to __1.7.2.4__)
 * [GenesisPHP v1.7](https://github.com/GenesisGateway/genesis_php) - (Integrated in Module)
 * PCI-certified server in order to use ```eMerchantPay Direct```
 
