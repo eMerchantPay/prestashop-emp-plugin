@@ -7,7 +7,7 @@ Requirements
 ------------
 
 * Prestashop 1.5.x - 1.6.x - 1.7.x (Tested up to __1.7.2.4__)
-* [GenesisPHP v1.7](https://github.com/GenesisGateway/genesis_php) - (Integrated in Module)
+* [GenesisPHP v1.9.0](https://github.com/GenesisGateway/genesis_php/releases/tag/1.9.0) - (Integrated in Module)
 * PCI-certified server in order to use ```eMerchantPay Direct```
 
 GenesisPHP Requirements
