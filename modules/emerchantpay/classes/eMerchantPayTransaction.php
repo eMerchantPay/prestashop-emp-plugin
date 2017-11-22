@@ -412,4 +412,60 @@ class eMerchantPayTransaction extends ObjectModel
 		}
 	}
 
+    /**
+     * Changes parent status with the child status.
+     * @return bool
+     */
+    public function changeParentStatus() {
+        if (!$this->shouldChangeParentStatus()) {
+            return false;
+        }
+
+        $parent_transaction = static::getByUniqueId( $this->id_parent );
+        $parent_transaction->status = $this->getStatusFromTransactionType( $this->type );
+
+        try {
+            return $parent_transaction->update();
+        } catch (\Exception $e) {
+            if (class_exists('Logger')) {
+                Logger::addLog( $e->getMessage(), 4 );
+            }
+            return false;
+        }
+    }
+
+    /**
+     * @return bool
+     */
+    public function shouldChangeParentStatus()
+    {
+        if ($this->status != 'approved') {
+            return false;
+        }
+
+        switch ($this->type) {
+            case \Genesis\API\Constants\Transaction\Types::REFUND:
+            case \Genesis\API\Constants\Transaction\Types::VOID:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * @param string $type
+     *
+     * @return string
+     */
+    protected function getStatusFromTransactionType($type)
+    {
+        switch ($type) {
+            case \Genesis\API\Constants\Transaction\Types::REFUND:
+                return \Genesis\API\Constants\Transaction\States::REFUNDED;
+            case \Genesis\API\Constants\Transaction\Types::VOID:
+                return \Genesis\API\Constants\Transaction\States::VOIDED;
+            default:
+                return 'unknown';
+        }
+    }
 }

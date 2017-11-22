@@ -41,6 +41,7 @@ class eMerchantPayInstall
 		 * Hooks for 1.7.x
 		 */
 		'displayAdminOrder',
+		'displayOrderDetail',
 		'paymentOptions'
 	);
 
