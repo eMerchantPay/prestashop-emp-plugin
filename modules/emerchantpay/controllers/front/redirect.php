@@ -28,26 +28,26 @@ if (!defined('_PS_VERSION_')) {
  */
 class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
 {
-	/** @var  eMerchantPay */
-	public $module;
-	/** @var  ContextCore  */
-	protected $context;
-    /** @var array  */
+    /** @var  eMerchantPay */
+    public $module;
+    /** @var  ContextCore */
+    protected $context;
+    /** @var array */
     protected $statuses = array('success', 'failure', 'cancel');
-    /** @var array  */
+    /** @var array */
     protected $actionsToRestoreCart = array('failure', 'cancel');
 
-	/**
-	 * @see FrontController::initContent()
-	 */
-	public function initContent()
-	{
-		if (version_compare(_PS_VERSION_, '1.6', '<')) {
-			$this->display_column_left  = true;
-			$this->display_column_right = true;
-		}
+    /**
+     * @see FrontController::initContent()
+     */
+    public function initContent()
+    {
+        if (version_compare(_PS_VERSION_, '1.6', '<')) {
+            $this->display_column_left  = true;
+            $this->display_column_right = true;
+        }
 
-		parent::initContent();
+        parent::initContent();
 
         if ($this->shouldRestoreCustomerCart()) {
             $this->restoreCustomerCart();
@@ -57,30 +57,30 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
             $this->module->redirectToPage('history.php');
         }
 
-		$this->context->smarty->append(
+        $this->context->smarty->append(
             'emerchantpay',
-			array(
-                'redirect'  => array(
+            array(
+                'redirect' => array(
                     'status' => Tools::getValue('action'),
                     'url'    => array(
-                        'order'     => $this->getOrderUrl(),
-                        'history'   => $this->context->link->getPageLink('history.php'),
-                        'restore'   => $this->context->link->getModuleLink(
+                        'order'   => $this->getOrderUrl(),
+                        'history' => $this->context->link->getPageLink('history.php'),
+                        'restore' => $this->context->link->getModuleLink(
                             $this->module->name, 'redirect', array('restore' => 'cart')
                         ),
-                        'support'   => $this->context->link->getPageLink('contact.php'),
+                        'support' => $this->context->link->getPageLink('contact.php'),
                     )
                 )
-			),
+            ),
             true
-		);
+        );
 
-		if (version_compare(_PS_VERSION_, '1.7', '<')) {
-			$this->setTemplate('redirect.tpl');
-		} else {
-			$this->setTemplate('module:emerchantpay/views/templates/front/redirectpage.tpl');
-		}
-	}
+        if (version_compare(_PS_VERSION_, '1.7', '<')) {
+            $this->setTemplate('redirect.tpl');
+        } else {
+            $this->setTemplate('module:emerchantpay/views/templates/front/redirectpage.tpl');
+        }
+    }
 
     /**
      * Checks if cart should be restored.
@@ -91,7 +91,7 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
     {
         return Tools::getValue('restore') === 'cart' ||
                in_array(
-                   Tools::getValue( 'action' ),
+                   Tools::getValue('action'),
                    $this->actionsToRestoreCart
                );
     }
@@ -101,9 +101,18 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
      */
     protected function getOrderUrl()
     {
-        return Configuration::get('PS_ORDER_PROCESS_TYPE') == PS_ORDER_PROCESS_OPC ?
+        return $this->isOrderProcessTypeOPC() ?
             $this->context->link->getPageLink('order-opc.php', array('step' => '3')) :
             $this->context->link->getPageLink('order.php', array('step' => '3'));
+    }
+
+    /**
+     * @return bool
+     */
+    protected function isOrderProcessTypeOPC()
+    {
+        return defined('PS_ORDER_PROCESS_OPC') &&
+               Configuration::get('PS_ORDER_PROCESS_TYPE') == PS_ORDER_PROCESS_OPC;
     }
 
     /**
@@ -120,9 +129,8 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
             $order['id_order']
         )->duplicate();
 
-        if ($duplication && Validate::isLoadedObject($duplication['cart']))
-        {
-            $this->context->cart = $duplication['cart'];
+        if ($duplication && Validate::isLoadedObject($duplication['cart'])) {
+            $this->context->cart            = $duplication['cart'];
             $this->context->cookie->id_cart = $duplication['cart']->id;
             $this->context->cookie->write();
         }
@@ -136,7 +144,7 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
     protected function getCart($orderId)
     {
         return new Cart(
-            (int) Order::getCartIdStatic(
+            (int)Order::getCartIdStatic(
                 $orderId,
                 $this->context->customer->id
             )
