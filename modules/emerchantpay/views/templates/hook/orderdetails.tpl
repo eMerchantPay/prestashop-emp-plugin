@@ -15,7 +15,7 @@
  * @copyright   2015 eMerchantPay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  *}
-{if $emerchantpay['transactions']['tree']}
+{if $emerchantpay['transactions']['tree'] && version_compare($emerchantpay['presta']['version'], '1.7.2', '>=')}
 
     <section class="box">
         <h3>
