@@ -28,86 +28,81 @@ if (!defined('_PS_VERSION_')) {
  */
 class eMerchantPayCheckoutModuleFrontController extends ModuleFrontController
 {
-	/** @var eMerchantPay */
-	public $module;
+    /** @var eMerchantPay */
+    public $module;
 
-	// Hide the left column
-	public $display_column_left = false;
+    // Hide the left column
+    public $display_column_left = false;
 
-	/**
-	 * @see FrontController::initContent()
-	 */
-	public function initContent()
-	{
-		parent::initContent();
+    /**
+     * @see FrontController::initContent()
+     */
+    public function initContent()
+    {
+        parent::initContent();
 
-		$this->page_name = $this->module->l('eMerchantPay Checkout');
+        $this->page_name = $this->module->l('eMerchantPay Checkout');
 
-		if ($this->context->customer->isLogged()) {
-			$this->initCheckout();
-		}
-		else {
-			$this->module->redirectToPage('my-account.php');
-		}
-	}
+        $this->initCheckout();
+    }
 
-	/**
-	 * Show confirmation page to the customer
-	 * and inform them, that they are going
-	 * to be redirected to our payment gateway.
-	 */
-	public function initCheckout()
-	{
-		if ($this->module->isAvailable()) {
-			$cart = $this->context->cart;
+    /**
+     * Show confirmation page to the customer
+     * and inform them, that they are going
+     * to be redirected to our payment gateway.
+     */
+    public function initCheckout()
+    {
+        if ($this->module->isAvailable()) {
+            $cart = $this->context->cart;
 
-			if (!$this->module->checkCurrency($cart)) {
-				$this->module->redirectToPage('order.php');
-			}
+            if (!$this->module->checkCurrency($cart)) {
+                $this->module->redirectToPage('order.php');
+            }
 
-			if(!$cart->getOrderTotal(true, $cart::BOTH)) {
-				$this->module->redirectToPage('order.php');
-			}
+            if (!$cart->getOrderTotal(true, $cart::BOTH)) {
+                $this->module->redirectToPage('order.php');
+            }
 
-			if (version_compare(_PS_VERSION_, '1.6', '<')) {
-				$this->context->controller->addCSS(
-					$this->module->getPathUri() . 'assets/css/bootstrap-custom.min.css', 'all'
-				);
-				$this->context->controller->addJS(
-					$this->module->getPathUri() . 'assets/js/bootstrap/bootstrap.min.js'
-				);
-			}
+            if (version_compare(_PS_VERSION_, '1.6', '<')) {
+                $this->context->controller->addCSS(
+                    $this->module->getPathUri() . 'assets/css/bootstrap-custom.min.css', 'all'
+                );
+                $this->context->controller->addJS(
+                    $this->module->getPathUri() . 'assets/js/bootstrap/bootstrap.min.js'
+                );
+            }
 
-			$this->context->controller->addCSS(
-				$this->module->getPathUri() . 'assets/css/card.min.css', 'all'
-			);
-			$this->context->controller->addJS(
-				$this->module->getPathUri() . 'assets/js/card/card.min.js'
-			);
+            $this->context->controller->addCSS(
+                $this->module->getPathUri() . 'assets/css/card.min.css', 'all'
+            );
+            $this->context->controller->addJS(
+                $this->module->getPathUri() . 'assets/js/card/card.min.js'
+            );
 
-			$this->context->smarty->append(
+            $this->context->smarty->append(
                 'emerchantpay',
                 array(
-                    'checkout'  => array(
+                    'checkout' => array(
                         'product_count' => $cart->nbProducts(),
                         'currency'      => $cart->id_currency,
                         'total'         => $cart->getOrderTotal(true, $cart::BOTH),
                         'isoCode'       => $this->context->language->iso_code,
                         'error'         => $this->module->getSessVar('error_checkout'),
                         'links'         => array(
-                            'back'     => $this->context->link->getPageLink('order', true, NULL, "step=3"),
-                            'confirm'  => $this->context->link->getModuleLink($this->module->name, 'validation'),
+                            'back'    => $this->context->link->getPageLink('order', true, null, "step=3"),
+                            'confirm' => $this->context->link->getModuleLink($this->module->name, 'validation'),
                         )
                     )
                 ),
                 true
             );
 
-			if (version_compare(_PS_VERSION_, '1.7', '<')) {
+            if (version_compare(_PS_VERSION_, '1.7', '<')) {
                 $this->setTemplate('checkout.tpl');
-			} else {
+            } else {
                 $this->setTemplate('module:emerchantpay/views/templates/front/checkoutpage.tpl');
-			}
-		}
-	}
+            }
+        }
+    }
 }
