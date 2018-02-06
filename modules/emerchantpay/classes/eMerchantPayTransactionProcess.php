@@ -28,77 +28,78 @@ if (!defined('_PS_VERSION_')) {
  */
 class eMerchantPayTransactionProcess
 {
-	const displayName = 'eMerchantPay Transactions';
+    const displayName = 'eMerchantPay Transactions';
 
-	/**
-	 * Create a Web-Payment Form instance.
-	 *
-	 * @param $data
-	 * @throws Exception
-	 * @return \Genesis\API\Response
-	 */
-	public static function checkout($data)
-	{
-		$genesis = new \Genesis\Genesis('WPF\Create');
+    /**
+     * Create a Web-Payment Form instance.
+     *
+     * @param $data
+     *
+     * @throws Exception
+     * @return \Genesis\API\Response
+     */
+    public static function checkout($data)
+    {
+        $genesis = new \Genesis\Genesis('WPF\Create');
 
-		$genesis
+        $genesis
             ->request()
-		        ->setTransactionId( $data->id )
-		        ->setCurrency( $data->currency )
-		        ->setAmount( $data->amount )
-		        ->setCustomerEmail( $data->customer_email )
-		        ->setCustomerPhone( $data->customer_phone );
+                ->setTransactionId($data->id)
+                ->setCurrency($data->currency)
+                ->setAmount($data->amount)
+                ->setCustomerEmail($data->customer_email)
+                ->setCustomerPhone($data->customer_phone);
 
-		if (isset($data->usage)) {
-			$genesis
+        if (isset($data->usage)) {
+            $genesis
                 ->request()
-					->setUsage($data->usage);
-		}
+                    ->setUsage($data->usage);
+        }
 
-		if (isset($data->description)) {
-			$genesis
+        if (isset($data->description)) {
+            $genesis
                 ->request()
-					->setDescription($data->description);
-		}
+                    ->setDescription($data->description);
+        }
 
-		if (isset($data->billing)) {
-			$genesis
+        if (isset($data->billing)) {
+            $genesis
                 ->request()
-			        ->setBillingFirstName( $data->billing->firstname )
-			        ->setBillingLastName( $data->billing->lastname )
-			        ->setBillingAddress1( $data->billing->address1 )
-			        ->setBillingAddress2( $data->billing->address2 )
-			        ->setBillingZipCode( $data->billing->postcode )
-			        ->setBillingCity( $data->billing->city )
-			        ->setBillingState( $data->billing->state )
-			        ->setBillingCountry( $data->billing->country );
-		}
+                    ->setBillingFirstName($data->billing->firstname)
+                    ->setBillingLastName($data->billing->lastname)
+                    ->setBillingAddress1($data->billing->address1)
+                    ->setBillingAddress2($data->billing->address2)
+                    ->setBillingZipCode($data->billing->postcode)
+                    ->setBillingCity($data->billing->city)
+                    ->setBillingState($data->billing->state)
+                    ->setBillingCountry($data->billing->country);
+        }
 
-		if (isset($data->shipping)) {
-			$genesis
+        if (isset($data->shipping)) {
+            $genesis
                 ->request()
-			        ->setShippingFirstName( $data->shipping->firstname )
-			        ->setShippingLastName( $data->shipping->lastname )
-			        ->setShippingAddress1( $data->shipping->address1 )
-			        ->setShippingAddress2( $data->shipping->address2 )
-			        ->setShippingZipCode( $data->shipping->postcode )
-			        ->setShippingCity( $data->shipping->city )
-			        ->setShippingState( $data->shipping->state )
-			        ->setShippingCountry( $data->shipping->country );
-		}
+                    ->setShippingFirstName($data->shipping->firstname)
+                    ->setShippingLastName($data->shipping->lastname)
+                    ->setShippingAddress1($data->shipping->address1)
+                    ->setShippingAddress2($data->shipping->address2)
+                    ->setShippingZipCode($data->shipping->postcode)
+                    ->setShippingCity($data->shipping->city)
+                    ->setShippingState($data->shipping->state)
+                    ->setShippingCountry($data->shipping->country);
+        }
 
-		if (isset($data->url)) {
-			$genesis
+        if (isset($data->url)) {
+            $genesis
                 ->request()
-			        ->setNotificationUrl( $data->url->notification )
-			        ->setReturnSuccessUrl( $data->url->return_success )
-					->setReturnFailureUrl( $data->url->return_failure )
-					->setReturnCancelUrl( $data->url->return_cancel );
-		}
+                    ->setNotificationUrl($data->url->notification)
+                    ->setReturnSuccessUrl($data->url->return_success)
+                    ->setReturnFailureUrl($data->url->return_failure)
+                    ->setReturnCancelUrl($data->url->return_cancel);
+        }
 
-		if (isset($data->transaction_types)) {
-			foreach ($data->transaction_types as $type) {
-				if (is_array($type)) {
+        if (isset($data->transaction_types)) {
+            foreach ($data->transaction_types as $type) {
+                if (is_array($type)) {
                     $genesis
                         ->request()
                             ->addTransactionType($type['name'], $type['parameters']);
@@ -107,8 +108,8 @@ class eMerchantPayTransactionProcess
                         ->request()
                             ->addTransactionType($type);
                 }
-			}
-		}
+            }
+        }
 
         if (isset($data->language)) {
             $genesis
@@ -116,167 +117,169 @@ class eMerchantPayTransactionProcess
                     ->setLanguage($data->language);
         }
 
-		$genesis->execute();
+        $genesis->execute();
 
         return $genesis->response();
-	}
+    }
 
-	/**
-	 * Perform a standard (and 3DSecure) payment transaction.
-	 *
-	 * Note: the transaction type depends on the Admin Panel selection
-	 *
-	 * @param $data stdClass Parameters for the transaction
-	 * @throws Exception
-	 * @return \Genesis\API\Response
-	 */
-	public static function pay($data)
-	{
-		switch ( $data->transaction_type ) {
-			default:
-			case \Genesis\API\Constants\Transaction\Types::AUTHORIZE:
-				$genesis = new \Genesis\Genesis( 'Financial\Cards\Authorize' );
-				break;
-			case \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D:
-				$genesis = new \Genesis\Genesis( 'Financial\Cards\Authorize3D' );
-				break;
-			case \Genesis\API\Constants\Transaction\Types::SALE:
-				$genesis = new \Genesis\Genesis( 'Financial\Cards\Sale' );
-				break;
-			case \Genesis\API\Constants\Transaction\Types::SALE_3D:
-				$genesis = new \Genesis\Genesis( 'Financial\Cards\Sale3D' );
-				break;
-		}
+    /**
+     * Perform a standard (and 3DSecure) payment transaction.
+     *
+     * Note: the transaction type depends on the Admin Panel selection
+     *
+     * @param $data stdClass Parameters for the transaction
+     *
+     * @throws Exception
+     * @return \Genesis\API\Response
+     */
+    public static function pay($data)
+    {
+        switch ($data->transaction_type) {
+            default:
+            case \Genesis\API\Constants\Transaction\Types::AUTHORIZE:
+                $genesis = new \Genesis\Genesis('Financial\Cards\Authorize');
+                break;
+            case \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D:
+                $genesis = new \Genesis\Genesis('Financial\Cards\Authorize3D');
+                break;
+            case \Genesis\API\Constants\Transaction\Types::SALE:
+                $genesis = new \Genesis\Genesis('Financial\Cards\Sale');
+                break;
+            case \Genesis\API\Constants\Transaction\Types::SALE_3D:
+                $genesis = new \Genesis\Genesis('Financial\Cards\Sale3D');
+                break;
+        }
 
-		$genesis
+        $genesis
             ->request()
-				->setTransactionId( $data->id )
-				->setRemoteIp( $data->remote_ip )
-				->setCurrency( $data->currency )
-				->setAmount( $data->amount )
-				->setCardHolder( $data->card_holder )
-				->setCardNumber( $data->card_number )
-				->setExpirationMonth( $data->expiration_month )
-				->setExpirationYear( $data->expiration_year )
-				->setCvv( $data->cvv )
-				->setCustomerEmail( $data->customer_email )
-				->setCustomerPhone( $data->customer_phone );
+                ->setTransactionId($data->id)
+                ->setRemoteIp($data->remote_ip)
+                ->setCurrency($data->currency)
+                ->setAmount($data->amount)
+                ->setCardHolder($data->card_holder)
+                ->setCardNumber($data->card_number)
+                ->setExpirationMonth($data->expiration_month)
+                ->setExpirationYear($data->expiration_year)
+                ->setCvv($data->cvv)
+                ->setCustomerEmail($data->customer_email)
+                ->setCustomerPhone($data->customer_phone);
 
-		if (isset($data->billing)) {
-			$genesis
+        if (isset($data->billing)) {
+            $genesis
                 ->request()
-					->setBillingFirstName( $data->billing->firstname )
-					->setBillingLastName( $data->billing->lastname )
-					->setBillingAddress1( $data->billing->address1 )
-					->setBillingAddress2( $data->billing->address2 )
-					->setBillingZipCode( $data->billing->postcode )
-					->setBillingCity( $data->billing->city )
-					->setBillingState( $data->billing->state )
-					->setBillingCountry( $data->billing->country );
-		}
+                    ->setBillingFirstName($data->billing->firstname)
+                    ->setBillingLastName($data->billing->lastname)
+                    ->setBillingAddress1($data->billing->address1)
+                    ->setBillingAddress2($data->billing->address2)
+                    ->setBillingZipCode($data->billing->postcode)
+                    ->setBillingCity($data->billing->city)
+                    ->setBillingState($data->billing->state)
+                    ->setBillingCountry($data->billing->country);
+        }
 
-		if (isset($data->shipping)) {
-			$genesis
+        if (isset($data->shipping)) {
+            $genesis
                 ->request()
-					->setShippingFirstName( $data->shipping->firstname )
-					->setShippingLastName( $data->shipping->lastname )
-					->setShippingAddress1( $data->shipping->address1 )
-					->setShippingAddress2( $data->shipping->address2 )
-					->setShippingZipCode( $data->shipping->postcode )
-					->setShippingCity( $data->shipping->city )
-					->setShippingState( $data->shipping->state )
-					->setShippingCountry( $data->shipping->country );
-		}
+                    ->setShippingFirstName($data->shipping->firstname)
+                    ->setShippingLastName($data->shipping->lastname)
+                    ->setShippingAddress1($data->shipping->address1)
+                    ->setShippingAddress2($data->shipping->address2)
+                    ->setShippingZipCode($data->shipping->postcode)
+                    ->setShippingCity($data->shipping->city)
+                    ->setShippingState($data->shipping->state)
+                    ->setShippingCountry($data->shipping->country);
+        }
 
-		if (isset($data->url)) {
-			$genesis
+        if (isset($data->url) &&
+            \Genesis\API\Constants\Transaction\Types::is3D($data->transaction_type)) {
+            $genesis
                 ->request()
-					->setNotificationUrl( $data->url->notification )
-					->setReturnSuccessUrl( $data->url->return_success )
-					->setReturnFailureUrl( $data->url->return_failure );
-		}
+                    ->setNotificationUrl($data->url->notification)
+                    ->setReturnSuccessUrl($data->url->return_success)
+                    ->setReturnFailureUrl($data->url->return_failure);
+        }
 
-		$genesis->execute();
+        $genesis->execute();
 
         return $genesis->response();
-	}
+    }
 
-	/**
-	 * Execute a Capture transaction
-	 *
-	 * @param $data array Parameters for the transaction
-	 *
-	 * @throws Exception
-	 *
-	 * @return \Genesis\API\Response|null
-	 */
-	public static function capture($data)
-	{
-		$genesis = new \Genesis\Genesis('Financial\Capture');
+    /**
+     * Execute a Capture transaction
+     *
+     * @param $data array Parameters for the transaction
+     *
+     * @throws Exception
+     *
+     * @return \Genesis\API\Response|null
+     */
+    public static function capture($data)
+    {
+        $genesis = new \Genesis\Genesis('Financial\Capture');
 
-		$genesis
+        $genesis
             ->request()
-				->setTransactionId($data['transaction_id'])
-				->setUsage($data['usage'])
-				->setRemoteIp($data['remote_ip'])
-				->setReferenceId($data['reference_id'])
-				->setAmount($data['amount'])
-				->setCurrency($data['currency']);
+                ->setTransactionId($data['transaction_id'])
+                ->setUsage($data['usage'])
+                ->setRemoteIp($data['remote_ip'])
+                ->setReferenceId($data['reference_id'])
+                ->setAmount($data['amount'])
+                ->setCurrency($data['currency']);
 
-		$genesis->execute();
+        $genesis->execute();
 
         return $genesis->response();
-	}
+    }
 
-	/**
-	 * Execute a Refund transaction
-	 *
-	 * @param $data array Parameters for the transaction
-	 *
-	 * @throws Exception
-	 *
-	 * @return \Genesis\API\Response
-	 */
-	public static function refund($data)
-	{
-		$genesis = new \Genesis\Genesis('Financial\Refund');
+    /**
+     * Execute a Refund transaction
+     *
+     * @param $data array Parameters for the transaction
+     *
+     * @throws Exception
+     *
+     * @return \Genesis\API\Response
+     */
+    public static function refund($data)
+    {
+        $genesis = new \Genesis\Genesis('Financial\Refund');
 
-		$genesis
+        $genesis
             ->request()
-				->setTransactionId($data['transaction_id'])
-				->setUsage($data['usage'])
-				->setRemoteIp($data['remote_ip'])
-				->setReferenceId($data['reference_id'])
-				->setAmount($data['amount'])
-				->setCurrency($data['currency']);
+                ->setTransactionId($data['transaction_id'])
+                ->setUsage($data['usage'])
+                ->setRemoteIp($data['remote_ip'])
+                ->setReferenceId($data['reference_id'])
+                ->setAmount($data['amount'])
+                ->setCurrency($data['currency']);
 
-		$genesis->execute();
+        $genesis->execute();
 
         return $genesis->response();
-	}
+    }
 
-	/**
-	 * Execute Void transaction
-	 *
-	 * @param $data array Parameters for the transaction
-	 *
-	 * @throws Exception
-	 *
-	 * @return \Genesis\API\Response
-	 */
-	public static function void($data)
-	{
-		$genesis = new \Genesis\Genesis('Financial\Cancel');
+    /**
+     * Execute Void transaction
+     *
+     * @param $data array Parameters for the transaction
+     *
+     * @throws Exception
+     *
+     * @return \Genesis\API\Response
+     */
+    public static function void($data)
+    {
+        $genesis = new \Genesis\Genesis('Financial\Cancel');
 
-		$genesis
+        $genesis
             ->request()
-				->setTransactionId($data['transaction_id'])
-				->setUsage($data['usage'])
-				->setRemoteIp($data['remote_ip'])
-				->setReferenceId($data['reference_id']);
+                ->setTransactionId($data['transaction_id'])
+                ->setUsage($data['usage'])
+                ->setRemoteIp($data['remote_ip'])
+                ->setReferenceId($data['reference_id']);
 
-		$genesis->execute();
+        $genesis->execute();
 
         return $genesis->response();
-	}
+    }
 }

@@ -61,7 +61,7 @@ class eMerchantPay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'eMerchantPay Payment Gateway';
         $this->controllers            = array('checkout', 'notification', 'redirect', 'validation');
-        $this->version                = '1.5.1';
+        $this->version                = '1.5.2';
         $this->author                 = 'eMerchantPay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => _PS_VERSION_);
@@ -347,9 +347,11 @@ class eMerchantPay extends PaymentModule
             $this->getPathUri() . 'assets/css/font-awesome.min.css', 'all'
         );
 
-        $this->registerCore17Javascript(
-            $this->getJQueryUri()
-        );
+        if ($this->isPrestaVersion17() && $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT)) {
+            $this->registerCore17Javascript(
+                $this->getJQueryUri()
+            );
+        }
 
         $this->context->controller->addCSS(
             $this->getPathUri() . 'assets/css/treegrid.min.css', 'all'
@@ -1223,6 +1225,19 @@ class eMerchantPay extends PaymentModule
      */
     public function redirectToPage($page, $args = array())
     {
+        Tools::redirect($this->getPageLink($page, $args));
+    }
+
+    /**
+     * Get page link
+     *
+     * @param string $page Prestashop Page
+     * @param array $args Optional GET arguments
+     *
+     * @return string Page link
+     */
+    public function getPageLink($page, $args = array())
+    {
         $default = array(
             'id_cart'   => (int)$this->context->cart->id,
             'id_module' => (int)$this->id,
@@ -1232,7 +1247,7 @@ class eMerchantPay extends PaymentModule
 
         $params = array_merge($default, $args);
 
-        Tools::redirect($this->context->link->getPageLink($page, true, null, $params));
+        return $this->context->link->getPageLink($page, true, null, $params);
     }
 
     /**
@@ -1293,7 +1308,7 @@ class eMerchantPay extends PaymentModule
      */
     private function getAsyncSuccessURL()
     {
-        return $this->context->link->getModuleLink($this->name, 'redirect', array('action' => 'success'));
+        return $this->getPageLink('order-confirmation.php');
     }
 
     /**
@@ -1303,7 +1318,7 @@ class eMerchantPay extends PaymentModule
      */
     private function getAsyncFailureURL()
     {
-        return $this->context->link->getModuleLink($this->name, 'redirect', array('action' => 'failure'));
+        return $this->context->link->getModuleLink($this->name, 'redirect', array('action' => 'failure', 'id_cart' => intval($this->context->cart->id)));
     }
 
     /**
@@ -1313,7 +1328,7 @@ class eMerchantPay extends PaymentModule
      */
     private function getAsyncCancelURL()
     {
-        return $this->context->link->getModuleLink($this->name, 'redirect', array('action' => 'cancel'));
+        return $this->context->link->getModuleLink($this->name, 'redirect', array('action' => 'cancel', 'id_cart' => intval($this->context->cart->id)));
     }
 
     /**
