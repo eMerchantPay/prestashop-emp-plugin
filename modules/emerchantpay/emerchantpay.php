@@ -1223,6 +1223,19 @@ class eMerchantPay extends PaymentModule
      */
     public function redirectToPage($page, $args = array())
     {
+        Tools::redirect($this->getPageLink($page, $args));
+    }
+
+    /**
+     * Get page link
+     *
+     * @param string $page Prestashop Page
+     * @param array $args Optional GET arguments
+     *
+     * @return string Page link
+     */
+    public function getPageLink($page, $args = array())
+    {
         $default = array(
             'id_cart'   => (int)$this->context->cart->id,
             'id_module' => (int)$this->id,
@@ -1232,7 +1245,7 @@ class eMerchantPay extends PaymentModule
 
         $params = array_merge($default, $args);
 
-        Tools::redirect($this->context->link->getPageLink($page, true, null, $params));
+        return $this->context->link->getPageLink($page, true, null, $params);
     }
 
     /**
@@ -1293,7 +1306,7 @@ class eMerchantPay extends PaymentModule
      */
     private function getAsyncSuccessURL()
     {
-        return $this->context->link->getModuleLink($this->name, 'redirect', array('action' => 'success'));
+        return $this->getPageLink('order-confirmation.php');
     }
 
     /**
@@ -1303,7 +1316,7 @@ class eMerchantPay extends PaymentModule
      */
     private function getAsyncFailureURL()
     {
-        return $this->context->link->getModuleLink($this->name, 'redirect', array('action' => 'failure'));
+        return $this->context->link->getModuleLink($this->name, 'redirect', array('action' => 'failure', 'id_cart' => intval($this->context->cart->id)));
     }
 
     /**
@@ -1313,7 +1326,7 @@ class eMerchantPay extends PaymentModule
      */
     private function getAsyncCancelURL()
     {
-        return $this->context->link->getModuleLink($this->name, 'redirect', array('action' => 'cancel'));
+        return $this->context->link->getModuleLink($this->name, 'redirect', array('action' => 'cancel', 'id_cart' => intval($this->context->cart->id)));
     }
 
     /**

@@ -70,7 +70,8 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
                         ),
                         'support' => $this->context->link->getPageLink('contact.php'),
                     )
-                )
+                ),
+                'cart' => new Cart(intval(Tools::getValue('id_cart')))
             ),
             true
         );
