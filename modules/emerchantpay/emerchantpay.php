@@ -347,9 +347,11 @@ class eMerchantPay extends PaymentModule
             $this->getPathUri() . 'assets/css/font-awesome.min.css', 'all'
         );
 
-        $this->registerCore17Javascript(
-            $this->getJQueryUri()
-        );
+        if ($this->isPrestaVersion17() && $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT)) {
+            $this->registerCore17Javascript(
+                $this->getJQueryUri()
+            );
+        }
 
         $this->context->controller->addCSS(
             $this->getPathUri() . 'assets/css/treegrid.min.css', 'all'
