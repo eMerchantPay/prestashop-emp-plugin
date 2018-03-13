@@ -158,12 +158,12 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
                                 $checkout_transaction,
                                 $checkout_reconcile->payment_transaction
                             );
-
-                            $checkout_transaction->updateOrderHistory(
-                                $this->module->getPrestaStatus($checkout_reconcile->status),
-                                true
-                            );
                         }
+
+                        $checkout_transaction->updateOrderHistory(
+                            $this->module->getPrestaStatus($checkout_reconcile->status),
+                            true
+                        );
 
                         $notification->renderResponse();
                     }

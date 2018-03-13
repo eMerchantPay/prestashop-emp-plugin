@@ -130,10 +130,19 @@ class eMerchantPayRedirectModuleFrontController extends ModuleFrontController
             $order['id_order']
         )->duplicate();
 
-        if ($duplication && Validate::isLoadedObject($duplication['cart'])) {
+        if ($duplication && Validate::isLoadedObject($duplication['cart']) && !$this->context->cookie->id_cart) {
             $this->context->cart            = $duplication['cart'];
             $this->context->cookie->id_cart = $duplication['cart']->id;
             $this->context->cookie->write();
+
+            // Refresh page here so correct cart content is shown
+            Tools::redirect(
+                Context::getContext()->link->getModuleLink(
+                    'emerchantpay',
+                    'redirect',
+                    Tools::getAllValues()
+                )
+            );
         }
     }
 
