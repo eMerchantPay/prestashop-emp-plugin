@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2016 eMerchantPay Ltd.
+ * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,8 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      eMerchantPay
- * @copyright   2016 eMerchantPay Ltd.
+ * @author      emerchantpay
+ * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
@@ -22,10 +22,10 @@ if (!defined('_PS_VERSION_')) {
 }
 
 /**
- * The main eMerchantPay class that handles
+ * The main Emerchantpay class that handles
  * all the logic related to the payment module
  */
-class eMerchantPay extends PaymentModule
+class Emerchantpay extends PaymentModule
 {
     /**
      * List supported languages
@@ -59,10 +59,10 @@ class eMerchantPay extends PaymentModule
         /* Initial Module Setup */
         $this->name                   = 'emerchantpay';
         $this->tab                    = 'payments_gateways';
-        $this->displayName            = 'eMerchantPay Payment Gateway';
+        $this->displayName            = 'emerchantpay Payment Gateway';
         $this->controllers            = array('checkout', 'notification', 'redirect', 'validation');
-        $this->version                = '1.5.3';
-        $this->author                 = 'eMerchantPay Ltd.';
+        $this->version                = '1.6.0';
+        $this->author                 = 'emerchantpay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => _PS_VERSION_);
         $this->bootstrap              = true;
@@ -70,7 +70,7 @@ class eMerchantPay extends PaymentModule
 
         /* The parent construct is required for translations */
         $this->page        = basename(__FILE__, '.php');
-        $this->description = 'Accept payments through eMerchantPay\'s Payment Gateway - Genesis';
+        $this->description = 'Accept payments through emerchantpay\'s Payment Gateway - Genesis';
 
         /* Use Bootstrap */
         $this->bootstrap = true;
@@ -124,7 +124,7 @@ class eMerchantPay extends PaymentModule
         // Call PaymentModule default install function
         $pre_install = parent::install();
 
-        $install = new eMerchantPayInstall();
+        $install = new EmerchantpayInstall();
 
         // Register Hooks
         $install->registerHooks($this);
@@ -146,7 +146,7 @@ class eMerchantPay extends PaymentModule
     {
         $pre_uninstall = parent::uninstall();
 
-        $uninstall = new eMerchantPayInstall();
+        $uninstall = new EmerchantpayInstall();
 
         // Clear the transaction database
         $uninstall->dropSchema();
@@ -305,7 +305,7 @@ class eMerchantPay extends PaymentModule
                         'denied_void'            => $this->l('Cancel Transaction are currently disabled! You can enable this option in the Module Settings.'),
                     ),
                     'error'   => $this->getSessVar('error_transaction'),
-                    'tree'    => eMerchantPayTransaction::getTransactionTree((int)$params['id_order']),
+                    'tree'    => EmerchantpayTransaction::getTransactionTree((int)$params['id_order']),
                 ),
             ),
             true
@@ -364,7 +364,7 @@ class eMerchantPay extends PaymentModule
             'emerchantpay',
             array(
                 'transactions' => array(
-                    'tree' => eMerchantPayTransaction::getTransactionTree((int)$order->id),
+                    'tree' => EmerchantpayTransaction::getTransactionTree((int)$order->id),
                 ),
             ),
             true
@@ -423,7 +423,7 @@ class eMerchantPay extends PaymentModule
 
         $paymentMethods = array(
             array(
-                'title'               => 'Pay safely with eMerchantPay Checkout',
+                'title'               => 'Pay safely with emerchantpay Checkout',
                 'name'                => 'checkout',
                 'clientSideEvents'    => array(
                     'onFormSubmit' => 'return doBeforeSubmitEMerchantPayCheckoutPaymentForm(this);"'
@@ -433,7 +433,7 @@ class eMerchantPay extends PaymentModule
                 }
             ),
             array(
-                'title'               => 'Pay safely with eMerchantPay Direct',
+                'title'               => 'Pay safely with emerchantpay Direct',
                 'name'                => 'direct',
                 'clientSideEvents'    => array(
                     'onFormSubmit' => 'return doBeforeSubmitEMerchantPayDirectPaymentForm(this);"'
@@ -796,7 +796,7 @@ class eMerchantPay extends PaymentModule
         $this->applyGenesisConfig();
 
         try {
-            $responseObj = eMerchantPayTransactionProcess::checkout(
+            $responseObj = EmerchantpayTransactionProcess::checkout(
                 $this->populateTransactionData()
             );
 
@@ -821,7 +821,7 @@ class eMerchantPay extends PaymentModule
             $new_order = new Order((int)$this->currentOrder);
 
             // Save the transaction to Db
-            $transaction                 = new eMerchantPayTransaction();
+            $transaction                 = new EmerchantpayTransaction();
             $transaction->id_parent      = 0;
             $transaction->ref_order      = $new_order->reference;
             $transaction->transaction_id = $this->transaction_data->id;
@@ -859,7 +859,7 @@ class eMerchantPay extends PaymentModule
         $this->applyGenesisConfig();
 
         try {
-            $responseObj = eMerchantPayTransactionProcess::pay(
+            $responseObj = EmerchantpayTransactionProcess::pay(
                 $this->populateTransactionData()
             );
 
@@ -922,7 +922,7 @@ class eMerchantPay extends PaymentModule
             }
 
             // Save the transaction to Db
-            $transaction            = new eMerchantPayTransaction();
+            $transaction            = new EmerchantpayTransaction();
             $transaction->id_parent = 0;
             $transaction->ref_order = $new_order->reference;
             $transaction->importResponse($response);
@@ -972,7 +972,7 @@ class eMerchantPay extends PaymentModule
         $this->applyGenesisConfig();
 
         try {
-            $transaction = eMerchantPayTransaction::getByUniqueId($id_unique);
+            $transaction = EmerchantpayTransaction::getByUniqueId($id_unique);
 
             if ($transaction->terminal) {
                 \Genesis\Config::setToken($transaction->terminal);
@@ -987,9 +987,9 @@ class eMerchantPay extends PaymentModule
                 'amount'         => $amount,
             );
 
-            $response = eMerchantPayTransactionProcess::capture($data);
+            $response = EmerchantpayTransactionProcess::capture($data);
 
-            $transaction_response            = new eMerchantPayTransaction();
+            $transaction_response            = new EmerchantpayTransaction();
             $transaction_response->id_parent = $transaction->id_unique;
             $transaction_response->ref_order = $transaction->ref_order;
             $transaction_response->importResponse($response->getResponseObject());
@@ -1026,7 +1026,7 @@ class eMerchantPay extends PaymentModule
         $this->applyGenesisConfig();
 
         try {
-            $transaction = eMerchantPayTransaction::getByUniqueId($id_unique);
+            $transaction = EmerchantpayTransaction::getByUniqueId($id_unique);
 
             if ($transaction->terminal) {
                 \Genesis\Config::setToken($transaction->terminal);
@@ -1041,9 +1041,9 @@ class eMerchantPay extends PaymentModule
                 'amount'         => $amount,
             );
 
-            $response = eMerchantPayTransactionProcess::refund($data);
+            $response = EmerchantpayTransactionProcess::refund($data);
 
-            $transaction_response            = new eMerchantPayTransaction();
+            $transaction_response            = new EmerchantpayTransaction();
             $transaction_response->id_parent = $transaction->id_unique;
             $transaction_response->ref_order = $transaction->ref_order;
             $transaction_response->importResponse($response->getResponseObject());
@@ -1077,7 +1077,7 @@ class eMerchantPay extends PaymentModule
         $this->applyGenesisConfig();
 
         try {
-            $transaction = eMerchantPayTransaction::getByUniqueId($id_unique);
+            $transaction = EmerchantpayTransaction::getByUniqueId($id_unique);
 
             if ($transaction->terminal) {
                 \Genesis\Config::setToken($transaction->terminal);
@@ -1090,9 +1090,9 @@ class eMerchantPay extends PaymentModule
                 'reference_id'   => $transaction->id_unique,
             );
 
-            $response = eMerchantPayTransactionProcess::void($data);
+            $response = EmerchantpayTransactionProcess::void($data);
 
-            $transaction_response            = new eMerchantPayTransaction();
+            $transaction_response            = new EmerchantpayTransaction();
             $transaction_response->id_parent = $transaction->id_unique;
             $transaction_response->ref_order = $transaction->ref_order;
             $transaction_response->importResponse($response->getResponseObject());
@@ -1807,7 +1807,7 @@ class eMerchantPay extends PaymentModule
         $form_structure = array(
             'form' => array(
                 'legend' => array(
-                    'title' => $this->l('eMerchantPay Configuration'),
+                    'title' => $this->l('emerchantpay Configuration'),
                     'icon'  => 'icon-cog'
                 ),
                 'input'  => array(
@@ -1947,14 +1947,14 @@ class eMerchantPay extends PaymentModule
         /* Bootstrap Genesis */
         include_once dirname(__FILE__) . '/lib/genesis/vendor/autoload.php';
 
-        /* eMerchantPay Install Helper */
-        include_once dirname(__FILE__) . '/classes/eMerchantPayInstall.php';
+        /* emerchantpay Install Helper */
+        include_once dirname(__FILE__) . '/classes/EmerchantpayInstall.php';
 
-        /* eMerchantPay Transaction Model */
-        include_once dirname(__FILE__) . '/classes/eMerchantPayTransaction.php';
+        /* emerchantpay Transaction Model */
+        include_once dirname(__FILE__) . '/classes/EmerchantpayTransaction.php';
 
-        /* eMerchantPay Transaction Processor */
-        include_once dirname(__FILE__) . '/classes/eMerchantPayTransactionProcess.php';
+        /* emerchantpay Transaction Processor */
+        include_once dirname(__FILE__) . '/classes/EmerchantpayTransactionProcess.php';
 
         /* Check if Genesis Library is initialized */
         if (!class_exists('\Genesis\Genesis')) {
@@ -1964,7 +1964,7 @@ class eMerchantPay extends PaymentModule
         /* Catch Block added -> Prestashop 1.6.0 calls Model Constructor even when the Module is not yet installed */
         try {
             /* Check and update database if necessary */
-            eMerchantPayInstall::doProcessSchemaUpdate();
+            EmerchantpayInstall::doProcessSchemaUpdate();
         } catch (\Exception $e) {
             /* just ignore and log exception - Init Method is called on Upload Module (it should be called after Module is installed) */
             $this->logError($e);

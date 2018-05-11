@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2015 eMerchantPay Ltd.
+ * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,8 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      eMerchantPay
- * @copyright   2015 eMerchantPay Ltd.
+ * @author      emerchantpay
+ * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
@@ -22,13 +22,13 @@ if (!defined('_PS_VERSION_')) {
 }
 
 /**
- * Class eMerchantPayNotificationModuleFrontController
+ * Class EmerchantpayNotificationModuleFrontController
  *
  * Notifications Front-End Controller
  */
-class eMerchantPayNotificationModuleFrontController extends ModuleFrontController
+class EmerchantpayNotificationModuleFrontController extends ModuleFrontController
 {
-    /** @var eMerchantPay */
+    /** @var emerchantpay */
     public $module;
 
     /**
@@ -104,7 +104,7 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
 
                 if (isset($reconcile->unique_id)) {
 
-                    $transaction = eMerchantPayTransaction::getByUniqueId($reconcile->unique_id);
+                    $transaction = EmerchantpayTransaction::getByUniqueId($reconcile->unique_id);
 
                     if (isset($transaction->id_unique) && $transaction->id_unique == $reconcile->unique_id) {
                         if (in_array($reconcile->transaction_type, $this->types)) {
@@ -145,7 +145,7 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
 
                 if (isset($checkout_reconcile->unique_id)) {
 
-                    $checkout_transaction = eMerchantPayTransaction::getByUniqueId($checkout_reconcile->unique_id);
+                    $checkout_transaction = EmerchantpayTransaction::getByUniqueId($checkout_reconcile->unique_id);
 
                     if (isset($checkout_transaction->id_unique)) {
 
@@ -200,15 +200,15 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
     /**
      * @param $payment_reconcile
      *
-     * @return eMerchantPayTransaction
+     * @return EmerchantpayTransaction
      */
     protected function getPaymentTransaction($payment_reconcile)
     {
         if ($payment_reconcile instanceof \ArrayObject) {
-            return eMerchantPayTransaction::getByUniqueId($payment_reconcile[0]->unique_id);
+            return EmerchantpayTransaction::getByUniqueId($payment_reconcile[0]->unique_id);
         }
 
-        return eMerchantPayTransaction::getByUniqueId($payment_reconcile->unique_id);
+        return EmerchantpayTransaction::getByUniqueId($payment_reconcile->unique_id);
     }
 
     /**
@@ -217,7 +217,7 @@ class eMerchantPayNotificationModuleFrontController extends ModuleFrontControlle
      */
     protected function addPaymentTransaction($checkout_transaction, $payment_reconcile)
     {
-        $payment_transaction = new eMerchantPayTransaction();
+        $payment_transaction = new EmerchantpayTransaction();
 
         $payment_transaction->id_parent = $checkout_transaction->id_unique;
         $payment_transaction->ref_order = $checkout_transaction->ref_order;

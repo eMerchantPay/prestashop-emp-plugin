@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2015 eMerchantPay Ltd.
+ * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,8 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      eMerchantPay
- * @copyright   2015 eMerchantPay Ltd.
+ * @author      emerchantpay
+ * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
@@ -22,11 +22,11 @@ if (!defined('_PS_VERSION_')) {
 }
 
 /**
- * Class eMerchantPayTransaction
+ * Class EmerchantpayTransaction
  *
- * eMerchantPay Transaction Model
+ * emerchantpay Transaction Model
  */
-class eMerchantPayTransaction extends ObjectModel
+class EmerchantpayTransaction extends ObjectModel
 {
     public $id_unique;
     public $id_parent;
@@ -128,14 +128,14 @@ class eMerchantPayTransaction extends ObjectModel
      *
      * @param $id_unique
      *
-     * @return eMerchantPayTransaction
+     * @return EmerchantpayTransaction
      *
      * @throws PrestaShopException
      */
     public static function getByUniqueId($id_unique)
     {
         /** @var PrestaShopCollectionCore $result */
-        $result = new PrestaShopCollection('eMerchantPayTransaction');
+        $result = new PrestaShopCollection('EmerchantpayTransaction');
         $result->where('id_unique', '=', $id_unique);
 
         return $result->getFirst();
@@ -153,7 +153,7 @@ class eMerchantPayTransaction extends ObjectModel
         $order = new Order((int)$id_order);
 
         /** @var PrestaShopCollectionCore $transactions */
-        $transactions = new PrestaShopCollection('eMerchantPayTransaction');
+        $transactions = new PrestaShopCollection('EmerchantpayTransaction');
         $transactions->where('ref_order', '=', $order->reference);
 
         return $transactions;
@@ -169,7 +169,7 @@ class eMerchantPayTransaction extends ObjectModel
      */
     public static function getOrderByTransactionId($id_transaction)
     {
-        $transaction = eMerchantPayTransaction::getByUniqueId($id_transaction);
+        $transaction = EmerchantpayTransaction::getByUniqueId($id_transaction);
 
         /** @var PrestaShopCollectionCore $orders */
         $orders = new PrestaShopCollection('Order');
@@ -214,7 +214,7 @@ class eMerchantPayTransaction extends ObjectModel
     private static function getTransactionsByTypeAndStatus($order_reference, $parent_transaction_id, $types, $status)
     {
 
-        return ObjectModel::hydrateCollection('eMerchantPayTransaction',
+        return ObjectModel::hydrateCollection('EmerchantpayTransaction',
             Db::getInstance()->executeS("
 				SELECT *
 				FROM `" . _DB_PREFIX_ . "emerchantpay_transactions`
@@ -237,7 +237,7 @@ class eMerchantPayTransaction extends ObjectModel
      */
     public static function getByOrderReference($order_reference)
     {
-        return ObjectModel::hydrateCollection('eMerchantPayTransaction',
+        return ObjectModel::hydrateCollection('EmerchantpayTransaction',
             Db::getInstance()->executeS("
 				SELECT *
 				FROM `" . _DB_PREFIX_ . "emerchantpay_transactions`
@@ -282,7 +282,7 @@ class eMerchantPayTransaction extends ObjectModel
 
         $transactions = array();
 
-        /** @var eMerchantPayTransaction $transaction */
+        /** @var EmerchantpayTransaction $transaction */
         foreach ($result as $transaction) {
             $transactions[] = $transaction->getFields();
         }

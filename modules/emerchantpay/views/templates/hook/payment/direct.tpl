@@ -1,5 +1,5 @@
 {*
- * Copyright (C) 2016 eMerchantPay Ltd.
+ * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -11,8 +11,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      eMerchantPay
- * @copyright   2016 eMerchantPay Ltd.
+ * @author      emerchantpay
+ * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  *}
 
@@ -22,12 +22,11 @@
             <div id="payment-method-{$emerchantpay['name']['module']}-direct" class="payment_module">
                 <div class="payment-method-container" style="margin-top:-15px;">
                     <div class="payment-method-header">
-                        <div class="row no-gutter">
+                        <div class="row">
                             <div class="col-xs-12">
-                                <h3 style="color:#777;">
-                                    <i class="fa fa-credit-card"></i>
-                                    {l s="Pay with Credit / Debit Card" mod="emerchantpay"}
-                                </h3>
+                                <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_direct.png"
+                                     alt="{l s="emerchantpay Logo" mod="emerchantpay"}" style="width:224px;"/>
+                                <span>&nbsp;{l s="Pay with Credit / Debit Card" mod="emerchantpay"}</span>
                             </div>
                         </div>
                     </div>
@@ -101,12 +100,11 @@
                     <div class="col-xs-12">
                         <div class="payment-method-container">
                             <div class="payment-method-header">
-                                <div class="row no-gutter">
+                                <div class="row">
                                     <div class="col-xs-12">
-                                        <h3>
-                                            <i class="icon icon-credit-card"></i>
-                                            {l s="Pay with Credit / Debit Card" mod="emerchantpay"}
-                                        </h3>
+                                        <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_direct.png"
+                                             alt="{l s="emerchantpay Logo" mod="emerchantpay"}" style="width:224px;"/>
+                                        <span>&nbsp;{l s="Pay with Credit / Debit Card" mod="emerchantpay"}</span>
                                     </div>
                                 </div>
                             </div>
@@ -196,12 +194,11 @@
                     <div class="col-xs-12">
                         <div class="payment-method-container">
                             <div class="payment-method-header">
-                                <div class="row no-gutter">
+                                <div class="row">
                                     <div class="col-xs-12">
-                                        <h3>
-                                            <i class="icon icon-credit-card"></i>
-                                            {l s="Pay with Credit / Debit Card" mod="emerchantpay"}
-                                        </h3>
+                                        <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_direct.png"
+                                             alt="{l s="emerchantpay Logo" mod="emerchantpay"}" style="width:224px;"/>
+                                        <span>&nbsp;{l s="Pay with Credit / Debit Card" mod="emerchantpay"}</span>
                                     </div>
                                 </div>
                             </div>
@@ -276,8 +273,6 @@
     #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container {
         /*width:100%;*/
         background: #FFF;
-        border: 1px solid #ddd;
-        border-radius: 16px;
         padding: 22px 12px;
         overflow: hidden;
     }
@@ -329,6 +324,11 @@
         height: 40px;
         line-height: 8px;
         margin: 0 auto;
+    }
+
+    #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container .jp-card-container,
+    #payment-method-{$emerchantpay['name']['module']}-direct .payment-method-container .payment-method-content .form-group {
+        margin: 0 0 0 15px !important;
     }
 </style>
 

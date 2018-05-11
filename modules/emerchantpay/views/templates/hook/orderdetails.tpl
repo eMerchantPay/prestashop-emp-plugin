@@ -1,5 +1,5 @@
 {*
- * Copyright (C) 2015 eMerchantPay Ltd.
+ * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -11,8 +11,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      eMerchantPay
- * @copyright   2015 eMerchantPay Ltd.
+ * @author      emerchantpay
+ * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  *}
 {if $emerchantpay['transactions']['tree'] && version_compare($emerchantpay['presta']['version'], '1.7.2', '>=')}
@@ -20,7 +20,7 @@
     <section class="box">
         <h3>
             <img src="{$emerchantpay['presta']['url']}modules/{$emerchantpay['name']['module']}/logo.png" alt="" style="width:16px;" />
-            <span>{l s='eMerchantPay Transactions' mod='emerchantpay'}</span>
+            <span>{l s='emerchantpay Transactions' mod='emerchantpay'}</span>
         </h3>
 
         <table class="table table-hover tree">

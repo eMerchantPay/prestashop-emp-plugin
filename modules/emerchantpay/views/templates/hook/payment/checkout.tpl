@@ -1,5 +1,5 @@
 {*
- * Copyright (C) 2016 eMerchantPay Ltd.
+ * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -11,8 +11,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      eMerchantPay
- * @copyright   2016 eMerchantPay Ltd.
+ * @author      emerchantpay
+ * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  *}
 
@@ -22,8 +22,8 @@
             <div id="payment-method-{$emerchantpay['name']['module']}-checkout" class="payment_module">
                 <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']}">
                     <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_checkout.png"
-                         alt="{l s="eMerchantPay Logo" mod="emerchantpay"}" style="width:224px;"/>
-                    {l s="Pay safely with eMerchantPay" mod="emerchantpay"}
+                         alt="{l s="emerchantpay Logo" mod="emerchantpay"}" style="width:224px;"/>
+                    {l s="Pay safely with emerchantpay" mod="emerchantpay"}
                 </a>
             </div>
         {/if}
@@ -45,8 +45,8 @@
                         <p class="payment_module">
                             <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']}">
                                 <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_checkout.png"
-                                     alt="{l s="eMerchantPay Logo" mod="emerchantpay"}"/>
-                                <span>{l s="Pay safely with eMerchantPay" mod="emerchantpay"}</span>
+                                     alt="{l s="emerchantpay Logo" mod="emerchantpay"}"/>
+                                <span>{l s="Pay safely with emerchantpay" mod="emerchantpay"}</span>
                             </a>
                         </p>
                     </div>
@@ -90,12 +90,12 @@
                 <div class="payment-method-container">
                     <div class="row">
                         <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_checkout.png"
-                             alt="{l s="eMerchantPay Logo" mod="emerchantpay"}"/>
-                        <span>{l s="Pay safely with eMerchantPay" mod="emerchantpay"}</span>
+                             alt="{l s="emerchantpay Logo" mod="emerchantpay"}"/>
+                        <span>{l s="Pay safely with emerchantpay" mod="emerchantpay"}</span>
                     </div>
                     <div class="row">
                         <p>
-                            {l s="You will be redirected to our eMerchantPay's website, where you can safely enter your payment details and complete this order." mod='emerchantpay'}
+                            {l s="You will be redirected to our emerchantpay's website, where you can safely enter your payment details and complete this order." mod='emerchantpay'}
                         </p>
                     </div>
                 </div>

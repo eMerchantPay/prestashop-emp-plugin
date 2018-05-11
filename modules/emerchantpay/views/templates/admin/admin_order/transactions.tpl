@@ -1,5 +1,5 @@
 {*
- * Copyright (C) 2015 eMerchantPay Ltd.
+ * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -11,8 +11,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      eMerchantPay
- * @copyright   2015 eMerchantPay Ltd.
+ * @author      emerchantpay
+ * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  *}
 
@@ -27,7 +27,7 @@
     <br/>
 
     <fieldset {if isset($emerchantpay['presta']['version']) && ($emerchantpay['presta']['version'] < '1.5')}style="width: 400px"{/if}>
-        <legend><img src="{$emerchantpay['presta']['url']}/modules/{$emerchantpay['name']['module']}/logo.png" style="width:16px" alt="" />{l s='eMerchantPay Transactions' mod='emerchantpay'}</legend>
+        <legend><img src="{$emerchantpay['presta']['url']}/modules/{$emerchantpay['name']['module']}/logo.png" style="width:16px" alt="" />{l s='emerchantpay Transactions' mod='emerchantpay'}</legend>
         {* System errors, impacting the module functionallity *}
         {if $emerchantpay['warning']}
             <div class="warn">{$emerchantpay['warning']|escape:html:'UTF-8'}</div>
@@ -185,7 +185,7 @@
             <div class="panel">
                 <div class="panel-heading">
                     <img src="{$emerchantpay['presta']['url']}modules/{$emerchantpay['name']['module']}/logo.png" alt="" style="width:16px;" />
-                    <span>{l s='eMerchantPay Transactions' mod='emerchantpay'}</span>
+                    <span>{l s='emerchantpay Transactions' mod='emerchantpay'}</span>
                 </div>
                 <div class="panel-collapse collapse in">
 

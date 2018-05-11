@@ -1,5 +1,5 @@
 {*
- * Copyright (C) 2015 eMerchantPay Ltd.
+ * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -11,8 +11,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      eMerchantPay
- * @copyright   2015 eMerchantPay Ltd.
+ * @author      emerchantpay
+ * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  *}
 
@@ -25,7 +25,7 @@
         <span class="navigation-pipe">
         {$navigationPipe}
     </span>
-        {l s='eMerchantPay Secure Checkout' mod='emerchantpay'}
+        {l s='emerchantpay Secure Checkout' mod='emerchantpay'}
     {/capture}
 
     {include file="$tpl_dir./breadcrumb.tpl"}
@@ -53,14 +53,14 @@
             </div>
         {/if}
 
-        <h3>{l s='eMerchantPay Secure Checkout' mod='emerchantpay'}</h3>
+        <h3>{l s='emerchantpay Secure Checkout' mod='emerchantpay'}</h3>
         <form action="{$emerchantpay['checkout']['links']['confirm']|escape:'html'}" method="POST" name="">
             <input type="hidden" name="checkout" value="confirmed" />
             <input type="hidden" name="submit{$emerchantpay['name']['module']}Checkout" value="true" />
 
             <p>
-                <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay.png" alt="{l s='eMerchantPay Checkout' mod='emerchantpay'}" width="128" style="float:left;margin: 0 10px 5px 0;" />
-                {l s='You have chosen to pay via eMerchantPay Secure Checkout' mod='emerchantpay'}
+                <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay.png" alt="{l s='emerchantpay Checkout' mod='emerchantpay'}" width="128" style="float:left;margin: 0 10px 5px 0;" />
+                {l s='You have chosen to pay via emerchantpay Secure Checkout' mod='emerchantpay'}
             </p>
             <p style="margin-top:20px;">
                 {l s='Here is a short summary of your order:' mod='emerchantpay'}
@@ -72,7 +72,7 @@
                 {/if}
             </p>
             <p>
-                {l s="You will be redirected to our eMerchantPay's website, where you can safely enter your payment details and complete this order." mod='emerchantpay'}
+                {l s="You will be redirected to our emerchantpay's website, where you can safely enter your payment details and complete this order." mod='emerchantpay'}
                 <br /><br />
                 <b>{l s='Please confirm your order by clicking "I confirm my order".' mod='emerchantpay'}</b>
             </p>
@@ -87,7 +87,7 @@
 
 {if version_compare($emerchantpay['presta']['version'], '1.6', '>=') && version_compare($emerchantpay['presta']['version'], '1.7', '<') }
 
-    {capture name=path}{l s='eMerchantPay Checkout' mod='emerchantpay'}{/capture}
+    {capture name=path}{l s='emerchantpay Checkout' mod='emerchantpay'}{/capture}
 
     <h1 class="page-heading">{l s='Order summary' mod='emerchantpay'}</h1>
 
@@ -112,10 +112,10 @@
             <input type="hidden" name="submit{$emerchantpay['name']['module']}Checkout" value="true" />
 
             <div class="box cheque-box">
-                <h3 class="page-subheading">{l s='eMerchantPay Checkout' mod='emerchantpay'}</h3>
+                <h3 class="page-subheading">{l s='emerchantpay Checkout' mod='emerchantpay'}</h3>
                 <p>
                     <strong class="dark">
-                        {l s='You have chosen to pay via eMerchantPay\'s Secure Checkout.' mod='emerchantpay'}
+                        {l s='You have chosen to pay via emerchantpay\'s Secure Checkout.' mod='emerchantpay'}
                         <br/>
                         {l s='Here is a short summary of your order:' mod='emerchantpay'}
                     </strong>
@@ -128,7 +128,7 @@
                     {/if}
                 </p>
                 <p>
-                    - {l s="You will be redirected to our eMerchantPay's website, where you can safely enter your payment details and complete this order." mod='emerchantpay'}
+                    - {l s="You will be redirected to our emerchantpay's website, where you can safely enter your payment details and complete this order." mod='emerchantpay'}
                     <br />
                     - <b>{l s='Please confirm your order by clicking "I confirm my order".' mod='emerchantpay'}</b>
                 </p>

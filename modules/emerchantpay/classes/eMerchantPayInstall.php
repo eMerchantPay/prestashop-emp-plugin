@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2016 eMerchantPay Ltd.
+ * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,8 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      eMerchantPay
- * @copyright   2016 eMerchantPay Ltd.
+ * @author      emerchantpay
+ * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
@@ -22,11 +22,11 @@ if (!defined('_PS_VERSION_')) {
 }
 
 /**
- * Class eMerchantPayInstall
+ * Class EmerchantpayInstall
  *
  * Perform module installation/un-installation
  */
-class eMerchantPayInstall
+class EmerchantpayInstall
 {
 	private $status = true;
 
@@ -94,7 +94,7 @@ class eMerchantPayInstall
 	/**
 	 * Register all Hooks required by the module
 	 *
-	 * @param $instance eMerchantPay
+	 * @param $instance emerchantpay
 	 *
 	 * @throws PrestaShopException
 	 */
@@ -124,7 +124,7 @@ class eMerchantPayInstall
 	/**
 	 * Delete registered hooks
 	 *
-	 * @param $instance eMerchantPay
+	 * @param $instance emerchantpay
 	 *
 	 * @throws PrestaShopException
 	 */
@@ -141,7 +141,7 @@ class eMerchantPayInstall
     /**
      * Delete module configuration
      *
-     * @param eMerchantPay $instance
+     * @param emerchantpay $instance
      * @throws PrestaShopException
      */
 	public function dropKeys($instance)
