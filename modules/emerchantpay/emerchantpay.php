@@ -61,7 +61,7 @@ class Emerchantpay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'emerchantpay Payment Gateway';
         $this->controllers            = array('checkout', 'notification', 'redirect', 'validation');
-        $this->version                = '1.6.0';
+        $this->version                = '1.6.1';
         $this->author                 = 'emerchantpay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => _PS_VERSION_);

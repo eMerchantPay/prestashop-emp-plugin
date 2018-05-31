@@ -95,7 +95,7 @@
                     </div>
                     <div class="row">
                         <p>
-                            {l s="You will be redirected to our emerchantpay's website, where you can safely enter your payment details and complete this order." mod='emerchantpay'}
+                            {l s="You will be redirected to emerchantpay, where you can safely enter your payment details and complete this order." mod='emerchantpay'}
                         </p>
                     </div>
                 </div>
