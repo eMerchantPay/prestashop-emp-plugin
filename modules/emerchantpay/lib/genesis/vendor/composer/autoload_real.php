@@ -45,9 +45,9 @@ class GenesisAutoLoader
             return self::$loader;
         }
 
-        spl_autoload_register(array('GenesisAutoLoader', 'loadClassLoader'), true, true);
+        spl_autoload_register(['GenesisAutoLoader', 'loadClassLoader'], true, true);
         self::$loader = $loader = new \Composer\Autoload\ClassLoader();
-        spl_autoload_unregister(array('GenesisAutoLoader', 'loadClassLoader'));
+        spl_autoload_unregister(['GenesisAutoLoader', 'loadClassLoader']);
 
         $map = require __DIR__ . '/autoload_namespaces.php';
         foreach ($map as $namespace => $path) {

@@ -117,9 +117,63 @@ class EmerchantpayTransactionProcess
                     ->setLanguage($data->language);
         }
 
+        if ($data->is_wpf_tokenization_enabled) {
+            $consumerId = EmerchantpayConsumer::getConsumerId(
+                \Genesis\Config::getUsername(),
+                $data->customer_email
+            );
+
+            if (empty($consumerId)) {
+                $consumerId = static::retrieveConsumerIdFromEmail($data->customer_email);
+            }
+
+            if (!empty($consumerId)) {
+                $genesis->request()->setConsumerId($consumerId);
+            }
+
+            $genesis->request()->setRememberCard(true);
+        }
+
         $genesis->execute();
 
         return $genesis->response();
+    }
+
+    /**
+     * @param string $email
+     *
+     * @return null|int
+     */
+    protected static function retrieveConsumerIdFromEmail($email)
+    {
+        try {
+            $genesis = new \Genesis\Genesis('NonFinancial\Consumers\Retrieve');
+            $genesis->request()->setEmail($email);
+
+            $genesis->execute();
+
+            $response = $genesis->response()->getResponseObject();
+
+            if (!self::isConsumerEnabled($response)) {
+                return null;
+            }
+
+            return $response->consumer_id;
+        } catch (\Exception $exception) {
+            return null;
+        }
+    }
+
+    /**
+     * @param $response
+     *
+     * @return bool
+     */
+    private static function isConsumerEnabled($response)
+    {
+        $state = new \Genesis\API\Constants\Transaction\States($response->status);
+
+        return $state->isEnabled();
     }
 
     /**

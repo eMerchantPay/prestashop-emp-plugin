@@ -36,7 +36,7 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
      *
      * @var array
      */
-    public $types = array(
+    public $types = [
         \Genesis\API\Constants\Transaction\Types::ABNIDEAL,
         \Genesis\API\Constants\Transaction\Types::ALIPAY,
         \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
@@ -55,18 +55,18 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
         \Genesis\API\Constants\Transaction\Types::INPAY,
         \Genesis\API\Constants\Transaction\Types::INSTA_DEBIT_PAYIN,
         \Genesis\API\Constants\Transaction\Types::INTERSOLVE,
+        \Genesis\API\Constants\Transaction\Types::ONLINE_BANKING_PAYIN,
         \Genesis\API\Constants\Transaction\Types::P24,
         \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE,
         \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_YEEPAY,
         \Genesis\API\Constants\Transaction\Types::PAYPAL_EXPRESS,
-        \Genesis\API\Constants\Transaction\Types::PAYSEC_PAYIN,
         \Genesis\API\Constants\Transaction\Types::POLI,
         \Genesis\API\Constants\Transaction\Types::SDD_SALE,
         \Genesis\API\Constants\Transaction\Types::TCS,
         \Genesis\API\Constants\Transaction\Types::TRUSTLY_SALE,
         \Genesis\API\Constants\Transaction\Types::WEBMONEY,
         \Genesis\API\Constants\Transaction\Types::WECHAT,
-    );
+    ];
 
     /**
      * @see FrontController::initContent()

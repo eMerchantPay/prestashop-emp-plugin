@@ -6,8 +6,8 @@ This is a Payment Module for Prestashop that gives you the ability to process pa
 Requirements
 ------------
 
-* Prestashop 1.6.x - 1.7.x (Tested up to __1.7.2.4__)
-* [GenesisPHP v1.9.0](https://github.com/GenesisGateway/genesis_php/releases/tag/1.9.0) - (Integrated in Module)
+* Prestashop 1.6.x - 1.7.x (Tested up to __1.7.4__)
+* [GenesisPHP v1.14.0](https://github.com/GenesisGateway/genesis_php/releases/tag/1.14.0) - (Integrated in Module)
 * PCI-certified server in order to use ```emerchantpay Direct```
 
 GenesisPHP Requirements
@@ -67,3 +67,48 @@ _Note_: If you have trouble with your credentials or terminal configuration, get
 You're now ready to process payments through our gateway.
 
 [support]: mailto:tech-support@emerchantpay.net
+
+Supported Transactions
+------------
+* ```emerchantpay Direct``` Payment Method
+	* __Authorize__
+	* __Authorize (3D-Secure)__
+	* __Sale__
+	* __Sale (3D-Secure)__
+
+* ```emerchantpay Checkout``` Payment Method
+    * __ABN iDeal__
+    * __Alipay__
+    * __Authorize__
+    * __Authorize (3D-Secure)__
+    * __CashU__
+    * __eZeeWallet__
+    * __Fashioncheque__
+    * __iDebit__
+    * __INPay__
+    * __InstaDebit__
+    * __Intersolve__
+    * __MyBank__
+    * __Neteller__
+    * __Online Banking__
+    * __P24__
+    * __PayByVoucher (Sale)__
+    * __PayPal Express__
+    * __PaySafeCard__
+    * __POLi__
+    * __PPRO__
+        * __eps__
+        * __GiroPay__
+        * __Qiwi__
+        * __Przelewy24__
+        * __SafetyPay__
+        * __TrustPay__
+        * __Mr.Cash__
+    * __Sale__
+    * __Sale (3D-Secure)__
+    * __Sepa Direct Debit__
+    * __SOFORT__
+    * __TCS__
+    * __Trustly__
+    * __WebMoney__
+    * __WeChat__

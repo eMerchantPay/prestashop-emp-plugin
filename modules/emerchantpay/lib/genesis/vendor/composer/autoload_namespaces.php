@@ -24,6 +24,6 @@
 $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
-return array(
-    'Genesis' => array($baseDir . '/src'),
-);
+return [
+    'Genesis' => [$baseDir . '/src'],
+];

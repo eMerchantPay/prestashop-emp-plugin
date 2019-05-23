@@ -82,19 +82,19 @@ class EmerchantpayCheckoutModuleFrontController extends ModuleFrontController
 
             $this->context->smarty->append(
                 'emerchantpay',
-                array(
-                    'checkout' => array(
+                [
+                    'checkout' => [
                         'product_count' => $cart->nbProducts(),
                         'currency'      => $cart->id_currency,
                         'total'         => $cart->getOrderTotal(true, $cart::BOTH),
                         'isoCode'       => $this->context->language->iso_code,
                         'error'         => $this->module->getSessVar('error_checkout'),
-                        'links'         => array(
+                        'links'         => [
                             'back'    => $this->context->link->getPageLink('order', true, null, "step=3"),
                             'confirm' => $this->context->link->getModuleLink($this->module->name, 'validation'),
-                        )
-                    )
-                ),
+                        ]
+                    ]
+                ],
                 true
             );
 

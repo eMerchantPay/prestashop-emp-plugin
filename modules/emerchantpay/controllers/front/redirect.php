@@ -33,9 +33,9 @@ class EmerchantpayRedirectModuleFrontController extends ModuleFrontController
     /** @var  ContextCore */
     protected $context;
     /** @var array */
-    protected $statuses = array('success', 'failure', 'cancel');
+    protected $statuses = ['success', 'failure', 'cancel'];
     /** @var array */
-    protected $actionsToRestoreCart = array('failure', 'cancel');
+    protected $actionsToRestoreCart = ['failure', 'cancel'];
 
     /**
      * @see FrontController::initContent()
@@ -59,20 +59,22 @@ class EmerchantpayRedirectModuleFrontController extends ModuleFrontController
 
         $this->context->smarty->append(
             'emerchantpay',
-            array(
-                'redirect' => array(
+            [
+                'redirect' => [
                     'status' => Tools::getValue('action'),
-                    'url'    => array(
+                    'url'    => [
                         'order'   => $this->getOrderUrl(),
                         'history' => $this->context->link->getPageLink('history.php'),
                         'restore' => $this->context->link->getModuleLink(
-                            $this->module->name, 'redirect', array('restore' => 'cart')
+                            $this->module->name,
+                            'redirect',
+                            ['restore' => 'cart']
                         ),
                         'support' => $this->context->link->getPageLink('contact.php'),
-                    )
-                ),
-                'cart' => new Cart(intval(Tools::getValue('id_cart')))
-            ),
+                    ]
+                ],
+                'cart'     => new Cart(intval(Tools::getValue('id_cart')))
+            ],
             true
         );
 
@@ -103,8 +105,8 @@ class EmerchantpayRedirectModuleFrontController extends ModuleFrontController
     protected function getOrderUrl()
     {
         return $this->isOrderProcessTypeOPC() ?
-            $this->context->link->getPageLink('order-opc.php', array('step' => '3')) :
-            $this->context->link->getPageLink('order.php', array('step' => '3'));
+            $this->context->link->getPageLink('order-opc.php', ['step' => '3']) :
+            $this->context->link->getPageLink('order.php', ['step' => '3']);
     }
 
     /**

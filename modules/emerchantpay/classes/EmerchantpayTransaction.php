@@ -44,51 +44,54 @@ class EmerchantpayTransaction extends ObjectModel
     /**
      * @see ObjectModel::$definition
      */
-    public static $definition = array(
+    public static $definition = [
         'table'   => 'emerchantpay_transactions',
         'primary' => 'id_entry',
-        'fields'  => array(
-            'id_unique'      => array(
+        'fields'  => [
+            'id_unique'      => [
                 'type'     => self::TYPE_STRING,
                 'validate' => 'isString',
                 'required' => true,
                 'size'     => 254
-            ),
-            'id_parent'      => array(
+            ],
+            'id_parent'      => [
                 'type'     => self::TYPE_STRING,
                 'validate' => 'isString',
                 'required' => true,
                 'size'     => 254
-            ),
-            'ref_order'      => array(
+            ],
+            'ref_order'      => [
                 'type'     => self::TYPE_STRING,
                 'validate' => 'isString',
                 'required' => true,
                 'size'     => 9
-            ),
-            'transaction_id' => array('type'     => self::TYPE_STRING,
-                                      'validate' => 'isString',
-                                      'required' => false,
-                                      'size'     => 254
-            ),
-            'type'           => array('type'     => self::TYPE_STRING,
-                                      'validate' => 'isString',
-                                      'required' => true,
-                                      'size'     => 254
-            ),
-            'status'         => array('type'     => self::TYPE_STRING,
-                                      'validate' => 'isString',
-                                      'required' => true,
-                                      'size'     => 254
-            ),
-            'message'        => array('type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 254),
-            'currency'       => array('type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 3),
-            'amount'         => array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
-            'terminal'       => array('type' => self::TYPE_STRING, 'validate' => 'isString'),
-            'date_add'       => array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
-            'date_upd'       => array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
-        ),
-    );
+            ],
+            'transaction_id' => [
+                'type'     => self::TYPE_STRING,
+                'validate' => 'isString',
+                'required' => false,
+                'size'     => 254
+            ],
+            'type'           => [
+                'type'     => self::TYPE_STRING,
+                'validate' => 'isString',
+                'required' => true,
+                'size'     => 254
+            ],
+            'status'         => [
+                'type'     => self::TYPE_STRING,
+                'validate' => 'isString',
+                'required' => true,
+                'size'     => 254
+            ],
+            'message'        => ['type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 254],
+            'currency'       => ['type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 3],
+            'amount'         => ['type' => self::TYPE_FLOAT, 'validate' => 'isPrice'],
+            'terminal'       => ['type' => self::TYPE_STRING, 'validate' => 'isString'],
+            'date_add'       => ['type' => self::TYPE_DATE, 'validate' => 'isDate'],
+            'date_upd'       => ['type' => self::TYPE_DATE, 'validate' => 'isDate'],
+        ],
+    ];
 
     /**
      * Add transaction
@@ -101,7 +104,7 @@ class EmerchantpayTransaction extends ObjectModel
     public function add($autodate = true, $nullValues = false)
     {
         if (parent::add($autodate, $nullValues)) {
-            Hook::exec('actionEmerchantPayAddTransaction', array('emerchantpayAddTransaction' => $this));
+            Hook::exec('actionEmerchantPayAddTransaction', ['emerchantpayAddTransaction' => $this]);
 
             return true;
         }
@@ -263,7 +266,6 @@ class EmerchantpayTransaction extends ObjectModel
         return number_format($amount, 2, ".", "");
     }
 
-
     /**
      * Returns an array with tree-structure where
      * every branch is a transaction related to
@@ -280,7 +282,7 @@ class EmerchantpayTransaction extends ObjectModel
 
         $result = self::getByOrderReference($order->reference);
 
-        $transactions = array();
+        $transactions = [];
 
         /** @var EmerchantpayTransaction $transaction */
         foreach ($result as $transaction) {
@@ -311,10 +313,18 @@ class EmerchantpayTransaction extends ObjectModel
                 $transaction['status'] == 'approved';
 
             if ($transaction['can_capture']) {
-                $totalAuthorizedAmount           = self::getTransactionsSumAmount($order->reference,
-                    $transaction['id_parent'], array('authorize', 'authorize3d'), 'approved');
-                $totalCapturedAmount             = self::getTransactionsSumAmount($order->reference,
-                    $transaction['id_unique'], 'capture', 'approved');
+                $totalAuthorizedAmount           = self::getTransactionsSumAmount(
+                    $order->reference,
+                    $transaction['id_parent'],
+                    ['authorize', 'authorize3d'],
+                    'approved'
+                );
+                $totalCapturedAmount             = self::getTransactionsSumAmount(
+                    $order->reference,
+                    $transaction['id_unique'],
+                    'capture',
+                    'approved'
+                );
                 $transaction['available_amount'] = $totalAuthorizedAmount - $totalCapturedAmount;
             }
 
@@ -322,8 +332,12 @@ class EmerchantpayTransaction extends ObjectModel
 
             if ($transaction['can_refund']) {
                 $totalCapturedAmount             = $transaction['amount'];
-                $totalRefundedAmount             = self::getTransactionsSumAmount($order->reference,
-                    $transaction['id_unique'], 'refund', 'approved');
+                $totalRefundedAmount             = self::getTransactionsSumAmount(
+                    $order->reference,
+                    $transaction['id_unique'],
+                    'refund',
+                    'approved'
+                );
                 $transaction['available_amount'] = $totalCapturedAmount - $totalRefundedAmount;
             }
 
@@ -339,13 +353,13 @@ class EmerchantpayTransaction extends ObjectModel
         }
 
         // Create the parent/child relations from a flat array
-        $array_asc = array();
+        $array_asc = [];
 
         foreach ($transactions as $key => $val) {
             // create an array with ids as keys and children
             // with the assumption that parents are created earlier.
             // store the original key
-            $array_asc[$val['id_unique']] = array_merge($val, array('org_key' => $key));
+            $array_asc[$val['id_unique']] = array_merge($val, ['org_key' => $key]);
 
             if (isset($val['id_parent']) && (bool)$val['id_parent']) {
                 $array_asc[$val['id_parent']]['children'][] = $val['id_unique'];
@@ -353,7 +367,7 @@ class EmerchantpayTransaction extends ObjectModel
         }
 
         // Order the parent/child entries
-        $transactions = array();
+        $transactions = [];
 
         foreach ($array_asc as $val) {
 
@@ -472,20 +486,22 @@ class EmerchantpayTransaction extends ObjectModel
      * Changes parent status with the child status.
      * @return bool
      */
-    public function changeParentStatus() {
+    public function changeParentStatus()
+    {
         if (!$this->shouldChangeParentStatus()) {
             return false;
         }
 
-        $parent_transaction = static::getByUniqueId( $this->id_parent );
-        $parent_transaction->status = $this->getStatusFromTransactionType( $this->type );
+        $parent_transaction         = static::getByUniqueId($this->id_parent);
+        $parent_transaction->status = $this->getStatusFromTransactionType($this->type);
 
         try {
             return $parent_transaction->update();
         } catch (\Exception $e) {
             if (class_exists('Logger')) {
-                Logger::addLog( $e->getMessage(), 4 );
+                Logger::addLog($e->getMessage(), 4);
             }
+
             return false;
         }
     }
