@@ -7,7 +7,7 @@ Requirements
 ------------
 
 * Prestashop 1.6.x - 1.7.x (Tested up to __1.7.4__)
-* [GenesisPHP v1.14.0](https://github.com/GenesisGateway/genesis_php/releases/tag/1.14.0) - (Integrated in Module)
+* [GenesisPHP v1.17.0](https://github.com/GenesisGateway/genesis_php/releases/tag/1.17.0) - (Integrated in Module)
 * PCI-certified server in order to use ```emerchantpay Direct```
 
 GenesisPHP Requirements
@@ -79,22 +79,40 @@ Supported Transactions
 * ```emerchantpay Checkout``` Payment Method
     * __ABN iDeal__
     * __Alipay__
+    * __Aura__
     * __Authorize__
     * __Authorize (3D-Secure)__
+    * __Baloto_
+    * __Banamex__
+    * __Banco de Occidente__
+    * __Banco do Brasil__
+    * __Bancomer__
+    * __Boleto__
+    * __Bradesco__
+    * __Cabal__
     * __CashU__
+    * __Cencosud__
+    * __Efecty__
+    * __Elo__
+    * __Entercash__
     * __eZeeWallet__
     * __Fashioncheque__
     * __iDebit__
     * __INPay__
     * __InstaDebit__
+    * __InstantTransfer__
     * __Intersolve__
+    * __Itau__
+    * __Multibanco__
     * __MyBank__
     * __Neteller__
     * __Online Banking__
+    * __OXXO__
     * __P24__
     * __PayByVoucher (Sale)__
     * __PayPal Express__
     * __PaySafeCard__
+    * __PayU__
     * __POLi__
     * __PPRO__
         * __eps__
@@ -106,9 +124,11 @@ Supported Transactions
         * __Mr.Cash__
     * __Sale__
     * __Sale (3D-Secure)__
+    * __Santander__
     * __Sepa Direct Debit__
     * __SOFORT__
     * __TCS__
     * __Trustly__
     * __WebMoney__
     * __WeChat__
+    * __Zimpler__

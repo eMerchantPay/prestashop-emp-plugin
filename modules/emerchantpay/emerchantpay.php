@@ -62,7 +62,7 @@ class Emerchantpay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'emerchantpay Payment Gateway';
         $this->controllers            = ['checkout', 'notification', 'redirect', 'validation'];
-        $this->version                = '1.6.2';
+        $this->version                = '1.7.0';
         $this->author                 = 'emerchantpay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = ['min' => '1.5', 'max' => _PS_VERSION_];
@@ -1430,31 +1430,19 @@ class Emerchantpay extends PaymentModule
                 \Genesis\API\Constants\Transaction\Types::PPRO,
         ];
 
-        $orderItemsList = $this->getItemList();
-        $userIdHash     = $this->getCurrentUserIdHash();
+        $userIdHash = $this->getCurrentUserIdHash();
 
         $transactionsCustomParams = [
-            \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE   => [
+            \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE => [
                 'card_type'   =>
                     \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\CardTypes::VIRTUAL,
                 'redeem_type' =>
                     \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\RedeemTypes::INSTANT
             ],
-            \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_YEEPAY => [
-                'card_type'        =>
-                    \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\CardTypes::VIRTUAL,
-                'redeem_type'      =>
-                    \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\RedeemTypes::INSTANT,
-                'product_name'     => $orderItemsList,
-                'product_category' => $orderItemsList
-            ],
-            \Genesis\API\Constants\Transaction\Types::CITADEL_PAYIN       => [
-                'merchant_customer_id' => $userIdHash
-            ],
-            \Genesis\API\Constants\Transaction\Types::IDEBIT_PAYIN        => [
+            \Genesis\API\Constants\Transaction\Types::IDEBIT_PAYIN      => [
                 'customer_account_id' => $userIdHash
             ],
-            \Genesis\API\Constants\Transaction\Types::INSTA_DEBIT_PAYIN   => [
+            \Genesis\API\Constants\Transaction\Types::INSTA_DEBIT_PAYIN => [
                 'customer_account_id' => $userIdHash
             ]
         ];
@@ -1797,12 +1785,38 @@ class Emerchantpay extends PaymentModule
                                 $this->l('ABN iDEAL'),
                             \Genesis\API\Constants\Transaction\Types::ALIPAY               =>
                                 $this->l('Alipay'),
+                            \Genesis\API\Constants\Transaction\Types::AURA                 =>
+                                $this->l('Aura'),
                             \Genesis\API\Constants\Transaction\Types::AUTHORIZE            =>
                                 $this->l('Authorize'),
                             \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D         =>
                                 $this->l('Authorize 3D'),
+                            \Genesis\API\Constants\Transaction\Types::BALOTO               =>
+                                $this->l('Baloto'),
+                            \Genesis\API\Constants\Transaction\Types::BANAMEX              =>
+                                $this->l('Banamex'),
+                            \Genesis\API\Constants\Transaction\Types::BANCO_DE_OCCIDENTE   =>
+                                $this->l('Banco de Occidente'),
+                            \Genesis\API\Constants\Transaction\Types::BANCO_DO_BRASIL      =>
+                                $this->l('Banco do Brasil'),
+                            \Genesis\API\Constants\Transaction\Types::BANCOMER             =>
+                                $this->l('Bancomer'),
+                            \Genesis\API\Constants\Transaction\Types::BOLETO               =>
+                                $this->l('Boleto'),
+                            \Genesis\API\Constants\Transaction\Types::BRADESCO             =>
+                                $this->l('Bradesco'),
+                            \Genesis\API\Constants\Transaction\Types::CABAL                =>
+                                $this->l('Cabal'),
                             \Genesis\API\Constants\Transaction\Types::CASHU                =>
                                 $this->l('CashU'),
+                            \Genesis\API\Constants\Transaction\Types::CENCOSUD             =>
+                                $this->l('Cencosud'),
+                            \Genesis\API\Constants\Transaction\Types::EFECTY               =>
+                                $this->l('Efecty'),
+                            \Genesis\API\Constants\Transaction\Types::ELO                  =>
+                                $this->l('Elo'),
+                            \Genesis\API\Constants\Transaction\Types::ENTERCASH            =>
+                                $this->l('Entercash'),
                             \Genesis\API\Constants\Payment\Methods::EPS                    =>
                                 $this->l('eps'),
                             \Genesis\API\Constants\Transaction\Types::EZEEWALLET           =>
@@ -1817,16 +1831,24 @@ class Emerchantpay extends PaymentModule
                                 $this->l('INPay'),
                             \Genesis\API\Constants\Transaction\Types::INSTA_DEBIT_PAYIN    =>
                                 $this->l('InstaDebit'),
+                            \Genesis\API\Constants\Transaction\Types::INSTANT_TRANSFER     =>
+                                $this->l('InstantTransfer'),
                             \Genesis\API\Constants\Transaction\Types::INTERSOLVE           =>
                                 $this->l('Intersolve'),
+                            \Genesis\API\Constants\Transaction\Types::ITAU                 =>
+                                $this->l('Itau'),
                             \Genesis\API\Constants\Payment\Methods::BCMC                   =>
                                 $this->l('Mr.Cash'),
+                            \Genesis\API\Constants\Transaction\Types::MULTIBANCO           =>
+                                $this->l('Multibanco'),
                             \Genesis\API\Constants\Payment\Methods::MYBANK                 =>
                                 $this->l('MyBank'),
                             \Genesis\API\Constants\Transaction\Types::NETELLER             =>
                                 $this->l('Neteller'),
                             \Genesis\API\Constants\Transaction\Types::ONLINE_BANKING_PAYIN =>
                                 $this->l('OnlineBanking'),
+                            \Genesis\API\Constants\Transaction\Types::OXXO                 =>
+                                $this->l('OXXO'),
                             \Genesis\API\Constants\Transaction\Types::P24                  =>
                                 $this->l('P24'),
                             \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE    =>
@@ -1835,6 +1857,8 @@ class Emerchantpay extends PaymentModule
                                 $this->l('PayPal Express'),
                             \Genesis\API\Constants\Transaction\Types::PAYSAFECARD          =>
                                 $this->l('PaySafeCard'),
+                            \Genesis\API\Constants\Transaction\Types::PAYU                 =>
+                                $this->l('PayU'),
                             \Genesis\API\Constants\Transaction\Types::POLI                 =>
                                 $this->l('POLi'),
                             \Genesis\API\Constants\Payment\Methods::PRZELEWY24             =>
@@ -1847,6 +1871,8 @@ class Emerchantpay extends PaymentModule
                                 $this->l('Sale'),
                             \Genesis\API\Constants\Transaction\Types::SALE_3D              =>
                                 $this->l('Sale 3D'),
+                            \Genesis\API\Constants\Transaction\Types::SANTANDER            =>
+                                $this->l('Santander'),
                             \Genesis\API\Constants\Transaction\Types::SDD_SALE             =>
                                 $this->l('Sepa Direct Debit'),
                             \Genesis\API\Constants\Transaction\Types::SOFORT               =>
@@ -1861,6 +1887,8 @@ class Emerchantpay extends PaymentModule
                                 $this->l('WebMoney'),
                             \Genesis\API\Constants\Transaction\Types::WEBMONEY             =>
                                 $this->l('WeChat'),
+                            \Genesis\API\Constants\Transaction\Types::ZIMPLER              =>
+                                $this->l('Zimpler'),
                         ]
                     ),
                     'id'    => 'id',
