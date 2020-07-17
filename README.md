@@ -6,8 +6,8 @@ This is a Payment Module for Prestashop that gives you the ability to process pa
 Requirements
 ------------
 
-* Prestashop 1.6.x - 1.7.x (Tested up to __1.7.4__)
-* [GenesisPHP v1.18.3](https://github.com/GenesisGateway/genesis_php/releases/tag/1.18.3) - (Integrated in Module)
+* Prestashop 1.6.x - 1.7.x (Tested up to __1.7.6__)
+* [GenesisPHP v1.18.4](https://github.com/GenesisGateway/genesis_php/releases/tag/1.18.4) - (Integrated in Module)
 * PCI-certified server in order to use ```emerchantpay Direct```
 
 GenesisPHP Requirements
@@ -77,39 +77,47 @@ Supported Transactions
 	* __Sale (3D-Secure)__
 
 * ```emerchantpay Checkout``` Payment Method
-    * __ABN iDeal__
-    * __Alipay__
+    * __Argencard__
     * __Aura__
     * __Authorize__
     * __Authorize (3D-Secure)__
-    * __Baloto_
-    * __Banamex__
+    * __Baloto__
+    * __Bancomer__
+    * __Bancontact__
     * __Banco de Occidente__
     * __Banco do Brasil__
-    * __Bancomer__
+    * __BitPay__
     * __Boleto__
     * __Bradesco__
     * __Cabal__
     * __CashU__
     * __Cencosud__
+    * __Davivienda__
     * __Efecty__
     * __Elo__
-    * __Entercash__
+    * __eps__
     * __eZeeWallet__
     * __Fashioncheque__
+    * __GiroPay__
+    * __iDeal__
     * __iDebit__
-    * __INPay__
     * __InstaDebit__
     * __InstantTransfer__
+    * __InitRecurringSale__
+    * __InitRecurringSale (3D-Secure)__
     * __Intersolve__
     * __Itau__
+    * __Klarna__
     * __Multibanco__
     * __MyBank__
+    * __Naranja__
+    * __Nativa__
+    * __Neosurf__
     * __Neteller__
     * __Online Banking__
     * __OXXO__
     * __P24__
-    * __PayByVoucher (Sale)__
+    * __Pago Facil__
     * __PayPal Express__
     * __PaySafeCard__
     * __PayU__
@@ -117,18 +125,30 @@ Supported Transactions
     * __PPRO__
         * __eps__
         * __GiroPay__
-        * __Qiwi__
+        * __Ideal__
         * __Przelewy24__
+        * __Qiwi__
         * __SafetyPay__
         * __TrustPay__
-        * __Mr.Cash__
+        * __BCMC__
+        * __MyBank__
+    * __PSE__
+    * __Qiwi__
+    * __RapiPago__
+    * __Redpagos__
+    * __SafetyPay__
     * __Sale__
     * __Sale (3D-Secure)__
     * __Santander__
+    * __Santander Cash__
     * __Sepa Direct Debit__
     * __SOFORT__
+    * __Tarjeta Shopping__
     * __TCS__
     * __Trustly__
+    * __TrustPay__
+    * __UPI__
     * __WebMoney__
+    * __WebPay__
     * __WeChat__
     * __Zimpler__

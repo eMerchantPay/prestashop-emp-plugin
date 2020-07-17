@@ -17,6 +17,9 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
+use Genesis\API\Constants\Transaction\Names;
+use Genesis\API\Constants\Transaction\Types;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -32,7 +35,7 @@ class Emerchantpay extends PaymentModule
      *
      * @var array
      */
-    private $languages = ['en', 'it', 'es', 'fr', 'de', 'pl', 'ja', 'zh', 'ar', 'pt', 'tr', 'ru', 'hi', 'bg'];
+    private $languages = array();
 
     /**
      * Constructor
@@ -54,6 +57,7 @@ class Emerchantpay extends PaymentModule
     const SETTING_EMERCHANTPAY_ALLOW_VOID            = 'EMERCHANTPAY_ALLOW_VOID';
     const SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT   = 'EMERCHANTPAY_ADD_JQUERY_CHECKOUT';
     const SETTING_EMERCHANTPAY_WPF_TOKENIZATION      = 'EMERCHANTPAY_WPF_TOKENIZATION';
+    const PPRO_TRANSACTION_SUFFIX                    = '_ppro';
 
     public function __construct()
     {
@@ -62,7 +66,7 @@ class Emerchantpay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'emerchantpay Payment Gateway';
         $this->controllers            = ['checkout', 'notification', 'redirect', 'validation'];
-        $this->version                = '1.7.1';
+        $this->version                = '1.7.2';
         $this->author                 = 'emerchantpay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = ['min' => '1.5', 'max' => _PS_VERSION_];
@@ -779,7 +783,7 @@ class Emerchantpay extends PaymentModule
         }
 
         // Set WPF transaction types
-        $data->transaction_types = $this->getCheckoutTransactionTypes();
+        $data->transaction_types = $this->getCheckoutTransactionTypes($cart);
 
         // Set WPF tokenization flag
         $data->is_wpf_tokenization_enabled = $this->isWpfTokenizationEnabled();
@@ -1002,18 +1006,26 @@ class Emerchantpay extends PaymentModule
 
         try {
             $transaction = EmerchantpayTransaction::getByUniqueId($id_unique);
+            $items       = null;
 
             if ($transaction->terminal) {
                 \Genesis\Config::setToken($transaction->terminal);
             }
 
+            if ($transaction->type === Types::KLARNA_AUTHORIZE) {
+                $cart  = new Cart($this->context->cart->id);
+                $items = $this->getKlarnaCustomParamItems($cart);
+            }
+
             $data = [
-                'transaction_id' => md5(uniqid() . mt_rand() . microtime(true)),
-                'usage'          => $usage,
-                'remote_ip'      => $ip_addr,
-                'reference_id'   => $transaction->id_unique,
-                'currency'       => $transaction->currency,
-                'amount'         => $amount,
+                'transaction_type' => $transaction->type,
+                'transaction_id'   => md5(uniqid() . mt_rand() . microtime(true)),
+                'usage'            => $usage,
+                'remote_ip'        => $ip_addr,
+                'reference_id'     => $transaction->id_unique,
+                'currency'         => $transaction->currency,
+                'amount'           => $amount,
+                'items'            => $items
             ];
 
             $response = EmerchantpayTransactionProcess::capture($data);
@@ -1056,18 +1068,26 @@ class Emerchantpay extends PaymentModule
 
         try {
             $transaction = EmerchantpayTransaction::getByUniqueId($id_unique);
+            $items       = null;
 
             if ($transaction->terminal) {
                 \Genesis\Config::setToken($transaction->terminal);
             }
 
+            if ($transaction->type === Types::KLARNA_CAPTURE) {
+                $cart  = new Cart($this->context->cart->id);
+                $items = $this->getKlarnaCustomParamItems($cart);
+            }
+
             $data = [
-                'transaction_id' => md5(uniqid() . mt_rand() . microtime(true)),
-                'usage'          => $usage,
-                'remote_ip'      => $ip_addr,
-                'reference_id'   => $transaction->id_unique,
-                'currency'       => $transaction->currency,
-                'amount'         => $amount,
+                'transaction_type' => $transaction->type,
+                'transaction_id'   => md5(uniqid() . mt_rand() . microtime(true)),
+                'usage'            => $usage,
+                'remote_ip'        => $ip_addr,
+                'reference_id'     => $transaction->id_unique,
+                'currency'         => $transaction->currency,
+                'amount'           => $amount,
+                'items'            => $items
             ];
 
             $response = EmerchantpayTransactionProcess::refund($data);
@@ -1207,13 +1227,13 @@ class Emerchantpay extends PaymentModule
     public function getPrestaBackendStatus($transaction_type)
     {
         switch ($transaction_type) {
-            case \Genesis\API\Constants\Transaction\Types::CAPTURE:
+            case Types::CAPTURE:
                 return Configuration::get('PS_OS_WS_PAYMENT');
                 break;
-            case \Genesis\API\Constants\Transaction\Types::REFUND:
+            case Types::REFUND:
                 return Configuration::get('PS_OS_REFUND');
                 break;
-            case \Genesis\API\Constants\Transaction\Types::VOID:
+            case Types::VOID:
                 return Configuration::get('PS_OS_CANCELED');
                 break;
             default:
@@ -1401,79 +1421,178 @@ class Emerchantpay extends PaymentModule
         return $this->display(__FILE__, $name);
     }
 
-    private function getCheckoutTransactionTypes()
+    /**
+     * @param $cart
+     * @return array
+     * @throws \Genesis\Exceptions\ErrorParameter
+     */
+    private function getCheckoutTransactionTypes($cart)
     {
-        $processed_list = [];
+        $processedList = [];
+        $types         = $this->getTransactionTypes();
 
-        $selected_types = json_decode(
+        foreach ($types as $transactionParams) {
+            if (is_array($transactionParams)) {
+                $processedList[$transactionParams['name']]['name']       = $transactionParams['name'];
+                $processedList[$transactionParams['name']]['parameters'] = $transactionParams['parameters'];
+
+                continue;
+            }
+
+            $attributes = $this->getCustomRequiredAttributes($transactionParams, $cart);
+
+            if (empty($attributes)) {
+                $processedList[$transactionParams]               = $transactionParams;
+            } else {
+                $processedList[$transactionParams]['name']       = $transactionParams;
+                $processedList[$transactionParams]['parameters'] = $attributes;
+            }
+        }
+
+        return $processedList;
+    }
+
+    /**
+     * @return array
+     */
+    private function getTransactionTypes()
+    {
+        $processedList = [];
+        $aliasMap      = [];
+
+        $selectedTypes = json_decode(
             Configuration::get(self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES)
         );
 
-        $alias_map = [
-            \Genesis\API\Constants\Payment\Methods::EPS         =>
-                \Genesis\API\Constants\Transaction\Types::PPRO,
-            \Genesis\API\Constants\Payment\Methods::GIRO_PAY    =>
-                \Genesis\API\Constants\Transaction\Types::PPRO,
-            \Genesis\API\Constants\Payment\Methods::PRZELEWY24  =>
-                \Genesis\API\Constants\Transaction\Types::PPRO,
-            \Genesis\API\Constants\Payment\Methods::QIWI        =>
-                \Genesis\API\Constants\Transaction\Types::PPRO,
-            \Genesis\API\Constants\Payment\Methods::SAFETY_PAY  =>
-                \Genesis\API\Constants\Transaction\Types::PPRO,
-            \Genesis\API\Constants\Payment\Methods::TRUST_PAY   =>
-                \Genesis\API\Constants\Transaction\Types::PPRO,
-            \Genesis\API\Constants\Payment\Methods::BCMC        =>
-                \Genesis\API\Constants\Transaction\Types::PPRO,
-            \Genesis\API\Constants\Payment\Methods::MYBANK      =>
-                \Genesis\API\Constants\Transaction\Types::PPRO,
-            \Genesis\API\Constants\Payment\Methods::IDEAL       =>
-                \Genesis\API\Constants\Transaction\Types::PPRO,
-        ];
+        $pproSuffix = self::PPRO_TRANSACTION_SUFFIX;
+        $methods    = \Genesis\API\Constants\Payment\Methods::getMethods();
 
-        $userIdHash = $this->getCurrentUserIdHash();
-
-        $transactionsCustomParams = [
-            \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE => [
-                'card_type'   =>
-                    \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\CardTypes::VIRTUAL,
-                'redeem_type' =>
-                    \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\RedeemTypes::INSTANT
-            ],
-            \Genesis\API\Constants\Transaction\Types::IDEBIT_PAYIN      => [
-                'customer_account_id' => $userIdHash
-            ],
-            \Genesis\API\Constants\Transaction\Types::INSTA_DEBIT_PAYIN => [
-                'customer_account_id' => $userIdHash
-            ]
-        ];
-
-        foreach ($selected_types as $selected_type) {
-
-            if (array_key_exists($selected_type, $alias_map)) {
-                $transaction_type = $alias_map[$selected_type];
-
-                $processed_list[$transaction_type]['name'] = $transaction_type;
-
-                $processed_list[$transaction_type]['parameters'][] = [
-                    'payment_method' => $selected_type
-                ];
-                continue;
-            }
-
-            if (array_key_exists($selected_type, $transactionsCustomParams)) {
-
-                $processed_list[$selected_type]['name'] = $selected_type;
-
-                $processed_list[$selected_type]['parameters'] = $transactionsCustomParams[$selected_type];
-
-                continue;
-            }
-
-            $processed_list[] = $selected_type;
-
+        foreach ($methods as $method) {
+            $aliasMap[$method . $pproSuffix] = Types::PPRO;
         }
 
-        return $processed_list;
+        foreach ($selectedTypes as $selectedType) {
+            if (array_key_exists($selectedType, $aliasMap)) {
+                $transactionType = $aliasMap[$selectedType];
+
+                $processedList[$transactionType]['name'] = $transactionType;
+
+                $processedList[$transactionType]['parameters'][] = [
+                    'payment_method' => str_replace($pproSuffix, '', $selectedType)
+                ];
+            } else {
+                $processedList[] = $selectedType;
+            }
+        }
+
+        return $processedList;
+    }
+
+    /**
+     * @param string $transactionType
+     * @param CardCore $cart
+     * @return array
+     * @throws \Genesis\Exceptions\ErrorParameter
+     */
+    private function getCustomRequiredAttributes($transactionType, $cart)
+    {
+        $attributes = array();
+        $userIdHash = $this->getCurrentUserIdHash();
+
+        switch ($transactionType) {
+            case Types::PAYBYVOUCHER_SALE:
+                $attributes = [
+                    'card_type'   =>
+                        \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\CardTypes::VIRTUAL,
+                    'redeem_type' =>
+                        \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\RedeemTypes::INSTANT
+                ];
+                break;
+            case Types::IDEBIT_PAYIN:
+            case Types::INSTA_DEBIT_PAYOUT:
+                $attributes = [
+                    'customer_account_id' => $userIdHash
+                ];
+                break;
+            case Types::TRUSTLY_SALE:
+                $userId      = $this->getCurrentUserId();
+                $trustlyUser = empty($userId) ? $userIdHash : $userId;
+
+                $attributes = [
+                    'user_id' => $trustlyUser
+                ];
+                break;
+            case Types::KLARNA_AUTHORIZE:
+                $attributes = $this->getKlarnaCustomParamItems($cart)->toArray();
+                break;
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * @param CartCore $cart
+     * @return \Genesis\API\Request\Financial\Alternatives\Klarna\Items
+     * @throws \Genesis\Exceptions\ErrorParameter
+     */
+    private function getKlarnaCustomParamItems($cart)
+    {
+        /** @var CurrencyCore $currency */
+        $currency    = new Currency(intval($cart->id_currency));
+        $cartSummary = $cart->getSummaryDetails();
+        $items       = new \Genesis\API\Request\Financial\Alternatives\Klarna\Items($currency->iso_code);
+
+        foreach ($cartSummary['products'] as $product) {
+            $type = $product['is_virtual'] ?
+                \Genesis\API\Request\Financial\Alternatives\Klarna\Item::ITEM_TYPE_DIGITAL :
+                \Genesis\API\Request\Financial\Alternatives\Klarna\Item::ITEM_TYPE_PHYSICAL;
+
+            $klarnaItem = new \Genesis\API\Request\Financial\Alternatives\Klarna\Item(
+                $product['name'],
+                $type,
+                $product['quantity'],
+                $product['price_with_reduction_without_tax']
+            );
+            $items->addItem($klarnaItem);
+        }
+
+        $discount = floatval($cartSummary['total_discounts']);
+        if ($discount) {
+            $items->addItem(
+                new \Genesis\API\Request\Financial\Alternatives\Klarna\Item(
+                    'Discount',
+                    \Genesis\API\Request\Financial\Alternatives\Klarna\Item::ITEM_TYPE_DISCOUNT,
+                    1,
+                    -$discount
+                )
+            );
+        }
+
+        $tax = floatval($cartSummary['total_tax']);
+        if ($tax) {
+            $items->addItem(
+                new \Genesis\API\Request\Financial\Alternatives\Klarna\Item(
+                    'Tax',
+                    \Genesis\API\Request\Financial\Alternatives\Klarna\Item::ITEM_TYPE_SURCHARGE,
+                    1,
+                    $tax
+                )
+            );
+        }
+
+        $shippingCost = floatval($cartSummary['total_shipping']);
+        if ($shippingCost) {
+            $items->addItem(
+                new \Genesis\API\Request\Financial\Alternatives\Klarna\Item(
+                    'Shipping Cost',
+                    \Genesis\API\Request\Financial\Alternatives\Klarna\Item::ITEM_TYPE_SHIPPING_FEE,
+                    1,
+                    $shippingCost
+                )
+            );
+        }
+
+        return $items;
     }
 
     /**
@@ -1742,10 +1861,18 @@ class Emerchantpay extends PaymentModule
                 'options' => [
                     'query' => $this->generateOptionsFromArray(
                         [
-                            \Genesis\API\Constants\Transaction\Types::AUTHORIZE    => $this->l('Authorize'),
-                            \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D => $this->l('Authorize 3D'),
-                            \Genesis\API\Constants\Transaction\Types::SALE         => $this->l('Sale'),
-                            \Genesis\API\Constants\Transaction\Types::SALE_3D      => $this->l('Sale 3D')
+                            Types::AUTHORIZE    => $this->l(
+                                Names::getName(Types::AUTHORIZE)
+                            ),
+                            Types::AUTHORIZE_3D => $this->l(
+                                Names::getName(Types::AUTHORIZE_3D)
+                            ),
+                            Types::SALE         => $this->l(
+                                Names::getName(Types::SALE)
+                            ),
+                            Types::SALE_3D      => $this->l(
+                                Names::getName(Types::SALE_3D)
+                            )
                         ]
                     ),
                     'id'    => 'id',
@@ -1779,118 +1906,7 @@ class Emerchantpay extends PaymentModule
                 'name'     => self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES . '[]',
                 'multiple' => true,
                 'options'  => [
-                    'query' => $this->generateOptionsFromArray(
-                        [
-                            \Genesis\API\Constants\Transaction\Types::ABNIDEAL             =>
-                                $this->l('ABN iDEAL'),
-                            \Genesis\API\Constants\Transaction\Types::ALIPAY               =>
-                                $this->l('Alipay'),
-                            \Genesis\API\Constants\Transaction\Types::AURA                 =>
-                                $this->l('Aura'),
-                            \Genesis\API\Constants\Transaction\Types::AUTHORIZE            =>
-                                $this->l('Authorize'),
-                            \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D         =>
-                                $this->l('Authorize 3D'),
-                            \Genesis\API\Constants\Transaction\Types::BALOTO               =>
-                                $this->l('Baloto'),
-                            \Genesis\API\Constants\Transaction\Types::BANAMEX              =>
-                                $this->l('Banamex'),
-                            \Genesis\API\Constants\Transaction\Types::BANCO_DE_OCCIDENTE   =>
-                                $this->l('Banco de Occidente'),
-                            \Genesis\API\Constants\Transaction\Types::BANCO_DO_BRASIL      =>
-                                $this->l('Banco do Brasil'),
-                            \Genesis\API\Constants\Transaction\Types::BANCOMER             =>
-                                $this->l('Bancomer'),
-                            \Genesis\API\Constants\Transaction\Types::BOLETO               =>
-                                $this->l('Boleto'),
-                            \Genesis\API\Constants\Transaction\Types::BRADESCO             =>
-                                $this->l('Bradesco'),
-                            \Genesis\API\Constants\Transaction\Types::CABAL                =>
-                                $this->l('Cabal'),
-                            \Genesis\API\Constants\Transaction\Types::CASHU                =>
-                                $this->l('CashU'),
-                            \Genesis\API\Constants\Transaction\Types::CENCOSUD             =>
-                                $this->l('Cencosud'),
-                            \Genesis\API\Constants\Transaction\Types::EFECTY               =>
-                                $this->l('Efecty'),
-                            \Genesis\API\Constants\Transaction\Types::ELO                  =>
-                                $this->l('Elo'),
-                            \Genesis\API\Constants\Transaction\Types::ENTERCASH            =>
-                                $this->l('Entercash'),
-                            \Genesis\API\Constants\Payment\Methods::EPS                    =>
-                                $this->l('eps'),
-                            \Genesis\API\Constants\Transaction\Types::EZEEWALLET           =>
-                                $this->l('eZeeWallet'),
-                            \Genesis\API\Constants\Transaction\Types::FASHIONCHEQUE        =>
-                                $this->l('Fashioncheque'),
-                            \Genesis\API\Constants\Payment\Methods::GIRO_PAY               =>
-                                $this->l('GiroPay'),
-                            \Genesis\API\Constants\Transaction\Types::IDEBIT_PAYIN         =>
-                                $this->l('iDebit'),
-                            \Genesis\API\Constants\Transaction\Types::INPAY                =>
-                                $this->l('INPay'),
-                            \Genesis\API\Constants\Transaction\Types::INSTA_DEBIT_PAYIN    =>
-                                $this->l('InstaDebit'),
-                            \Genesis\API\Constants\Transaction\Types::INSTANT_TRANSFER     =>
-                                $this->l('InstantTransfer'),
-                            \Genesis\API\Constants\Transaction\Types::INTERSOLVE           =>
-                                $this->l('Intersolve'),
-                            \Genesis\API\Constants\Transaction\Types::ITAU                 =>
-                                $this->l('Itau'),
-                            \Genesis\API\Constants\Payment\Methods::BCMC                   =>
-                                $this->l('Mr.Cash'),
-                            \Genesis\API\Constants\Transaction\Types::MULTIBANCO           =>
-                                $this->l('Multibanco'),
-                            \Genesis\API\Constants\Payment\Methods::MYBANK                 =>
-                                $this->l('MyBank'),
-                            \Genesis\API\Constants\Transaction\Types::NETELLER             =>
-                                $this->l('Neteller'),
-                            \Genesis\API\Constants\Transaction\Types::ONLINE_BANKING_PAYIN =>
-                                $this->l('OnlineBanking'),
-                            \Genesis\API\Constants\Transaction\Types::OXXO                 =>
-                                $this->l('OXXO'),
-                            \Genesis\API\Constants\Transaction\Types::P24                  =>
-                                $this->l('P24'),
-                            \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE    =>
-                                $this->l('PayByVoucher (Sale)'),
-                            \Genesis\API\Constants\Transaction\Types::PAYPAL_EXPRESS       =>
-                                $this->l('PayPal Express'),
-                            \Genesis\API\Constants\Transaction\Types::PAYSAFECARD          =>
-                                $this->l('PaySafeCard'),
-                            \Genesis\API\Constants\Transaction\Types::PAYU                 =>
-                                $this->l('PayU'),
-                            \Genesis\API\Constants\Transaction\Types::POLI                 =>
-                                $this->l('POLi'),
-                            \Genesis\API\Constants\Payment\Methods::PRZELEWY24             =>
-                                $this->l('Przelewy24'),
-                            \Genesis\API\Constants\Payment\Methods::QIWI                   =>
-                                $this->l('Qiwi'),
-                            \Genesis\API\Constants\Payment\Methods::SAFETY_PAY             =>
-                                $this->l('SafetyPay'),
-                            \Genesis\API\Constants\Transaction\Types::SALE                 =>
-                                $this->l('Sale'),
-                            \Genesis\API\Constants\Transaction\Types::SALE_3D              =>
-                                $this->l('Sale 3D'),
-                            \Genesis\API\Constants\Transaction\Types::SANTANDER            =>
-                                $this->l('Santander'),
-                            \Genesis\API\Constants\Transaction\Types::SDD_SALE             =>
-                                $this->l('Sepa Direct Debit'),
-                            \Genesis\API\Constants\Transaction\Types::SOFORT               =>
-                                $this->l('SOFORT'),
-                            \Genesis\API\Constants\Transaction\Types::TCS                  =>
-                                $this->l('TCS'),
-                            \Genesis\API\Constants\Transaction\Types::TRUSTLY_SALE         =>
-                                $this->l('Trustly'),
-                            \Genesis\API\Constants\Payment\Methods::TRUST_PAY              =>
-                                $this->l('TrustPay'),
-                            \Genesis\API\Constants\Transaction\Types::WEBMONEY             =>
-                                $this->l('WebMoney'),
-                            \Genesis\API\Constants\Transaction\Types::WEBMONEY             =>
-                                $this->l('WeChat'),
-                            \Genesis\API\Constants\Transaction\Types::ZIMPLER              =>
-                                $this->l('Zimpler'),
-                        ]
-                    ),
+                    'query' => $this->generateOptionsFromArray(self::getSupportedWpfTransactionTypes()),
                     'id'    => 'id',
                     'name'  => 'name',
                 ]
@@ -1913,6 +1929,42 @@ class Emerchantpay extends PaymentModule
                 ]
             ]
         ];
+    }
+
+    public function getSupportedWpfTransactionTypes()
+    {
+        $data = array();
+
+        $transactionTypes = Types::getWPFTransactionTypes();
+        $excludedTypes = [
+            Types::INIT_RECURRING_SALE,
+            Types::INIT_RECURRING_SALE_3D,
+            Types::SDD_INIT_RECURRING_SALE,
+            Types::PPRO
+        ];
+
+        $transactionTypes = array_diff($transactionTypes, $excludedTypes);
+
+        // Add PPRO specific Types
+        $pproTypes = array_map(
+            function ($type) {
+                return $type . self::PPRO_TRANSACTION_SUFFIX;
+            },
+            \Genesis\API\Constants\Payment\Methods::getMethods()
+        );
+        $transactionTypes = array_merge($transactionTypes, $pproTypes);
+        asort($transactionTypes);
+
+        foreach ($transactionTypes as $type) {
+            $name = Names::getName($type);
+            if (!Types::isValidTransactionType($type)) {
+                $name = strtoupper($type);
+            }
+
+            $data[$type] = $this->l($name);
+        }
+
+        return $data;
     }
 
     /**
@@ -2105,6 +2157,9 @@ class Emerchantpay extends PaymentModule
             $this->warning = $this->l('You need to set your credentials (username, password), in order to use Genesis Payment Gateway!');
 
         }
+
+        // Load Available WPF Languages
+        $this->languages = \Genesis\API\Constants\i18n::getAll();
     }
 
     /**
@@ -2204,10 +2259,10 @@ class Emerchantpay extends PaymentModule
             self::SETTING_EMERCHANTPAY_DIRECT                => '0',
             self::SETTING_EMERCHANTPAY_CHECKOUT              => '0',
             self::SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE       =>
-                \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
+                Types::AUTHORIZE,
             self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES    => [
-                \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
-                \Genesis\API\Constants\Transaction\Types::SALE,
+                Types::AUTHORIZE,
+                Types::SALE,
             ],
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE => '1',
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND  => '1',

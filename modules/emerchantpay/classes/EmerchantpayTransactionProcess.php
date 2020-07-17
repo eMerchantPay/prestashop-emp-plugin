@@ -188,21 +188,9 @@ class EmerchantpayTransactionProcess
      */
     public static function pay($data)
     {
-        switch ($data->transaction_type) {
-            default:
-            case \Genesis\API\Constants\Transaction\Types::AUTHORIZE:
-                $genesis = new \Genesis\Genesis('Financial\Cards\Authorize');
-                break;
-            case \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D:
-                $genesis = new \Genesis\Genesis('Financial\Cards\Authorize3D');
-                break;
-            case \Genesis\API\Constants\Transaction\Types::SALE:
-                $genesis = new \Genesis\Genesis('Financial\Cards\Sale');
-                break;
-            case \Genesis\API\Constants\Transaction\Types::SALE_3D:
-                $genesis = new \Genesis\Genesis('Financial\Cards\Sale3D');
-                break;
-        }
+        $genesis = new \Genesis\Genesis(
+            \Genesis\API\Constants\Transaction\Types::getFinancialRequestClassForTrxType($data->transaction_type)
+        );
 
         $genesis
             ->request()
@@ -269,7 +257,9 @@ class EmerchantpayTransactionProcess
      */
     public static function capture($data)
     {
-        $genesis = new \Genesis\Genesis('Financial\Capture');
+        $genesis = new \Genesis\Genesis(
+            \Genesis\API\Constants\Transaction\Types::getCaptureTransactionClass($data['transaction_type'])
+        );
 
         $genesis
             ->request()
@@ -279,6 +269,14 @@ class EmerchantpayTransactionProcess
                 ->setReferenceId($data['reference_id'])
                 ->setAmount($data['amount'])
                 ->setCurrency($data['currency']);
+
+        if ($data['transaction_type'] === \Genesis\API\Constants\Transaction\Types::KLARNA_AUTHORIZE &&
+            $data['items'] instanceof \Genesis\API\Request\Financial\Alternatives\Klarna\Items
+        ) {
+            $genesis
+                ->request()
+                ->setItems($data['items']);
+        }
 
         $genesis->execute();
 
@@ -296,7 +294,9 @@ class EmerchantpayTransactionProcess
      */
     public static function refund($data)
     {
-        $genesis = new \Genesis\Genesis('Financial\Refund');
+        $genesis = new \Genesis\Genesis(
+            \Genesis\API\Constants\Transaction\Types::getRefundTransactionClass($data['transaction_type'])
+        );
 
         $genesis
             ->request()
@@ -306,6 +306,14 @@ class EmerchantpayTransactionProcess
                 ->setReferenceId($data['reference_id'])
                 ->setAmount($data['amount'])
                 ->setCurrency($data['currency']);
+
+        if ($data['transaction_type'] === \Genesis\API\Constants\Transaction\Types::KLARNA_CAPTURE &&
+            $data['items'] instanceof \Genesis\API\Request\Financial\Alternatives\Klarna\Items
+        ) {
+            $genesis
+                ->request()
+                ->setItems($data['items']);
+        }
 
         $genesis->execute();
 
