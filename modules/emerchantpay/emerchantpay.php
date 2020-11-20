@@ -59,6 +59,11 @@ class Emerchantpay extends PaymentModule
     const SETTING_EMERCHANTPAY_WPF_TOKENIZATION      = 'EMERCHANTPAY_WPF_TOKENIZATION';
     const PPRO_TRANSACTION_SUFFIX                    = '_ppro';
 
+    /**
+     * Custom prefix
+     */
+    const PLATFORM_TRANSACTION_PREFIX = 'ps_';
+
     public function __construct()
     {
         /* Initial Module Setup */
@@ -66,7 +71,7 @@ class Emerchantpay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'emerchantpay Payment Gateway';
         $this->controllers            = ['checkout', 'notification', 'redirect', 'validation'];
-        $this->version                = '1.7.2';
+        $this->version                = '1.7.3';
         $this->author                 = 'emerchantpay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = ['min' => '1.5', 'max' => _PS_VERSION_];
@@ -666,7 +671,7 @@ class Emerchantpay extends PaymentModule
      */
     private function generateTransactionId($length = 30)
     {
-        return substr(md5(mt_rand() . microtime(true) . uniqid()), 0, $length);
+        return self::PLATFORM_TRANSACTION_PREFIX . substr(md5(mt_rand() . microtime(true) . uniqid()), 0, $length);
     }
 
     /**
@@ -693,7 +698,7 @@ class Emerchantpay extends PaymentModule
         // Parameters
         $data->id               = $this->generateTransactionId();
         $data->transaction_type = Configuration::get(self::SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE);
-        $data->usage            = $this->l('Prestashop Transaction');
+        $data->usage            = $this->l('Payment via') . ' ' . Configuration::get('PS_SHOP_NAME');
 
         $description = '';
 
