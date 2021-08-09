@@ -7,7 +7,7 @@ Requirements
 ------------
 
 * Prestashop 1.6.x - 1.7.x (Tested up to __1.7.6__)
-* [GenesisPHP v1.18.4](https://github.com/GenesisGateway/genesis_php/releases/tag/1.18.4) - (Integrated in Module)
+* [GenesisPHP v1.19.1](https://github.com/GenesisGateway/genesis_php/releases/tag/1.19.1) - (Integrated in Module)
 * PCI-certified server in order to use ```emerchantpay Direct```
 
 GenesisPHP Requirements
@@ -122,25 +122,23 @@ Supported Transactions
     * __PaySafeCard__
     * __PayU__
     * __POLi__
+    * __Post Finance__
     * __PPRO__
         * __eps__
         * __GiroPay__
         * __Ideal__
         * __Przelewy24__
-        * __Qiwi__
         * __SafetyPay__
         * __TrustPay__
         * __BCMC__
         * __MyBank__
     * __PSE__
-    * __Qiwi__
     * __RapiPago__
     * __Redpagos__
     * __SafetyPay__
     * __Sale__
     * __Sale (3D-Secure)__
     * __Santander__
-    * __Santander Cash__
     * __Sepa Direct Debit__
     * __SOFORT__
     * __Tarjeta Shopping__
@@ -151,4 +149,3 @@ Supported Transactions
     * __WebMoney__
     * __WebPay__
     * __WeChat__
-    * __Zimpler__
