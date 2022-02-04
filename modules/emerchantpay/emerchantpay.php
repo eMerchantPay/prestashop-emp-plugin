@@ -18,6 +18,7 @@
  */
 
 use Genesis\API\Constants\Transaction\Names;
+use Genesis\API\Constants\Transaction\Parameters\Mobile\GooglePay\PaymentTypes as GooglePaymentTypes;
 use Genesis\API\Constants\Transaction\Types;
 
 if (!defined('_PS_VERSION_')) {
@@ -57,7 +58,14 @@ class Emerchantpay extends PaymentModule
     const SETTING_EMERCHANTPAY_ALLOW_VOID            = 'EMERCHANTPAY_ALLOW_VOID';
     const SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT   = 'EMERCHANTPAY_ADD_JQUERY_CHECKOUT';
     const SETTING_EMERCHANTPAY_WPF_TOKENIZATION      = 'EMERCHANTPAY_WPF_TOKENIZATION';
-    const PPRO_TRANSACTION_SUFFIX                    = '_ppro';
+
+    /**
+     * Transaction Type specifics
+     */
+    const PPRO_TRANSACTION_SUFFIX           = '_ppro';
+    const GOOGLE_PAY_TRANSACTION_PREFIX     = 'google_pay_';
+    const GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE = 'authorize';
+    const GOOGLE_PAY_PAYMENT_TYPE_SALE      = 'sale';
 
     /**
      * Custom prefix
@@ -71,7 +79,7 @@ class Emerchantpay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'emerchantpay Payment Gateway';
         $this->controllers            = ['checkout', 'notification', 'redirect', 'validation'];
-        $this->version                = '1.7.4';
+        $this->version                = '1.7.5';
         $this->author                 = 'emerchantpay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = ['min' => '1.5', 'max' => _PS_VERSION_];
@@ -1476,14 +1484,21 @@ class Emerchantpay extends PaymentModule
             $aliasMap[$method . $pproSuffix] = Types::PPRO;
         }
 
+        $aliasMap = array_merge($aliasMap, [
+            self::GOOGLE_PAY_TRANSACTION_PREFIX . self::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE => Types::GOOGLE_PAY,
+            self::GOOGLE_PAY_TRANSACTION_PREFIX . self::GOOGLE_PAY_PAYMENT_TYPE_SALE      => Types::GOOGLE_PAY
+        ]);
+
         foreach ($selectedTypes as $selectedType) {
             if (array_key_exists($selectedType, $aliasMap)) {
                 $transactionType = $aliasMap[$selectedType];
 
                 $processedList[$transactionType]['name'] = $transactionType;
 
+                $key = $transactionType === Types::GOOGLE_PAY ? 'payment_type' : 'payment_method';
+
                 $processedList[$transactionType]['parameters'][] = [
-                    'payment_method' => str_replace($pproSuffix, '', $selectedType)
+                    $key => str_replace([$pproSuffix, self::GOOGLE_PAY_TRANSACTION_PREFIX], '', $selectedType)
                 ];
             } else {
                 $processedList[] = $selectedType;
@@ -1945,7 +1960,8 @@ class Emerchantpay extends PaymentModule
             Types::INIT_RECURRING_SALE,
             Types::INIT_RECURRING_SALE_3D,
             Types::SDD_INIT_RECURRING_SALE,
-            Types::PPRO
+            Types::PPRO,
+            Types::GOOGLE_PAY
         ];
 
         $transactionTypes = array_diff($transactionTypes, $excludedTypes);
@@ -1957,7 +1973,19 @@ class Emerchantpay extends PaymentModule
             },
             \Genesis\API\Constants\Payment\Methods::getMethods()
         );
-        $transactionTypes = array_merge($transactionTypes, $pproTypes);
+
+        // Add Google Pay Transaction Methods
+        $googlePayMethods = array_map(
+            function ($type) {
+                return self::GOOGLE_PAY_TRANSACTION_PREFIX . $type;
+            },
+            [
+                self::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE,
+                self::GOOGLE_PAY_PAYMENT_TYPE_SALE
+            ]
+        );
+
+        $transactionTypes = array_merge($transactionTypes, $pproTypes, $googlePayMethods);
         asort($transactionTypes);
 
         foreach ($transactionTypes as $type) {
