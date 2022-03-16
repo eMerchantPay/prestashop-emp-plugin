@@ -320,7 +320,8 @@ class EmerchantpayTransaction extends ObjectModel
                     [
                         \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
                         \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
-                        \Genesis\API\Constants\Transaction\Types::GOOGLE_PAY
+                        \Genesis\API\Constants\Transaction\Types::GOOGLE_PAY,
+                        \Genesis\API\Constants\Transaction\Types::PAY_PAL,
                     ],
                     'approved'
                 );
@@ -466,15 +467,16 @@ class EmerchantpayTransaction extends ObjectModel
     }
 
     /**
-     * Determine if Google Pay Method is chosen inside the Payment settings
+     * Determine if Google Pay or PayPal Method is chosen inside the Payment settings
      *
-     * @param string $transactionType GooglePay Method
+     * @param string $transactionType GooglePay or PayPal Method
      * @return bool
      */
     protected static function isTransactionWithCustomAttribute($transactionType)
     {
         $transactionTypes = [
-            \Genesis\API\Constants\Transaction\Types::GOOGLE_PAY
+            \Genesis\API\Constants\Transaction\Types::GOOGLE_PAY,
+            \Genesis\API\Constants\Transaction\Types::PAY_PAL,
         ];
 
         return in_array($transactionType, $transactionTypes);
@@ -511,6 +513,23 @@ class EmerchantpayTransaction extends ObjectModel
                         Emerchantpay::GOOGLE_PAY_TRANSACTION_PREFIX . Emerchantpay::GOOGLE_PAY_PAYMENT_TYPE_SALE,
                         $selectedTypes
                     );
+                }
+                break;
+            case \Genesis\API\Constants\Transaction\Types::PAY_PAL:
+                if (self::REFERENCE_ACTION_CAPTURE === $action) {
+                    return in_array(
+                        Emerchantpay::PAYPAL_TRANSACTION_PREFIX . Emerchantpay::PAYPAL_PAYMENT_TYPE_AUTHORIZE,
+                        $selectedTypes
+                    );
+                }
+
+                if (self::REFERENCE_ACTION_REFUND === $action) {
+                    $refundableTypes = [
+                        Emerchantpay::PAYPAL_TRANSACTION_PREFIX . Emerchantpay::PAYPAL_PAYMENT_TYPE_SALE,
+                        Emerchantpay::PAYPAL_TRANSACTION_PREFIX . Emerchantpay::PAYPAL_PAYMENT_TYPE_EXPRESS
+                    ];
+
+                    return (count(array_intersect($refundableTypes, $selectedTypes)) > 0);
                 }
                 break;
             default:

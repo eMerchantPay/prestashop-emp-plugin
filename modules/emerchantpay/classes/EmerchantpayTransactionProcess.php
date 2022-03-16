@@ -93,6 +93,7 @@ class EmerchantpayTransactionProcess
                 ->request()
                     ->setNotificationUrl($data->url->notification)
                     ->setReturnSuccessUrl($data->url->return_success)
+                    ->setReturnPendingUrl($data->url->return_success)
                     ->setReturnFailureUrl($data->url->return_failure)
                     ->setReturnCancelUrl($data->url->return_cancel);
         }

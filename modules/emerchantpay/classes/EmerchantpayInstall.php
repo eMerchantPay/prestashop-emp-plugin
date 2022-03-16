@@ -36,13 +36,13 @@ class EmerchantpayInstall
         'paymentTop',
         'orderConfirmation',
         'adminOrder',
-        'BackOfficeHeader',
         /*
          * Hooks for 1.7.x
          */
         'displayAdminOrder',
         'displayOrderDetail',
-        'paymentOptions'
+        'paymentOptions',
+        'backOfficeHeader',
     ];
 
     /**

@@ -32,6 +32,11 @@ if (!defined('_PS_VERSION_')) {
 class Emerchantpay extends PaymentModule
 {
     /**
+     * Name of the BO orders controller
+     */
+    const PS_CONTROLLER_ADMIN_ORDERS = 'AdminOrders';
+
+    /**
      * List supported languages
      *
      * @var array
@@ -66,6 +71,10 @@ class Emerchantpay extends PaymentModule
     const GOOGLE_PAY_TRANSACTION_PREFIX     = 'google_pay_';
     const GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE = 'authorize';
     const GOOGLE_PAY_PAYMENT_TYPE_SALE      = 'sale';
+    const PAYPAL_TRANSACTION_PREFIX         = 'pay_pal_';
+    const PAYPAL_PAYMENT_TYPE_AUTHORIZE     = 'authorize';
+    const PAYPAL_PAYMENT_TYPE_SALE          = 'sale';
+    const PAYPAL_PAYMENT_TYPE_EXPRESS       = 'express';
 
     /**
      * Custom prefix
@@ -79,7 +88,7 @@ class Emerchantpay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'emerchantpay Payment Gateway';
         $this->controllers            = ['checkout', 'notification', 'redirect', 'validation'];
-        $this->version                = '1.7.5';
+        $this->version                = '1.7.6';
         $this->author                 = 'emerchantpay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = ['min' => '1.5', 'max' => _PS_VERSION_];
@@ -251,95 +260,11 @@ class Emerchantpay extends PaymentModule
      */
     public function hookAdminOrder($params)
     {
-        if (Tools::isSubmit($this->name . '_transaction_id')) {
-            switch (Tools::getValue($this->name . '_transaction_type')) {
-                case 'capture':
-                    $this->doCapture();
-                    break;
-                case 'refund':
-                    $this->doRefund();
-                    break;
-                case 'void':
-                    $this->doVoid();
-                    break;
-            }
-
-            // Prevent re-submission by refresh
-            // Some browsers are re-POST happy
-            Tools::redirect($_SERVER['HTTP_REFERER']);
+        if (!$this->isPrestaVersion177()) {
+            return $this->displayAdminOrder($params);
         }
 
-        $order = new Order((int)$params['id_order']);
-
-        if ($order->payment != $this->displayName) {
-            return '';
-        }
-
-        if (version_compare(_PS_VERSION_, '1.6', '<')) {
-            $this->context->controller->addCSS(
-                $this->getPathUri() . 'assets/css/font-awesome.min.css', 'all'
-            );
-        }
-
-        $this->context->controller->addCSS(
-            $this->getPathUri() . 'assets/css/treegrid.min.css', 'all'
-        );
-
-        $this->context->controller->addCSS(
-            $this->getPathUri() . 'assets/js/bootstrap/bootstrapValidator.min.css'
-        );
-
-        $this->context->controller->addJS(
-            $this->getPathUri() . 'assets/js/treegrid/cookie.min.js'
-        );
-        $this->context->controller->addJS(
-            $this->getPathUri() . 'assets/js/treegrid/treegrid.min.js'
-        );
-
-        $this->context->controller->addJS(
-            $this->getPathUri() . 'assets/js/bootstrap/bootstrapValidator.min.js'
-        );
-
-        $this->context->controller->addJS(
-            $this->getPathUri() . 'assets/js/jQueryExtensions/jquery.number.min.js'
-        );
-
-        $currency = new Currency((int)$order->id_currency);
-
-        $this->context->smarty->append(
-            'emerchantpay',
-            [
-                'transactions' => [
-                    'order'   => [
-                        'id'       => $order->id,
-                        'amount'   => $order->getTotalPaid(),
-                        'currency' => [
-                            'iso_code'          => $currency->iso_code,
-                            'sign'              => $currency->sign,
-                            'decimalPlaces'     => 2,
-                            'decimalSeparator'  => '.',
-                            'thousandSeparator' => ''
-                            /* must be empty, otherwise exception could be trown from Genesis */
-                        ]
-                    ],
-                    'options' => [
-                        'allow_partial_capture' => $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE),
-                        'allow_partial_refund'  => $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND),
-                        'allow_void'            => $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ALLOW_VOID)
-                    ],
-                    'text'    => [
-                        'denied_partial_capture' => $this->l('Partial Capture is currently disabled! You can enable this option in the Module Settings.'),
-                        'denied_partial_refund'  => $this->l('Partial Refund is currently disabled! You can enable this option in the Module Settings.'),
-                        'denied_void'            => $this->l('Cancel Transaction are currently disabled! You can enable this option in the Module Settings.'),
-                    ],
-                    'error'   => $this->getSessVar('error_transaction'),
-                    'tree'    => EmerchantpayTransaction::getTransactionTree((int)$params['id_order']),
-                ],
-            ],
-            true
-        );
-
-        return $this->fetchTemplate('/views/templates/admin/admin_order/transactions.tpl');
+        return '';
     }
 
     /**
@@ -352,7 +277,23 @@ class Emerchantpay extends PaymentModule
      */
     public function hookDisplayAdminOrder($params)
     {
-        return $this->hookAdminOrder($params);
+        if ($this->isPrestaVersion17()) {
+            return $this->displayAdminOrder($params);
+        }
+
+        return '';
+    }
+
+    /**
+     * Add needed CSS & JavaScript files in the BO.
+     *
+     * @return void
+     */
+    public function hookBackOfficeHeader()
+    {
+        if ($this->isPrestaVersion177()) {
+            $this->addAssets();
+        }
     }
 
     /**
@@ -1486,7 +1427,10 @@ class Emerchantpay extends PaymentModule
 
         $aliasMap = array_merge($aliasMap, [
             self::GOOGLE_PAY_TRANSACTION_PREFIX . self::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE => Types::GOOGLE_PAY,
-            self::GOOGLE_PAY_TRANSACTION_PREFIX . self::GOOGLE_PAY_PAYMENT_TYPE_SALE      => Types::GOOGLE_PAY
+            self::GOOGLE_PAY_TRANSACTION_PREFIX . self::GOOGLE_PAY_PAYMENT_TYPE_SALE      => Types::GOOGLE_PAY,
+            self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_AUTHORIZE         => Types::PAY_PAL,
+            self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_SALE              => Types::PAY_PAL,
+            self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_EXPRESS           => Types::PAY_PAL
         ]);
 
         foreach ($selectedTypes as $selectedType) {
@@ -1495,10 +1439,18 @@ class Emerchantpay extends PaymentModule
 
                 $processedList[$transactionType]['name'] = $transactionType;
 
-                $key = $transactionType === Types::GOOGLE_PAY ? 'payment_type' : 'payment_method';
+                $key = $this->getCustomParameterKey($transactionType);
 
                 $processedList[$transactionType]['parameters'][] = [
-                    $key => str_replace([$pproSuffix, self::GOOGLE_PAY_TRANSACTION_PREFIX], '', $selectedType)
+                    $key => str_replace(
+                        [
+                            $pproSuffix,
+                            self::GOOGLE_PAY_TRANSACTION_PREFIX,
+                            self::PAYPAL_TRANSACTION_PREFIX
+                        ],
+                        '',
+                        $selectedType
+                    )
                 ];
             } else {
                 $processedList[] = $selectedType;
@@ -1510,7 +1462,7 @@ class Emerchantpay extends PaymentModule
 
     /**
      * @param string $transactionType
-     * @param CardCore $cart
+     * @param CartCore $cart
      * @return array
      * @throws \Genesis\Exceptions\ErrorParameter
      */
@@ -1961,7 +1913,8 @@ class Emerchantpay extends PaymentModule
             Types::INIT_RECURRING_SALE_3D,
             Types::SDD_INIT_RECURRING_SALE,
             Types::PPRO,
-            Types::GOOGLE_PAY
+            Types::GOOGLE_PAY,
+            Types::PAY_PAL
         ];
 
         $transactionTypes = array_diff($transactionTypes, $excludedTypes);
@@ -1985,7 +1938,24 @@ class Emerchantpay extends PaymentModule
             ]
         );
 
-        $transactionTypes = array_merge($transactionTypes, $pproTypes, $googlePayMethods);
+        // Add PayPal Transaction Methods
+        $payPalMethods = array_map(
+            function ($type) {
+                return self::PAYPAL_TRANSACTION_PREFIX . $type;
+            },
+            [
+                self::PAYPAL_PAYMENT_TYPE_AUTHORIZE,
+                self::PAYPAL_PAYMENT_TYPE_SALE,
+                self::PAYPAL_PAYMENT_TYPE_EXPRESS
+            ]
+        );
+
+        $transactionTypes = array_merge(
+            $transactionTypes,
+            $pproTypes,
+            $googlePayMethods,
+            $payPalMethods
+        );
         asort($transactionTypes);
 
         foreach ($transactionTypes as $type) {
@@ -2363,6 +2333,16 @@ class Emerchantpay extends PaymentModule
     }
 
     /**
+     * Retrieves if the current PrestaSHop Version is 1.7.7.x
+     *
+     * @return bool
+     */
+    public static function isPrestaVersion177()
+    {
+        return version_compare(_PS_VERSION_, '1.7.7.0', '>=');
+    }
+
+    /**
      * Retrieves the current jQuery path
      *
      * @return null|string
@@ -2374,5 +2354,161 @@ class Emerchantpay extends PaymentModule
         }
 
         return null;
+    }
+
+    /**
+     * @param $transactionType
+     * @return string
+     */
+    private function getCustomParameterKey($transactionType)
+    {
+        switch ($transactionType) {
+            case Types::PPRO:
+                $result = 'payment_method';
+                break;
+            case Types::PAY_PAL:
+                $result = 'payment_type';
+                break;
+            case Types::GOOGLE_PAY:
+                $result = 'payment_subtype';
+                break;
+            default:
+                $result = 'unknown';
+        }
+
+        return $result;
+    }
+
+    /**
+     * Helper function to add js and css where is needed
+     *
+     * @return void
+     */
+    private function addAssets()
+    {
+        if (Tools::getValue('controller') == self::PS_CONTROLLER_ADMIN_ORDERS) {
+            if (version_compare(_PS_VERSION_, '1.6', '<') ||
+                version_compare(_PS_VERSION_, '1.7.8.0', '>=')) {
+                $this->context->controller->addCSS(
+                    $this->getPathUri() . 'assets/css/font-awesome.min.css',
+                    'all'
+                );
+            }
+
+            $this->context->controller->addCSS(
+                $this->getPathUri() . 'assets/css/treegrid.min.css',
+                'all'
+            );
+
+            $this->context->controller->addCSS(
+                $this->getPathUri() . 'assets/js/bootstrap/bootstrapValidator.min.css'
+            );
+
+            $this->context->controller->addJS(
+                $this->getPathUri() . 'assets/js/treegrid/cookie.min.js'
+            );
+            $this->context->controller->addJS(
+                $this->getPathUri() . 'assets/js/treegrid/treegrid.min.js'
+            );
+
+            $this->context->controller->addJS(
+                $this->getPathUri() . 'assets/js/bootstrap/bootstrapValidator.min.js'
+            );
+
+            $this->context->controller->addJS(
+                $this->getPathUri() . 'assets/js/jQueryExtensions/jquery.number.min.js'
+            );
+        }
+    }
+
+    /**
+     * Display the saved transactions
+     *
+     * @param $params
+     * @return mixed|string
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     */
+    private function displayAdminOrder($params)
+    {
+        if (Tools::isSubmit($this->name . '_transaction_id')) {
+            switch (Tools::getValue($this->name . '_transaction_type')) {
+                case 'capture':
+                    $this->doCapture();
+                    break;
+                case 'refund':
+                    $this->doRefund();
+                    break;
+                case 'void':
+                    $this->doVoid();
+                    break;
+            }
+
+            // Prevent re-submission by refresh
+            // Some browsers are re-POST happy
+            Tools::redirect($_SERVER['HTTP_REFERER']);
+        }
+
+        $order = new Order((int)$params['id_order']);
+
+        if ($order->payment != $this->displayName) {
+            return '';
+        }
+
+        if (!$this->isPrestaVersion177()) {
+            $this->addAssets();
+        }
+
+        $currency = new Currency((int)$order->id_currency);
+
+        $this->context->smarty->append(
+            'emerchantpay',
+            [
+                'transactions' => [
+                    'order'   => [
+                        'id'       => $order->id,
+                        'amount'   => $order->getTotalPaid(),
+                        'currency' => [
+                            'iso_code'          => $currency->iso_code,
+                            'sign'              => $currency->sign,
+                            'decimalPlaces'     => 2,
+                            'decimalSeparator'  => '.',
+                            'thousandSeparator' => ''
+                            /* must be empty, otherwise exception could be trown from Genesis */
+                        ]
+                    ],
+                    'options' => [
+                        'allow_partial_capture' => $this->getBoolConfigurationValue(
+                            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE
+                        ),
+                        'allow_partial_refund'  => $this->getBoolConfigurationValue(
+                            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND
+                        ),
+                        'allow_void'            => $this->getBoolConfigurationValue(
+                            self::SETTING_EMERCHANTPAY_ALLOW_VOID
+                        )
+                    ],
+                    'text'    => [
+                        'denied_partial_capture' => $this->l(
+                            'Partial Capture is currently disabled! You can enable this option in the Module Settings.'
+                        ),
+                        'denied_partial_refund'  => $this->l(
+                            'Partial Refund is currently disabled! You can enable this option in the Module Settings.'
+                        ),
+                        'denied_void'            => $this->l(
+                            'Cancel Transaction are currently disabled! You can enable this option in the Module Settings.'
+                        ),
+                    ],
+                    'error'   => $this->getSessVar('error_transaction'),
+                    'tree'    => EmerchantpayTransaction::getTransactionTree((int)$params['id_order']),
+                ],
+            ],
+            true
+        );
+
+        return
+            $this->isPrestaVersion177() ?
+                $this->fetchTemplate('/views/templates/admin/admin_order/transactions-bootstrap-4.tpl') :
+                $this->fetchTemplate('/views/templates/admin/admin_order/transactions.tpl');
     }
 }
