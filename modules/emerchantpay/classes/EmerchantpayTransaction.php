@@ -322,6 +322,7 @@ class EmerchantpayTransaction extends ObjectModel
                         \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
                         \Genesis\API\Constants\Transaction\Types::GOOGLE_PAY,
                         \Genesis\API\Constants\Transaction\Types::PAY_PAL,
+                        \Genesis\API\Constants\Transaction\Types::APPLE_PAY,
                     ],
                     'approved'
                 );
@@ -467,9 +468,9 @@ class EmerchantpayTransaction extends ObjectModel
     }
 
     /**
-     * Determine if Google Pay or PayPal Method is chosen inside the Payment settings
+     * Determine if Google Pay, PayPal or Apple Pay Method is chosen inside the Payment settings
      *
-     * @param string $transactionType GooglePay or PayPal Method
+     * @param string $transactionType GooglePay, PayPal or Apple Pay Method
      * @return bool
      */
     protected static function isTransactionWithCustomAttribute($transactionType)
@@ -477,6 +478,7 @@ class EmerchantpayTransaction extends ObjectModel
         $transactionTypes = [
             \Genesis\API\Constants\Transaction\Types::GOOGLE_PAY,
             \Genesis\API\Constants\Transaction\Types::PAY_PAL,
+            \Genesis\API\Constants\Transaction\Types::APPLE_PAY,
         ];
 
         return in_array($transactionType, $transactionTypes);
@@ -530,6 +532,22 @@ class EmerchantpayTransaction extends ObjectModel
                     ];
 
                     return (count(array_intersect($refundableTypes, $selectedTypes)) > 0);
+                }
+                break;
+            case \Genesis\API\Constants\Transaction\Types::APPLE_PAY:
+                if (self::REFERENCE_ACTION_CAPTURE === $action) {
+                    return in_array(
+                        Emerchantpay::APPLE_PAY_TRANSACTION_PREFIX .
+                        Emerchantpay::APPLE_PAY_PAYMENT_TYPE_AUTHORIZE,
+                        $selectedTypes
+                    );
+                }
+
+                if (self::REFERENCE_ACTION_REFUND === $action) {
+                    return in_array(
+                        Emerchantpay::APPLE_PAY_TRANSACTION_PREFIX . Emerchantpay::APPLE_PAY_PAYMENT_TYPE_SALE,
+                        $selectedTypes
+                    );
                 }
                 break;
             default:

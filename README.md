@@ -7,7 +7,7 @@ Requirements
 ------------
 
 * Prestashop 1.6.x - 1.7.x (Tested up to __1.7.8__)
-* [GenesisPHP v1.20.0](https://github.com/GenesisGateway/genesis_php/releases/tag/1.20.0) - (Integrated in Module)
+* [GenesisPHP v1.20.1](https://github.com/GenesisGateway/genesis_php/releases/tag/1.20.1) - (Integrated in Module)
 * PCI-certified server in order to use ```emerchantpay Direct```
 
 GenesisPHP Requirements
@@ -71,12 +71,13 @@ You're now ready to process payments through our gateway.
 Supported Transactions
 ------------
 * ```emerchantpay Direct``` Payment Method
-	* __Authorize__
-	* __Authorize (3D-Secure)__
-	* __Sale__
-	* __Sale (3D-Secure)__
+    * __Authorize__
+    * __Authorize (3D-Secure)__
+    * __Sale__
+    * __Sale (3D-Secure)__
 
 * ```emerchantpay Checkout``` Payment Method
+    * __Apple Pay__ 
     * __Argencard__
     * __Aura__
     * __Authorize__
@@ -99,7 +100,7 @@ Supported Transactions
     * __eZeeWallet__
     * __Fashioncheque__
     * __GiroPay__
-    * __GooglePay__
+    * __Google Pay__
     * __iDeal__
     * __iDebit__
     * __InstaDebit__

@@ -75,6 +75,9 @@ class Emerchantpay extends PaymentModule
     const PAYPAL_PAYMENT_TYPE_AUTHORIZE     = 'authorize';
     const PAYPAL_PAYMENT_TYPE_SALE          = 'sale';
     const PAYPAL_PAYMENT_TYPE_EXPRESS       = 'express';
+    const APPLE_PAY_TRANSACTION_PREFIX      = 'apple_pay_';
+    const APPLE_PAY_PAYMENT_TYPE_AUTHORIZE  = 'authorize';
+    const APPLE_PAY_PAYMENT_TYPE_SALE       = 'sale';
 
     /**
      * Custom prefix
@@ -88,7 +91,7 @@ class Emerchantpay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'emerchantpay Payment Gateway';
         $this->controllers            = ['checkout', 'notification', 'redirect', 'validation'];
-        $this->version                = '1.7.6';
+        $this->version                = '1.7.7';
         $this->author                 = 'emerchantpay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = ['min' => '1.5', 'max' => _PS_VERSION_];
@@ -1430,7 +1433,9 @@ class Emerchantpay extends PaymentModule
             self::GOOGLE_PAY_TRANSACTION_PREFIX . self::GOOGLE_PAY_PAYMENT_TYPE_SALE      => Types::GOOGLE_PAY,
             self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_AUTHORIZE         => Types::PAY_PAL,
             self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_SALE              => Types::PAY_PAL,
-            self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_EXPRESS           => Types::PAY_PAL
+            self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_EXPRESS           => Types::PAY_PAL,
+            self::APPLE_PAY_TRANSACTION_PREFIX . self::APPLE_PAY_PAYMENT_TYPE_AUTHORIZE   => Types::APPLE_PAY,
+            self::APPLE_PAY_TRANSACTION_PREFIX . self::APPLE_PAY_PAYMENT_TYPE_SALE        => Types::APPLE_PAY
         ]);
 
         foreach ($selectedTypes as $selectedType) {
@@ -1446,7 +1451,8 @@ class Emerchantpay extends PaymentModule
                         [
                             $pproSuffix,
                             self::GOOGLE_PAY_TRANSACTION_PREFIX,
-                            self::PAYPAL_TRANSACTION_PREFIX
+                            self::PAYPAL_TRANSACTION_PREFIX,
+                            self::APPLE_PAY_TRANSACTION_PREFIX
                         ],
                         '',
                         $selectedType
@@ -1914,7 +1920,8 @@ class Emerchantpay extends PaymentModule
             Types::SDD_INIT_RECURRING_SALE,
             Types::PPRO,
             Types::GOOGLE_PAY,
-            Types::PAY_PAL
+            Types::PAY_PAL,
+            Types::APPLE_PAY,
         ];
 
         $transactionTypes = array_diff($transactionTypes, $excludedTypes);
@@ -1950,11 +1957,23 @@ class Emerchantpay extends PaymentModule
             ]
         );
 
+        // Add Apple Pay Transaction Methods
+        $applePayMethods = array_map(
+            function ($type) {
+                return self::APPLE_PAY_TRANSACTION_PREFIX . $type;
+            },
+            [
+                self::APPLE_PAY_PAYMENT_TYPE_AUTHORIZE,
+                self::APPLE_PAY_PAYMENT_TYPE_SALE
+            ]
+        );
+
         $transactionTypes = array_merge(
             $transactionTypes,
             $pproTypes,
             $googlePayMethods,
-            $payPalMethods
+            $payPalMethods,
+            $applePayMethods
         );
         asort($transactionTypes);
 
@@ -2370,6 +2389,7 @@ class Emerchantpay extends PaymentModule
                 $result = 'payment_type';
                 break;
             case Types::GOOGLE_PAY:
+            case Types::APPLE_PAY:
                 $result = 'payment_subtype';
                 break;
             default:
