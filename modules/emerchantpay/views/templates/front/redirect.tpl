@@ -24,7 +24,7 @@
 
 {if $emerchantpay['redirect']['status'] == 'failure'}
 
-    {capture name=path}{l s='Payment Status'}{/capture}
+    {capture name=path}{l s='Payment Status' mod='emerchantpay'}{/capture}
 
     <div id="center_column" class="center_column">
         <h1 class="page-heading bottom-indent">
@@ -47,7 +47,7 @@
 
 {if $emerchantpay['redirect']['status'] == 'cancel'}
 
-    {capture name=path}{l s='Payment Status'}{/capture}
+    {capture name=path}{l s='Payment Status' mod='emerchantpay'}{/capture}
 
     <div id="center_column" class="center_column">
         <h1 class="page-heading bottom-indent">

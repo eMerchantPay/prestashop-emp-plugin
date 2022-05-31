@@ -21,7 +21,7 @@
         {if $emerchantpay['payment']['methods']['checkout']}
             <div id="payment-method-{$emerchantpay['name']['module']}-checkout" class="payment_module">
                 <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']}">
-                    <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_checkout.png"
+                    <img src="{$emerchantpay['path']}/views/img/logos/emerchantpay_checkout.png"
                          alt="{l s="emerchantpay Logo" mod="emerchantpay"}" style="width:224px;"/>
                     {l s="Pay safely with emerchantpay" mod="emerchantpay"}
                 </a>
@@ -44,7 +44,7 @@
                     <div class="col-xs-12 col-md-6">
                         <p class="payment_module">
                             <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']}">
-                                <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_checkout.png"
+                                <img src="{$emerchantpay['path']}/views/img/logos/emerchantpay_checkout.png"
                                      alt="{l s="emerchantpay Logo" mod="emerchantpay"}"/>
                                 <span>{l s="Pay safely with emerchantpay" mod="emerchantpay"}</span>
                             </a>
@@ -81,7 +81,7 @@
                 <div class="row row-spacer" style="margin-bottom: 10pt;">
                     <div class="alert alert-warning alert-dismissable error-wrapper">
                         <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        {$emerchantpay['payment']['errors']['checkout']|escape:html:'UTF-8'}
+                        {$emerchantpay['payment']['errors']['checkout']}
                     </div>
                 </div>
             {/if}
@@ -89,7 +89,7 @@
             <div id="payment-method-{$emerchantpay['name']['module']}-checkout">
                 <div class="payment-method-container">
                     <div class="row">
-                        <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_checkout.png"
+                        <img src="{$emerchantpay['path']}/views/img/logos/emerchantpay_checkout.png"
                              alt="{l s="emerchantpay Logo" mod="emerchantpay"}"/>
                         <span>{l s="Pay safely with emerchantpay" mod="emerchantpay"}</span>
                     </div>

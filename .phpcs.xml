@@ -7,4 +7,5 @@
 
     <exclude-pattern>*/genesis/*</exclude-pattern>
     <exclude-pattern>*/backward_compatibility/*</exclude-pattern>
+    <exclude-pattern>*/translations/*</exclude-pattern>
 </ruleset>

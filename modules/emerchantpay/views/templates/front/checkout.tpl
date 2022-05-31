@@ -48,18 +48,18 @@
             <div class="row row-spacer">
                 <div class="alert alert-warning alert-dismissable error-wrapper" style="width:75%;margin:15px auto;">
                     <button type="button" class="close" data-dismiss="alert">&times;</button>
-                    {$emerchantpay['checkout']['error']|escape:html:'UTF-8'}
+                    {$emerchantpay['checkout']['error']}
                 </div>
             </div>
         {/if}
 
         <h3>{l s='emerchantpay Secure Checkout' mod='emerchantpay'}</h3>
-        <form action="{$emerchantpay['checkout']['links']['confirm']|escape:'html'}" method="POST" name="">
+        <form action="{$emerchantpay['checkout']['links']['confirm']|escape:'html':'UTF-8'}" method="POST" name="">
             <input type="hidden" name="checkout" value="confirmed" />
             <input type="hidden" name="submit{$emerchantpay['name']['module']}Checkout" value="true" />
 
             <p>
-                <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay.png" alt="{l s='emerchantpay Checkout' mod='emerchantpay'}" width="128" style="float:left;margin: 0 10px 5px 0;" />
+                <img src="{$emerchantpay['path']}/views/img/logos/emerchantpay.png" alt="{l s='emerchantpay Checkout' mod='emerchantpay'}" width="128" style="float:left;margin: 0 10px 5px 0;" />
                 {l s='You have chosen to pay via emerchantpay Secure Checkout' mod='emerchantpay'}
             </p>
             <p style="margin-top:20px;">
@@ -102,12 +102,12 @@
         <div class="row row-spacer" style="margin:0;">
             <div class="alert alert-warning alert-dismissable error-wrapper">
                 <button type="button" class="close" data-dismiss="alert">&times;</button>
-                {$emerchantpay['checkout']['error']|escape:html:'UTF-8'}
+                {$emerchantpay['checkout']['error']}
             </div>
         </div>
     {/if}
 
-        <form action="{$emerchantpay['checkout']['links']['confirm']|escape:'html'}" method="post">
+        <form action="{$emerchantpay['checkout']['links']['confirm']|escape:'html':'UTF-8'}" method="post">
             <input type="hidden" name="checkout" value="confirmed" />
             <input type="hidden" name="submit{$emerchantpay['name']['module']}Checkout" value="true" />
 

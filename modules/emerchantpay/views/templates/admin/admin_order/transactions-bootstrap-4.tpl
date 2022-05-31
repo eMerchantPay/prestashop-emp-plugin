@@ -29,14 +29,14 @@
                     {if $emerchantpay['warning']}
                         <div class="alert alert-warning alert-dismissable error-wrapper mx-auto">
                             <button type="button" class="close" data-dismiss="alert">&times;</button>
-                            {$emerchantpay['warning']|escape:html:'UTF-8'}
+                            {$emerchantpay['warning']}
                         </div>
                     {/if}
 
                     {* Transaction errors *}
                     {if $emerchantpay['transactions']['error']}
                         <div class="alert alert-danger alert-dismissable error-wrapper mx-auto">
-                            {$emerchantpay['transactions']['error']|escape:html:'UTF-8'}
+                            {$emerchantpay['transactions']['error']}
                             <button type="button" class="close" data-dismiss="alert">&times;</button>
                         </div>
                     {/if}
@@ -95,7 +95,7 @@
                                                 <a class="btn btn-transaction btn-success button-capture button" role="button" data-type="capture" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['available_amount']}"
                                                     {if !$emerchantpay['transactions']['options']['allow_partial_capture']}
                                                         data-toggle="tooltip" data-placement="bottom"
-                                                        title="{$emerchantpay['transactions']['text']['denied_partial_capture']|escape:html:'UTF-8'}"
+                                                        title="{$emerchantpay['transactions']['text']['denied_partial_capture']}"
                                                     {/if}
                                                     >
                                                     <i class="fa fa-check fa-large"></i>
@@ -109,7 +109,7 @@
                                                 <a class="btn btn-transaction btn-warning button-refund button" role="button" data-type="refund" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['available_amount']}"
                                                     {if !$emerchantpay['transactions']['options']['allow_partial_refund']}
                                                         data-toggle="tooltip" data-placement="bottom"
-                                                        title="{$emerchantpay['transactions']['text']['denied_partial_refund']|escape:html:'UTF-8'}"
+                                                        title="{$emerchantpay['transactions']['text']['denied_partial_refund']}"
                                                     {/if}
                                                     >
                                                     <i class="fa fa-reply fa-large"></i>
@@ -123,7 +123,7 @@
                                                 <a class="btn btn-transaction btn-danger button-void button" role="button" data-type="void" data-id-unique="{$transaction['id_unique']}" data-amount="0"
                                                     {if !$emerchantpay['transactions']['options']['allow_void']}
                                                         data-disabled="disabled" style="cursor: default" data-toggle="tooltip" data-placement="bottom"
-                                                        title="{$emerchantpay['transactions']['text']['denied_void']|escape:html:'UTF-8'}"
+                                                        title="{$emerchantpay['transactions']['text']['denied_void']}"
                                                     {/if}
                                                     >
                                                     <i class="fa fa-remove fa-large"></i>

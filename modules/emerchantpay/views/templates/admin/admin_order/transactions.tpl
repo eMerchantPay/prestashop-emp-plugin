@@ -30,7 +30,7 @@
         <legend><img src="{$emerchantpay['presta']['url']}/modules/{$emerchantpay['name']['module']}/logo.png" style="width:16px" alt="" />{l s='emerchantpay Transactions' mod='emerchantpay'}</legend>
         {* System errors, impacting the module functionallity *}
         {if $emerchantpay['warning']}
-            <div class="warn">{$emerchantpay['warning']|escape:html:'UTF-8'}</div>
+            <div class="warn">{$emerchantpay['warning']}</div>
         {else}
             {* Transaction errors *}
             {if $emerchantpay['transactions']['error']}
@@ -193,7 +193,7 @@
                     {if $emerchantpay['warning']}
                         <div class="alert alert-warning alert-dismissable error-wrapper">
                             <button type="button" class="close" data-dismiss="alert">&times;</button>
-                            {$emerchantpay['warning']|escape:html:'UTF-8'}
+                            {$emerchantpay['warning']}
                         </div>
                     {/if}
 
@@ -201,7 +201,7 @@
                     {if $emerchantpay['transactions']['error']}
                         <div class="alert alert-danger alert-dismissable error-wrapper">
                             <button type="button" class="close" data-dismiss="alert">&times;</button>
-                            {$emerchantpay['transactions']['error']|escape:html:'UTF-8'}
+                            {$emerchantpay['transactions']['error']}
                         </div>
                     {/if}
 
@@ -259,7 +259,7 @@
                                                 <a class="btn btn-transaction btn-success button-capture button" role="button" data-type="capture" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['available_amount']}"
                                                     {if !$emerchantpay['transactions']['options']['allow_partial_capture']}
                                                         data-toggle="tooltip" data-placement="bottom"
-                                                        title="{$emerchantpay['transactions']['text']['denied_partial_capture']|escape:html:'UTF-8'}"
+                                                        title="{$emerchantpay['transactions']['text']['denied_partial_capture']}"
                                                     {/if}
                                                     >
                                                     <i class="icon-check icon-large"></i>
@@ -273,7 +273,7 @@
                                                 <a class="btn btn-transaction btn-warning button-refund button" role="button" data-type="refund" data-id-unique="{$transaction['id_unique']}" data-amount="{$transaction['available_amount']}"
                                                     {if !$emerchantpay['transactions']['options']['allow_partial_refund']}
                                                         data-toggle="tooltip" data-placement="bottom"
-                                                        title="{$emerchantpay['transactions']['text']['denied_partial_refund']|escape:html:'UTF-8'}"
+                                                        title="{$emerchantpay['transactions']['text']['denied_partial_refund']}"
                                                     {/if}
                                                     >
                                                     <i class="icon-reply icon-large"></i>
@@ -287,7 +287,7 @@
                                                 <a class="btn btn-transaction btn-danger button-void button" role="button" data-type="void" data-id-unique="{$transaction['id_unique']}" data-amount="0"
                                                     {if !$emerchantpay['transactions']['options']['allow_void']}
                                                         data-disabled="disabled" style="cursor: default" data-toggle="tooltip" data-placement="bottom"
-                                                        title="{$emerchantpay['transactions']['text']['denied_void']|escape:html:'UTF-8'}"
+                                                        title="{$emerchantpay['transactions']['text']['denied_void']}"
                                                     {/if}
                                                     >
                                                     <i class="icon-remove icon-large"></i>

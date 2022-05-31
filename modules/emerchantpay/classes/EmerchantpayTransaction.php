@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
@@ -220,12 +220,13 @@ class EmerchantpayTransaction extends ObjectModel
     private static function getTransactionsByTypeAndStatus($order_reference, $parent_transaction_id, $types, $status)
     {
 
-        return ObjectModel::hydrateCollection('EmerchantpayTransaction',
+        return ObjectModel::hydrateCollection(
+            'EmerchantpayTransaction',
             Db::getInstance()->executeS("
 				SELECT *
 				FROM `" . _DB_PREFIX_ . "emerchantpay_transactions`
 				WHERE (`ref_order` = '" . pSQL($order_reference) . "') and " .
-                                        (!empty($parent_transaction_id) ? " (`id_parent` = '" . $parent_transaction_id . "') and " : "") . "
+                (!empty($parent_transaction_id) ? " (`id_parent` = '" . $parent_transaction_id . "') and " : "") . "
 						(`type` in ('" . (is_array($types) ? implode("','", $types) : $types) . "')) and
 						(`status` = '" . $status . "')
 
@@ -243,7 +244,8 @@ class EmerchantpayTransaction extends ObjectModel
      */
     public static function getByOrderReference($order_reference)
     {
-        return ObjectModel::hydrateCollection('EmerchantpayTransaction',
+        return ObjectModel::hydrateCollection(
+            'EmerchantpayTransaction',
             Db::getInstance()->executeS("
 				SELECT *
 				FROM `" . _DB_PREFIX_ . "emerchantpay_transactions`
@@ -377,7 +379,6 @@ class EmerchantpayTransaction extends ObjectModel
         $transactions = [];
 
         foreach ($array_asc as $val) {
-
             /*
             if (isset($val['id_parent']) && $val['id_parent']){
                 continue;

@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
@@ -28,8 +28,6 @@ if (!defined('_PS_VERSION_')) {
  */
 class EmerchantpayTransactionProcess
 {
-    const displayName = 'emerchantpay Transactions';
-
     /**
      * Create a Web-Payment Form instance.
      *

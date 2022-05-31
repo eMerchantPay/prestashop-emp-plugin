@@ -1,0 +1,19 @@
+{
+    "name": "emerchantpay/prestashop-emp-plugin",
+    "description": "emerchantpay Payment Gateway for Prestashop",
+    "type": "prestashop-module",
+    "version": "1.8.0",
+    "require-dev": {
+        "prestashop/autoindex": "^2.0"
+    },
+    "license": "GPL-2.0",
+    "authors": [
+        {
+            "name": "emerchantpay",
+            "email": "shopping_carts@emerchantpay.com",
+            "homepage":"https://emerchantpay.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}

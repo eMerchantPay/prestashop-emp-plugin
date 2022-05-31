@@ -24,7 +24,7 @@
                     <div class="payment-method-header">
                         <div class="row">
                             <div class="col-xs-12">
-                                <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_direct.png"
+                                <img src="{$emerchantpay['path']}/views/img/logos/emerchantpay_direct.png"
                                      alt="{l s="emerchantpay Logo" mod="emerchantpay"}" style="width:224px;"/>
                                 <span>&nbsp;{l s="Pay with Credit / Debit Card" mod="emerchantpay"}</span>
                             </div>
@@ -36,7 +36,7 @@
                             <div class="row row-spacer">
                                 <div class="alert alert-warning alert-dismissable error-wrapper">
                                     <button type="button" class="close" data-dismiss="alert">&times;</button>
-                                    {$emerchantpay['payment']['errors']['direct']|escape:html:'UTF-8'}
+                                    {$emerchantpay['payment']['errors']['direct']}
                                 </div>
                             </div>
                         </div>
@@ -102,7 +102,7 @@
                             <div class="payment-method-header">
                                 <div class="row">
                                     <div class="col-xs-12">
-                                        <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_direct.png"
+                                        <img src="{$emerchantpay['path']}/views/img/logos/emerchantpay_direct.png"
                                              alt="{l s="emerchantpay Logo" mod="emerchantpay"}" style="width:224px;"/>
                                         <span>&nbsp;{l s="Pay with Credit / Debit Card" mod="emerchantpay"}</span>
                                     </div>
@@ -114,7 +114,7 @@
                                     <div class="row row-spacer">
                                         <div class="alert alert-warning alert-dismissable error-wrapper">
                                             <button type="button" class="close" data-dismiss="alert">&times;</button>
-                                            {$emerchantpay['payment']['errors']['direct']|escape:html:'UTF-8'}
+                                            {$emerchantpay['payment']['errors']['direct']}
                                         </div>
                                     </div>
                                 </div>
@@ -196,7 +196,7 @@
                             <div class="payment-method-header">
                                 <div class="row">
                                     <div class="col-xs-12">
-                                        <img src="{$emerchantpay['path']}/assets/img/logos/emerchantpay_direct.png"
+                                        <img src="{$emerchantpay['path']}/views/img/logos/emerchantpay_direct.png"
                                              alt="{l s="emerchantpay Logo" mod="emerchantpay"}" style="width:224px;"/>
                                         <span>&nbsp;{l s="Pay with Credit / Debit Card" mod="emerchantpay"}</span>
                                     </div>
@@ -208,7 +208,7 @@
                                     <div class="row row-spacer">
                                         <div class="alert alert-warning alert-dismissable error-wrapper">
                                             <button type="button" class="close" data-dismiss="alert">&times;</button>
-                                            {$emerchantpay['payment']['errors']['direct']|escape:html:'UTF-8'}
+                                            {$emerchantpay['payment']['errors']['direct']}
                                         </div>
                                     </div>
                                 </div>
@@ -345,7 +345,7 @@
                 expiryInput: 'input[name="{$emerchantpay['name']['module']}-expiry"]'
             },
             messages: {
-                legalText: '&copy;{$smarty.now|date_format: '%Y'} {$emerchantpay['name']['display']}<br/><br/>{$emerchantpay['name']['store']}'
+                legalText: '&copy;{$emerchantpay['legal']['year']} {$emerchantpay['name']['display']}<br/><br/>{$emerchantpay['name']['store']}'
             }
         });
     </script>

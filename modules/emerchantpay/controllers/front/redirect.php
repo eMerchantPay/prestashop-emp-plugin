@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
@@ -73,7 +73,7 @@ class EmerchantpayRedirectModuleFrontController extends ModuleFrontController
                         'support' => $this->context->link->getPageLink('contact.php'),
                     ]
                 ],
-                'cart'     => new Cart(intval(Tools::getValue('id_cart')))
+                'cart'     => new Cart((int)Tools::getValue('id_cart'))
             ],
             true
         );

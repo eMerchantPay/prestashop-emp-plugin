@@ -2,8 +2,8 @@
 <module>
 	<name>emerchantpay</name>
 	<displayName><![CDATA[emerchantpay Payment Gateway]]></displayName>
-	<version><![CDATA[1.7.7]]></version>
-	<description><![CDATA[Accept payments through emerchantpay&#039;s Payment Gateway - Genesis]]></description>
+	<version><![CDATA[1.8.0]]></version>
+	<description><![CDATA[Accept payments through emerchantpay Payment Gateway - Genesis]]></description>
 	<author><![CDATA[emerchantpay Ltd.]]></author>
 	<tab><![CDATA[payments_gateways]]></tab>
 	<is_configurable>1</is_configurable>

@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Copyright (C) 2018 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
@@ -66,18 +66,18 @@ class EmerchantpayCheckoutModuleFrontController extends ModuleFrontController
 
             if (version_compare(_PS_VERSION_, '1.6', '<')) {
                 $this->context->controller->addCSS(
-                    $this->module->getPathUri() . 'assets/css/bootstrap-custom.min.css', 'all'
+                    $this->module->getPathUri() . 'views/css/bootstrap-custom.min.css', 'all'
                 );
                 $this->context->controller->addJS(
-                    $this->module->getPathUri() . 'assets/js/bootstrap/bootstrap.min.js'
+                    $this->module->getPathUri() . 'views/js/bootstrap/bootstrap.min.js'
                 );
             }
 
             $this->context->controller->addCSS(
-                $this->module->getPathUri() . 'assets/css/card.min.css', 'all'
+                $this->module->getPathUri() . 'views/css/card.min.css', 'all'
             );
             $this->context->controller->addJS(
-                $this->module->getPathUri() . 'assets/js/card/card.min.js'
+                $this->module->getPathUri() . 'views/js/card/card.min.js'
             );
 
             $this->context->smarty->append(
