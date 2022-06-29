@@ -17,36 +17,36 @@
  *}
 
 {if version_compare($emerchantpay['presta']['version'], '1.5', '>=') && version_compare($emerchantpay['presta']['version'], '1.6', '<') }
-    <div class="row" class="payment-method-{$emerchantpay['name']['module']}">
+    <div class="row" class="payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}">
         {if $emerchantpay['payment']['methods']['checkout']}
-            <div id="payment-method-{$emerchantpay['name']['module']}-checkout" class="payment_module">
-                <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']}">
-                    <img src="{$emerchantpay['path']}/views/img/logos/emerchantpay_checkout.png"
-                         alt="{l s="emerchantpay Logo" mod="emerchantpay"}" style="width:224px;"/>
-                    {l s="Pay safely with emerchantpay" mod="emerchantpay"}
+            <div id="payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout" class="payment_module">
+                <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']|escape:'htmlall':'UTF-8'}">
+                    <img src="{$emerchantpay['path']|escape:'htmlall':'UTF-8'}/views/img/logos/emerchantpay_checkout.png"
+                         alt="{l s='emerchantpay Logo' mod='emerchantpay'}" style="width:224px;"/>
+                    {l s='Pay safely with emerchantpay' mod='emerchantpay'}
                 </a>
             </div>
         {/if}
     </div>
 
     <style type="text/css">
-        .payment-method-{$emerchantpay['name']['module']} {
+        .payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'} {
             margin-bottom: 16px;
         }
     </style>
 {/if}
 
 {if version_compare($emerchantpay['presta']['version'], '1.6', '>=') && version_compare($emerchantpay['presta']['version'], '1.7', '<') }
-    <div class="payment-method-{$emerchantpay['name']['module']}">
+    <div class="payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}">
         {if $emerchantpay['payment']['methods']['checkout']}
-            <div id="payment-method-{$emerchantpay['name']['module']}-checkout">
+            <div id="payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout">
                 <div class="row">
                     <div class="col-xs-12 col-md-6">
                         <p class="payment_module">
-                            <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']}">
-                                <img src="{$emerchantpay['path']}/views/img/logos/emerchantpay_checkout.png"
-                                     alt="{l s="emerchantpay Logo" mod="emerchantpay"}"/>
-                                <span>{l s="Pay safely with emerchantpay" mod="emerchantpay"}</span>
+                            <a class="payment_module_link" href="{$emerchantpay['payment']['urls']['checkout']|escape:'htmlall':'UTF-8'}">
+                                <img src="{$emerchantpay['path']|escape:'htmlall':'UTF-8'}/views/img/logos/emerchantpay_checkout.png"
+                                     alt="{l s='emerchantpay Logo' mod='emerchantpay'}"/>
+                                <span>{l s='Pay safely with emerchantpay' mod='emerchantpay'}</span>
                             </a>
                         </p>
                     </div>
@@ -55,19 +55,19 @@
         {/if}
     </div>
     <style type="text/css">
-        .payment-method-{$emerchantpay['name']['module']} {
+        .payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'} {
             margin-bottom: 16px;
         }
 
-        #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link {
+        #payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout a.payment_module_link {
             padding-left: 33px;
         }
 
-        #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link span {
+        #payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout a.payment_module_link span {
             padding-left: 8px;
         }
 
-        #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link::after {
+        #payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout a.payment_module_link::after {
             line-height: 0;
             top: 50% !important;
         }
@@ -75,27 +75,27 @@
 {/if}
 
 {if version_compare($emerchantpay['presta']['version'], '1.7', '>=') && version_compare($emerchantpay['presta']['version'], '1.8', '<') }
-    <div class="payment-method-{$emerchantpay['name']['module']}">
+    <div class="payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}">
         {if $emerchantpay['payment']['methods']['checkout']}
             {if $emerchantpay['payment']['errors']['checkout']}
                 <div class="row row-spacer" style="margin-bottom: 10pt;">
                     <div class="alert alert-warning alert-dismissable error-wrapper">
                         <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        {$emerchantpay['payment']['errors']['checkout']}
+                        {$emerchantpay['payment']['errors']['checkout']|escape:'htmlall':'UTF-8'}
                     </div>
                 </div>
             {/if}
 
-            <div id="payment-method-{$emerchantpay['name']['module']}-checkout">
+            <div id="payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout">
                 <div class="payment-method-container">
                     <div class="row">
-                        <img src="{$emerchantpay['path']}/views/img/logos/emerchantpay_checkout.png"
-                             alt="{l s="emerchantpay Logo" mod="emerchantpay"}"/>
-                        <span>{l s="Pay safely with emerchantpay" mod="emerchantpay"}</span>
+                        <img src="{$emerchantpay['path']|escape:'htmlall':'UTF-8'}/views/img/logos/emerchantpay_checkout.png"
+                             alt="{l s='emerchantpay Logo' mod='emerchantpay'}"/>
+                        <span>{l s='Pay safely with emerchantpay' mod='emerchantpay'}</span>
                     </div>
                     <div class="row">
                         <p>
-                            {l s="You will be redirected to emerchantpay, where you can safely enter your payment details and complete this order." mod='emerchantpay'}
+                            {l s='You will be redirected to emerchantpay, where you can safely enter your payment details and complete this order.' mod='emerchantpay'}
                         </p>
                     </div>
                 </div>
@@ -106,15 +106,15 @@
 {/if}
 
 <style type="text/css">
-    #payment-method-{$emerchantpay['name']['module']}-checkout {
+    #payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout {
         position: relative;
     }
 
-    #payment-method-{$emerchantpay['name']['module']}-checkout.payment_module {
+    #payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout.payment_module {
         padding-bottom: 20px;
     }
 
-    #payment-method-{$emerchantpay['name']['module']}-checkout .center-wrapper {
+    #payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout .center-wrapper {
         position: relative;
         display: block;
         top: 50%;
@@ -124,21 +124,21 @@
         line-height: 2000px;
     }
 
-    #payment-method-{$emerchantpay['name']['module']}-checkout .center-wrapper .wrap {
+    #payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout .center-wrapper .wrap {
         line-height: 0;
     }
 
-    #payment-method-{$emerchantpay['name']['module']}-checkout .center-wrapper .wrap img {
+    #payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout .center-wrapper .wrap img {
         width: 85%;
         max-width: 350px;
         vertical-align: middle;
     }
 
-    #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link {
+    #payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout a.payment_module_link {
         line-height: 50px;
     }
 
-    #payment-method-{$emerchantpay['name']['module']}-checkout a.payment_module_link:after {
+    #payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}-checkout a.payment_module_link:after {
         display: block;
         content: "\f054";
         position: absolute;

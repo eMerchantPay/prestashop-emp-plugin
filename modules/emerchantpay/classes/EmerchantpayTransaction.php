@@ -219,18 +219,25 @@ class EmerchantpayTransaction extends ObjectModel
      */
     private static function getTransactionsByTypeAndStatus($order_reference, $parent_transaction_id, $types, $status)
     {
+        $table              = _DB_PREFIX_ . 'emerchantpay_transactions';
+        $order              = pSQL($order_reference);
+        $parent_transaction = !empty($parent_transaction_id) ?
+            ' (`id_parent` = \'' . pSQL($parent_transaction_id) . '\')' : 'true';
+        $types              = '(`type` in (\'' .
+            (is_array($types) ? implode('\',\'', array_map('pSQL', $types)) : pSQL($types)) .
+            '\'))';
+        $status             = pSQL($status);
 
         return ObjectModel::hydrateCollection(
             'EmerchantpayTransaction',
             Db::getInstance()->executeS("
 				SELECT *
-				FROM `" . _DB_PREFIX_ . "emerchantpay_transactions`
-				WHERE (`ref_order` = '" . pSQL($order_reference) . "') and " .
-                (!empty($parent_transaction_id) ? " (`id_parent` = '" . $parent_transaction_id . "') and " : "") . "
-						(`type` in ('" . (is_array($types) ? implode("','", $types) : $types) . "')) and
-						(`status` = '" . $status . "')
-
-			")
+				FROM `$table`
+				WHERE (`ref_order` = '$order')
+				 AND $parent_transaction
+				 AND $types
+				 AND (`status` = '$status')
+		    ")
         );
     }
 

@@ -94,7 +94,7 @@ class Emerchantpay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'emerchantpay Payment Gateway';
         $this->controllers            = ['checkout', 'notification', 'redirect', 'validation'];
-        $this->version                = '1.8.0';
+        $this->version                = '1.8.1';
         $this->author                 = 'emerchantpay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = ['min' => '1.5', 'max' => _PS_VERSION_];
@@ -424,25 +424,10 @@ class Emerchantpay extends PaymentModule
         foreach ($paymentMethods as $paymentMethod) {
             $availabilityClosure = $paymentMethod['availabilityClosure'];
             if (!is_callable($availabilityClosure) || $availabilityClosure()) {
-                $submitFormAction       = $this->context->link->getModuleLink(
-                    $this->name,
-                    'validation',
-                    [],
-                    true
-                );
-                $paymentMethodInputName = 'submit' . $this->name . Tools::ucfirst($paymentMethod['name']);
                 $paymentMethodOption    = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
                 $paymentMethodOption
                     ->setCallToActionText($paymentMethod['title'])
-                    ->setForm(
-                        '<form
-                            class="payment-option-form-' . $this->name . '"
-                            method="post"
-                            action="' . $submitFormAction . '"
-                            onsubmit="' . $paymentMethod['clientSideEvents']['onFormSubmit'] . '">
-                            <input type="hidden" name="' . $paymentMethodInputName . '" value="1" />
-                         </form>'
-                    )
+                    ->setForm($this->generateMethodForm($paymentMethod))
                     ->setAdditionalInformation(
                         $this->context->smarty->fetch(
                             "module:{$this->name}/views/templates/hook/payment/{$paymentMethod['name']}.tpl"
@@ -1268,13 +1253,14 @@ class Emerchantpay extends PaymentModule
     {
         $content   = '';
         $cookie    = $this->context->cookie->__get($this->name);
-        $variables = unserialize($cookie);
+        $variables = json_decode($cookie, true);
 
         if (is_array($variables) && array_key_exists($key, $variables)) {
             $content = $variables[$key];
 
             unset($variables[$key]);
-            $this->context->cookie->__set($this->name, serialize($variables));
+            $this->context->cookie->__set($this->name, json_encode($variables));
+            $this->context->cookie->write();
         }
 
         return $content;
@@ -1291,7 +1277,7 @@ class Emerchantpay extends PaymentModule
     public function setSessVar($key = null, $value = null)
     {
         $cookie    = $this->context->cookie->__get($this->name);
-        $variables = unserialize($cookie);
+        $variables = json_decode($cookie, true);
 
         if (!$variables) {
             $variables = [];
@@ -1299,7 +1285,8 @@ class Emerchantpay extends PaymentModule
 
         $variables[$key] = trim($value);
 
-        $this->context->cookie->__set($this->name, serialize($variables));
+        $this->context->cookie->__set($this->name, json_encode($variables));
+        $this->context->cookie->write();
     }
 
     /**
@@ -1848,9 +1835,11 @@ class Emerchantpay extends PaymentModule
                 'name'   => self::SETTING_EMERCHANTPAY_DIRECT,
                 'values' => [
                     [
+                        'id'    => 'active_on',
                         'value' => '1',
                     ],
                     [
+                        'id'    => 'active_off',
                         'value' => '0'
                     ]
                 ]
@@ -1894,9 +1883,11 @@ class Emerchantpay extends PaymentModule
                 'name'   => self::SETTING_EMERCHANTPAY_CHECKOUT,
                 'values' => [
                     [
+                        'id'    => 'active_on',
                         'value' => '1'
                     ],
                     [
+                        'id'    => 'active_off',
                         'value' => '0'
                     ]
                 ]
@@ -1939,9 +1930,11 @@ class Emerchantpay extends PaymentModule
                 'name'   => self::SETTING_EMERCHANTPAY_WPF_TOKENIZATION,
                 'values' => [
                     [
+                        'id'    => 'active_on',
                         'value' => '1'
                     ],
                     [
+                        'id'    => 'active_off',
                         'value' => '0'
                     ]
                 ]
@@ -2064,9 +2057,11 @@ class Emerchantpay extends PaymentModule
                         'name'   => self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE,
                         'values' => [
                             [
+                                'id'    => 'active_on',
                                 'value' => '1'
                             ],
                             [
+                                'id'    => 'active_off',
                                 'value' => '0'
                             ]
                         ]
@@ -2080,9 +2075,11 @@ class Emerchantpay extends PaymentModule
                         'name'   => self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND,
                         'values' => [
                             [
+                                'id'    => 'active_on',
                                 'value' => '1'
                             ],
                             [
+                                'id'    => 'active_off',
                                 'value' => '0'
                             ]
                         ]
@@ -2096,9 +2093,11 @@ class Emerchantpay extends PaymentModule
                         'name'   => self::SETTING_EMERCHANTPAY_ALLOW_VOID,
                         'values' => [
                             [
+                                'id'    => 'active_on',
                                 'value' => '1'
                             ],
                             [
+                                'id'    => 'active_off',
                                 'value' => '0'
                             ]
                         ]
@@ -2133,9 +2132,11 @@ class Emerchantpay extends PaymentModule
                 'name'   => self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT,
                 'values' => [
                     [
+                        'id'    => 'active_on',
                         'value' => '1'
                     ],
                     [
+                        'id'    => 'active_off',
                         'value' => '0'
                     ]
                 ]
@@ -2569,5 +2570,31 @@ class Emerchantpay extends PaymentModule
             $this->isPrestaVersion177() ?
                 $this->fetchTemplate('/views/templates/admin/admin_order/transactions-bootstrap-4.tpl') :
                 $this->fetchTemplate('/views/templates/admin/admin_order/transactions.tpl');
+    }
+
+    /**
+     * Get the HTML method form string
+     *
+     * @param array $paymentMethod
+     * @return string
+     */
+    private function generateMethodForm($paymentMethod)
+    {
+        $submitFormAction = $this->context->link->getModuleLink(
+            $this->name,
+            'validation',
+            [],
+            true
+        );
+
+        $this->context->smarty->assign([
+            'method_name'             => $this->name,
+            'method_input_name'       => 'submit' . $this->name . Tools::ucfirst($paymentMethod['name']),
+            'submit_form_action'      => $submitFormAction,
+            'on_submit_callback'      => $paymentMethod['clientSideEvents']['onFormSubmit'],
+            'all_conditions_approved' => true
+        ]);
+
+        return $this->context->smarty->fetch("module:{$this->name}/views/templates/front/methodform.tpl");
     }
 }

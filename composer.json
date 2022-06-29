@@ -2,7 +2,7 @@
     "name": "emerchantpay/prestashop-emp-plugin",
     "description": "emerchantpay Payment Gateway for Prestashop",
     "type": "prestashop-module",
-    "version": "1.8.0",
+    "version": "1.8.1",
     "require-dev": {
         "prestashop/autoindex": "^2.0"
     },

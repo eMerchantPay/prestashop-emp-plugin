@@ -19,11 +19,11 @@
 {if version_compare($emerchantpay['presta']['version'], '1.5', '>=') && version_compare($emerchantpay['presta']['version'], '1.6', '<') }
 
     {capture name=path}
-        <a href="{$emerchantpay['checkout']['links']['back']|escape:'html':'UTF-8'}" title="{l s='Go back to the Checkout' mod='emerchantpay'}">
+        <a href="{$emerchantpay['checkout']['links']['back']|escape:'htmlall':'UTF-8'}" title="{l s='Go back to the Checkout' mod='emerchantpay'}">
             {l s='Checkout' mod='emerchantpay'}
         </a>
         <span class="navigation-pipe">
-        {$navigationPipe}
+        {$navigationPipe|escape:'htmlall':'UTF-8'}
     </span>
         {l s='emerchantpay Secure Checkout' mod='emerchantpay'}
     {/capture}
@@ -48,18 +48,18 @@
             <div class="row row-spacer">
                 <div class="alert alert-warning alert-dismissable error-wrapper" style="width:75%;margin:15px auto;">
                     <button type="button" class="close" data-dismiss="alert">&times;</button>
-                    {$emerchantpay['checkout']['error']}
+                    {$emerchantpay['checkout']['error']|escape:'htmlall':'UTF-8'}
                 </div>
             </div>
         {/if}
 
         <h3>{l s='emerchantpay Secure Checkout' mod='emerchantpay'}</h3>
-        <form action="{$emerchantpay['checkout']['links']['confirm']|escape:'html':'UTF-8'}" method="POST" name="">
+        <form action="{$emerchantpay['checkout']['links']['confirm']|escape:'htmlall':'UTF-8'}" method="POST" name="">
             <input type="hidden" name="checkout" value="confirmed" />
-            <input type="hidden" name="submit{$emerchantpay['name']['module']}Checkout" value="true" />
+            <input type="hidden" name="submit{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}Checkout" value="true" />
 
             <p>
-                <img src="{$emerchantpay['path']}/views/img/logos/emerchantpay.png" alt="{l s='emerchantpay Checkout' mod='emerchantpay'}" width="128" style="float:left;margin: 0 10px 5px 0;" />
+                <img src="{$emerchantpay['path']|escape:'htmlall':'UTF-8'}/views/img/logos/emerchantpay.png" alt="{l s='emerchantpay Checkout' mod='emerchantpay'}" width="128" style="float:left;margin: 0 10px 5px 0;" />
                 {l s='You have chosen to pay via emerchantpay Secure Checkout' mod='emerchantpay'}
             </p>
             <p style="margin-top:20px;">
@@ -72,13 +72,13 @@
                 {/if}
             </p>
             <p>
-                {l s="You will be redirected to our emerchantpay's website, where you can safely enter your payment details and complete this order." mod='emerchantpay'}
+                {l s='You will be redirected to our emerchantpay\'s website, where you can safely enter your payment details and complete this order.' mod='emerchantpay'}
                 <br /><br />
                 <b>{l s='Please confirm your order by clicking "I confirm my order".' mod='emerchantpay'}</b>
             </p>
             <p class="cart_navigation" id="cart_navigation">
                 <input type="submit" value="{l s='I confirm my order' mod='emerchantpay'}" class="exclusive_large" />
-                <a href="{$emerchantpay['checkout']['links']['back']|escape:'html':'UTF-8'}" class="button_large">{l s='Other payment methods' mod='emerchantpay'}</a>
+                <a href="{$emerchantpay['checkout']['links']['back']|escape:'htmlall':'UTF-8'}" class="button_large">{l s='Other payment methods' mod='emerchantpay'}</a>
             </p>
         </form>
     {/if}
@@ -102,14 +102,14 @@
         <div class="row row-spacer" style="margin:0;">
             <div class="alert alert-warning alert-dismissable error-wrapper">
                 <button type="button" class="close" data-dismiss="alert">&times;</button>
-                {$emerchantpay['checkout']['error']}
+                {$emerchantpay['checkout']['error']|escape:'htmlall':'UTF-8'}
             </div>
         </div>
     {/if}
 
-        <form action="{$emerchantpay['checkout']['links']['confirm']|escape:'html':'UTF-8'}" method="post">
+        <form action="{$emerchantpay['checkout']['links']['confirm']|escape:'htmlall':'UTF-8'}" method="post">
             <input type="hidden" name="checkout" value="confirmed" />
-            <input type="hidden" name="submit{$emerchantpay['name']['module']}Checkout" value="true" />
+            <input type="hidden" name="submit{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}Checkout" value="true" />
 
             <div class="box cheque-box">
                 <h3 class="page-subheading">{l s='emerchantpay Checkout' mod='emerchantpay'}</h3>
@@ -128,14 +128,14 @@
                     {/if}
                 </p>
                 <p>
-                    - {l s="You will be redirected to our emerchantpay's website, where you can safely enter your payment details and complete this order." mod='emerchantpay'}
+                    - {l s='You will be redirected to our emerchantpay\'s website, where you can safely enter your payment details and complete this order.' mod='emerchantpay'}
                     <br />
                     - <b>{l s='Please confirm your order by clicking "I confirm my order".' mod='emerchantpay'}</b>
                 </p>
             </div>
 
             <p class="cart_navigation clearfix" id="cart_navigation">
-                <a href="{$emerchantpay['checkout']['links']['back']|escape:'html':'UTF-8'}" class="button-exclusive btn btn-default">
+                <a href="{$emerchantpay['checkout']['links']['back']|escape:'htmlall':'UTF-8'}" class="button-exclusive btn btn-default">
                     <i class="icon-chevron-left"></i>{l s='Other payment methods' mod='emerchantpay'}
                 </a>
                 <button type="submit" class="button btn btn-default button-medium">

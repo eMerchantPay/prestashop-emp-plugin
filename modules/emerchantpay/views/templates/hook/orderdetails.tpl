@@ -19,41 +19,41 @@
 
     <section class="box">
         <h3>
-            <img src="{$emerchantpay['presta']['url']}modules/{$emerchantpay['name']['module']}/logo.png" alt="" style="width:16px;" />
+            <img src="{$emerchantpay['presta']['url']|escape:'htmlall':'UTF-8'}modules/{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'}/logo.png" alt="" style="width:16px;" />
             <span>{l s='emerchantpay Transactions' mod='emerchantpay'}</span>
         </h3>
 
         <table class="table table-hover tree">
             <thead class="thead-default">
             <tr>
-                <th>{l s="Id"       mod="emerchantpay"}</th>
-                <th>{l s="Type"     mod="emerchantpay"}</th>
-                <th>{l s="Date"     mod="emerchantpay"}</th>
-                <th>{l s="Amount"   mod="emerchantpay"}</th>
-                <th>{l s="Status"   mod="emerchantpay"}</th>
-                <th class="slim-message">{l s="Message"  mod="emerchantpay"}</th>
+                <th>{l s='Id'       mod='emerchantpay'}</th>
+                <th>{l s='Type'     mod='emerchantpay'}</th>
+                <th>{l s='Date'     mod='emerchantpay'}</th>
+                <th>{l s='Amount'   mod='emerchantpay'}</th>
+                <th>{l s='Status'   mod='emerchantpay'}</th>
+                <th class="slim-message">{l s='Message'  mod='emerchantpay'}</th>
             </tr>
             </thead>
             <tbody>
             {foreach from=$emerchantpay['transactions']['tree'] item=transaction}
-                <tr class="treegrid-{$transaction['id_unique']} {if $transaction['id_parent']}treegrid-parent-{$transaction['id_parent']}{/if}">
+                <tr class="treegrid-{$transaction['id_unique']|escape:'htmlall':'UTF-8'} {if $transaction['id_parent']}treegrid-parent-{$transaction['id_parent']|escape:'htmlall':'UTF-8'}{/if}">
                     <td class="text-left">
-                        {$transaction['id_unique']}
+                        {$transaction['id_unique']|escape:'htmlall':'UTF-8'}
                     </td>
                     <td class="text-left">
-                        {$transaction['type']}
+                        {$transaction['type']|escape:'htmlall':'UTF-8'}
                     </td>
                     <td class="text-left">
-                        {$transaction['date_add']}
+                        {$transaction['date_add']|escape:'htmlall':'UTF-8'}
                     </td>
                     <td class="text-right">
-                        {$transaction['amount']}
+                        {$transaction['amount']|escape:'htmlall':'UTF-8'}
                     </td>
                     <td class="text-left">
-                        {$transaction['status']}
+                        {$transaction['status']|escape:'htmlall':'UTF-8'}
                     </td>
                     <td class="text-left">
-                        {$transaction['message']}
+                        {$transaction['message']|escape:'htmlall':'UTF-8'}
                     </td>
                 </tr>
             {/foreach}

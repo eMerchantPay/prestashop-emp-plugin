@@ -37,7 +37,7 @@
                     {l s='Please check your input and try again!' mod='emerchantpay'}
 
                     <br /><br />{l s='If the problem persists, you can contact our' mod='emerchantpay'}
-                    <a href="{$emerchantpay['redirect']['url']['support']}">{l s='customer support' mod='emerchantpay'}</a>.
+                    <a href="{$emerchantpay['redirect']['url']['support']|escape:'htmlall':'UTF-8'}">{l s='customer support' mod='emerchantpay'}</a>.
                 </p>
             </div>
         </div>
@@ -60,9 +60,9 @@
                     {l s='You have successfully cancelled your order.' mod='emerchantpay'}
 
                     <br/><br/>{l s='You can redo your ' mod='emerchantpay'}
-                    <a href="{$emerchantpay['redirect']['url']['order']}">{l s='order' mod='emerchantpay'}</a>
+                    <a href="{$emerchantpay['redirect']['url']['order']|escape:'htmlall':'UTF-8'}">{l s='order' mod='emerchantpay'}</a>
                     {l s=' with different details or review your order' mod='emerchantpay'}
-                    <a href="{$emerchantpay['redirect']['url']['history']}">{l s='history' mod='emerchantpay'}</a>.
+                    <a href="{$emerchantpay['redirect']['url']['history']|escape:'htmlall':'UTF-8'}">{l s='history' mod='emerchantpay'}</a>.
                 </p>
             </div>
         </div>

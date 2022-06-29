@@ -21,7 +21,7 @@
         {if $emerchantpay['payment']['option']['selected_id'] != ''}
             $(document).ready(function() {
                 setTimeout(function() {
-                    var paymentOptionAdditionalInfoContainer = $('#{$emerchantpay['payment']['option']['selected_id']}-additional-information');
+                    var paymentOptionAdditionalInfoContainer = $('#{$emerchantpay['payment']['option']['selected_id']|escape:'javascript':'UTF-8'}-additional-information');
                     if (!paymentOptionAdditionalInfoContainer.is(':visible')) {
                         paymentOptionAdditionalInfoContainer.slideDown('slow');
                     }
@@ -59,11 +59,11 @@
     </script>
 
     <style type="text/css">
-        .payment-method-{$emerchantpay['name']['module']} {
+        .payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'} {
             margin-bottom: 16px;
         }
 
-        .payment-method-{$emerchantpay['name']['module']} div.alert {
+        .payment-method-{$emerchantpay['name']['module']|escape:'htmlall':'UTF-8'} div.alert {
             width: 95%;
             margin: 0 auto;
         }
