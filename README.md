@@ -7,7 +7,7 @@ Requirements
 ------------
 
 * Prestashop 1.6.x - 1.7.x (Tested up to __1.7.8__)
-* [GenesisPHP v1.20.1](https://github.com/GenesisGateway/genesis_php/releases/tag/1.20.1) - (Integrated in Module)
+* [GenesisPHP v1.21.2](https://github.com/GenesisGateway/genesis_php/releases/tag/1.21.2) - (Integrated in Module)
 * PCI-certified server in order to use ```emerchantpay Direct```
 
 GenesisPHP Requirements
@@ -124,6 +124,7 @@ Supported Transactions
     * __PayPal__
     * __PaySafeCard__
     * __PayU__
+    * __Pix__
     * __POLi__
     * __Post Finance__
     * __PPRO__
