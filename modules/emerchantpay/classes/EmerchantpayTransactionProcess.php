@@ -133,6 +133,49 @@ class EmerchantpayTransactionProcess
             $genesis->request()->setRememberCard(true);
         }
 
+        if ($data->is_threeds_allowed) {
+            /** @var \Genesis\API\Request\WPF\Create $request */
+            $request = $genesis->request();
+            $request
+                ->setThreedsV2ControlChallengeIndicator($data->threeds_challenge_indicator)
+                ->setThreedsV2PurchaseCategory($data->threeds_purchase_category)
+                ->setThreedsV2MerchantRiskDeliveryTimeframe($data->threeds_delivery_timeframe)
+                ->setThreedsV2MerchantRiskShippingIndicator($data->threeds_shipping_indicator)
+                ->setThreedsV2MerchantRiskReorderItemsIndicator($data->threeds_reorder_items_indicator)
+                ->setThreedsV2CardHolderAccountRegistrationIndicator($data->threeds_registration_indicator)
+                ;
+            if (!$data->is_guest) {
+                $request
+                    ->setThreedsV2CardHolderAccountCreationDate($data->threeds_creation_date)
+                    ->setThreedsV2CardHolderAccountLastChangeDate($data->threeds_last_change_date)
+                    ->setThreedsV2CardHolderAccountUpdateIndicator($data->threeds_update_indicator)
+                    ->setThreedsV2CardHolderAccountPasswordChangeDate($data->threeds_password_change_date)
+                    ->setThreedsV2CardHolderAccountPasswordChangeIndicator($data->threeds_password_change_indicator)
+                    ->setThreedsV2CardHolderAccountRegistrationDate($data->threeds_registration_date)
+                    ->setThreedsV2CardHolderAccountShippingAddressDateFirstUsed(
+                        $data->threeds_shipping_address_date_first_used
+                    )
+                    ->setThreedsV2CardHolderAccountShippingAddressUsageIndicator(
+                        $data->threeds_shipping_address_usage_indicator
+                    )
+                    ->setThreedsV2CardHolderAccountTransactionsActivityLast24Hours(
+                        $data->transactions_activity_last_24_hours
+                    )
+                    ->setThreedsV2CardHolderAccountTransactionsActivityPreviousYear(
+                        $data->transactions_activity_previous_year
+                    )
+                    ->setThreedsV2CardHolderAccountPurchasesCountLast6Months(
+                        $data->purchases_count_last_6_months
+                    )
+                ;
+            }
+        }
+
+        $wpfAmount = (float)$genesis->request()->getAmount();
+        if ($wpfAmount <= $data->sca_exemption_amount) {
+            $genesis->request()->setScaExemption($data->sca_exemption_value);
+        }
+
         $genesis->execute();
 
         return $genesis->response();

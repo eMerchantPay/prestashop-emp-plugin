@@ -18,7 +18,10 @@
  */
 
 use Genesis\API\Constants\Transaction\Names;
-use Genesis\API\Constants\Transaction\Parameters\Mobile\GooglePay\PaymentTypes as GooglePaymentTypes;
+use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\CardHolderAccount\RegistrationIndicators;
+use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\MerchantRisk\DeliveryTimeframes;
+use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\Purchase\Categories;
+use Genesis\API\Constants\Transaction\Parameters\ScaExemptions;
 use Genesis\API\Constants\Transaction\Types;
 use Genesis\API\Constants\Banks;
 use Genesis\Utils\Common as CommonUtils;
@@ -52,20 +55,24 @@ class Emerchantpay extends PaymentModule
     /**
      * Configurable module settings
      */
-    const SETTING_EMERCHANTPAY_USERNAME              = 'EMERCHANTPAY_USERNAME';
-    const SETTING_EMERCHANTPAY_PASSWORD              = 'EMERCHANTPAY_PASSWORD';
-    const SETTING_EMERCHANTPAY_TOKEN                 = 'EMERCHANTPAY_TOKEN';
-    const SETTING_EMERCHANTPAY_ENVIRONMENT           = 'EMERCHANTPAY_ENVIRONMENT';
-    const SETTING_EMERCHANTPAY_DIRECT                = 'EMERCHANTPAY_DIRECT';
-    const SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE       = 'EMERCHANTPAY_DIRECT_TRX_TYPE';
-    const SETTING_EMERCHANTPAY_CHECKOUT              = 'EMERCHANTPAY_CHECKOUT';
-    const SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES    = 'EMERCHANTPAY_CHECKOUT_TRX_TYPES';
-    const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE = 'EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE';
-    const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND  = 'EMERCHANTPAY_ALLOW_PARTIAL_REFUND';
-    const SETTING_EMERCHANTPAY_ALLOW_VOID            = 'EMERCHANTPAY_ALLOW_VOID';
-    const SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT   = 'EMERCHANTPAY_ADD_JQUERY_CHECKOUT';
-    const SETTING_EMERCHANTPAY_WPF_TOKENIZATION      = 'EMERCHANTPAY_WPF_TOKENIZATION';
-    const SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES   = 'EMERCHANTPAY_CHECKOUT_BANK_CODES';
+    const SETTING_EMERCHANTPAY_USERNAME                    = 'EMERCHANTPAY_USERNAME';
+    const SETTING_EMERCHANTPAY_PASSWORD                    = 'EMERCHANTPAY_PASSWORD';
+    const SETTING_EMERCHANTPAY_TOKEN                       = 'EMERCHANTPAY_TOKEN';
+    const SETTING_EMERCHANTPAY_ENVIRONMENT                 = 'EMERCHANTPAY_ENVIRONMENT';
+    const SETTING_EMERCHANTPAY_DIRECT                      = 'EMERCHANTPAY_DIRECT';
+    const SETTING_EMERCHANTPAY_DIRECT_TRX_TYPE             = 'EMERCHANTPAY_DIRECT_TRX_TYPE';
+    const SETTING_EMERCHANTPAY_CHECKOUT                    = 'EMERCHANTPAY_CHECKOUT';
+    const SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES          = 'EMERCHANTPAY_CHECKOUT_TRX_TYPES';
+    const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE       = 'EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE';
+    const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND        = 'EMERCHANTPAY_ALLOW_PARTIAL_REFUND';
+    const SETTING_EMERCHANTPAY_ALLOW_VOID                  = 'EMERCHANTPAY_ALLOW_VOID';
+    const SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT         = 'EMERCHANTPAY_ADD_JQUERY_CHECKOUT';
+    const SETTING_EMERCHANTPAY_WPF_TOKENIZATION            = 'EMERCHANTPAY_WPF_TOKENIZATION';
+    const SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES         = 'EMERCHANTPAY_CHECKOUT_BANK_CODES';
+    const SETTING_EMERCHANTPAY_THREEDS_ALLOWED             = 'EMERCHANTPAY_THREEDS_ALLOWED';
+    const SETTING_EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR = 'EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR';
+    const SETTING_EMERCHANTPAY_SCA_EXEMPTION               = 'EMERCHANTPAY_SCA_EXEMPTION';
+    const SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT        = 'EMERCHANTPAY_SCA_EXEMPTION_AMOUNT';
 
     /**
      * Transaction Type specifics
@@ -94,7 +101,7 @@ class Emerchantpay extends PaymentModule
         $this->tab                    = 'payments_gateways';
         $this->displayName            = 'emerchantpay Payment Gateway';
         $this->controllers            = ['checkout', 'notification', 'redirect', 'validation'];
-        $this->version                = '1.8.2';
+        $this->version                = '1.9.0';
         $this->author                 = 'emerchantpay Ltd.';
         $this->need_instance          = 1;
         $this->ps_versions_compliancy = ['min' => '1.5', 'max' => _PS_VERSION_];
@@ -235,6 +242,16 @@ class Emerchantpay extends PaymentModule
     public function isWpfTokenizationEnabled()
     {
         return $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_WPF_TOKENIZATION);
+    }
+
+    /**
+     * Is 3DS v2 enabled?
+     *
+     * @return bool
+     */
+    public function isThreedsAllowed()
+    {
+        return $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_THREEDS_ALLOWED);
     }
 
     /**
@@ -735,6 +752,76 @@ class Emerchantpay extends PaymentModule
 
         // Set WPF tokenization flag
         $data->is_wpf_tokenization_enabled = $this->isWpfTokenizationEnabled();
+
+        // Threeds
+        $data->is_guest = Cart::isGuestCartByCartId($cart->id);
+
+        // Order parameters
+        $data->is_threeds_allowed              = $this->isThreedsAllowed();
+        $data->threeds_challenge_indicator     = Configuration::get(
+            self::SETTING_EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR
+        );
+        $data->threeds_purchase_category       = $cart->isVirtualCart() ?
+            Categories::SERVICE :
+            Categories::GOODS;
+        $data->threeds_delivery_timeframe      = $cart->isVirtualCart() ?
+            DeliveryTimeframes::ELECTRONICS :
+            DeliveryTimeframes::ANOTHER_DAY;
+        $data->threeds_shipping_indicator      = EmerchantpayThreeds::getShippingIndicator(
+            $cart,
+            $invoice,
+            $shipping,
+            Cart::isGuestCartByCartId($cart->id)
+        );
+        $data->threeds_reorder_items_indicator = EmerchantpayThreeds::getReorderItemsIndicator(
+            $cart,
+            $customer,
+            Cart::isGuestCartByCartId($cart->id)
+        );
+        $data->threeds_registration_indicator  = RegistrationIndicators::GUEST_CHECKOUT;
+
+        // Cardholder parameters
+        if (!Cart::isGuestCartByCartId($cart->id)) {
+            $data->threeds_creation_date                    = $customer->date_add;
+            $data->threeds_registration_date                = EmerchantpayThreeds::findFirstCustomerOrderDate(
+                $customer
+            );
+            $data->threeds_registration_indicator           = EmerchantpayThreeds::getRegistrationIndicator($customer);
+            $data->threeds_last_change_date                 = EmerchantpayThreeds::findLastChangeDate(
+                $customer,
+                $cart->id_lang
+            );
+            $data->threeds_update_indicator                 = EmerchantpayThreeds::getUpdateIndicator(
+                $customer,
+                $cart->id_lang
+            );
+            $data->threeds_password_change_date             = $customer->last_passwd_gen;
+            $data->threeds_password_change_indicator        = EmerchantpayThreeds::getPasswordIndicator($customer);
+
+            $shippingAddressDateFirstUsed                   = EmerchantpayThreeds::findShippingAddressDateFirstUsed(
+                $customer,
+                $cart
+            );
+            $data->threeds_shipping_address_date_first_used = $shippingAddressDateFirstUsed;
+            $data->threeds_shipping_address_usage_indicator = EmerchantpayThreeds::getShippingAddressUsageIndicator(
+                $shippingAddressDateFirstUsed
+            );
+            $data->transactions_activity_last_24_hours      = EmerchantpayThreeds::findNumberOfOrdersForAPeriod(
+                $customer->id,
+                EmerchantpayThreeds::ACTIVITY_24_HOURS
+            );
+            $data->transactions_activity_previous_year      = EmerchantpayThreeds::findNumberOfOrdersForAPeriod(
+                $customer->id,
+                EmerchantpayThreeds::ACTIVITY_1_YEAR
+            );
+            $data->purchases_count_last_6_months            = EmerchantpayThreeds::findNumberOfOrdersForLastSixMonths(
+                $customer->id
+            );
+        }
+
+        // SCA Exemption
+        $data->sca_exemption_value  = Configuration::get(self::SETTING_EMERCHANTPAY_SCA_EXEMPTION);
+        $data->sca_exemption_amount = Configuration::get(self::SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT);
 
         return $this->transaction_data = $data;
     }
@@ -1643,7 +1730,11 @@ class Emerchantpay extends PaymentModule
             self::SETTING_EMERCHANTPAY_ALLOW_VOID,
             self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT,
             self::SETTING_EMERCHANTPAY_WPF_TOKENIZATION,
-            self::SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES
+            self::SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES,
+            self::SETTING_EMERCHANTPAY_THREEDS_ALLOWED,
+            self::SETTING_EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR,
+            self::SETTING_EMERCHANTPAY_SCA_EXEMPTION,
+            self::SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT
         ];
     }
 
@@ -1942,6 +2033,83 @@ class Emerchantpay extends PaymentModule
         ];
     }
 
+    /**
+     * Get form threeds fields
+     *
+     * @return array
+     */
+    private function getFormThreedsFields()
+    {
+        return [
+            [
+                'type' => 'switch',
+                'label' => 'Enable 3DSv2',
+                'desc' => $this->l('Enable 3DSv2 optional parameters'),
+                'name' => self::SETTING_EMERCHANTPAY_THREEDS_ALLOWED,
+                'values' => [
+                    [
+                        'id'    => 'active_on',
+                        'value' => '1'
+                    ],
+                    [
+                        'id'    => 'active_off',
+                        'value' => '0'
+                    ]
+                ]
+            ],
+            [
+                'type'     => 'select',
+                'label'    => $this->l('3DSv2 Challenge'),
+                'desc'     => $this->l(
+                    'The value has weight and might impact the decision whether a challenge will be required' .
+                    ' for the transaction or not.'
+                ),
+                'id'       => self::SETTING_EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR,
+                'name'     => self::SETTING_EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR,
+                'multiple' => false,
+                'options'  => [
+                    'query' => $this->generateOptionsFromArray(EmerchantpayThreeds::getChallengeIndicators()),
+                    'id'    => 'id',
+                    'name'  => 'name',
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Get SCA options form fields
+     *
+     * @return array
+     */
+    private function getFormScaFields()
+    {
+        return [
+            [
+                'type'     => 'select',
+                'label'    => $this->l('SCA Exemption'),
+                'desc'     => $this->l('Exemption for the Strong Customer Authentication.'),
+                'id'       => self::SETTING_EMERCHANTPAY_SCA_EXEMPTION,
+                'name'     => self::SETTING_EMERCHANTPAY_SCA_EXEMPTION,
+                'multiple' => false,
+                'options'  => [
+                    'query' => $this->generateOptionsFromArray($this->getScaExemptionOptions()),
+                    'id'    => 'id',
+                    'name'  => 'name',
+                ]
+            ],
+            [
+                'type'     => 'text',
+                'label'    => $this->l('Exemption Amount'),
+                'desc'     => $this->l(
+                    'Exemption Amount determinate if the SCA Exemption should be included in' .
+                    ' the request to the Gateway.'
+                ),
+                'name'     => self::SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT,
+                'required' => true
+            ]
+        ];
+    }
+
     public function getSupportedWpfTransactionTypes()
     {
         $data = array();
@@ -2113,6 +2281,8 @@ class Emerchantpay extends PaymentModule
         $form_structure['form']['input'] = array_merge(
             $this->getFormCredentialsFields(),
             $this->getFormTransactionFields(),
+            $this->getFormThreedsFields(),
+            $this->getFormScaFields(),
             $form_structure['form']['input']
         );
 
@@ -2203,6 +2373,9 @@ class Emerchantpay extends PaymentModule
 
         /* emerchantpay Transaction Processor */
         include_once dirname(__FILE__) . '/classes/EmerchantpayTransactionProcess.php';
+
+        /* emerchantpay Threeds helper */
+        include_once dirname(__FILE__) . '/classes/EmerchantpayThreeds.php';
 
         /* Check if Genesis Library is initialized */
         if (!class_exists('\Genesis\Genesis')) {
@@ -2344,7 +2517,10 @@ class Emerchantpay extends PaymentModule
             self::SETTING_EMERCHANTPAY_ALLOW_VOID            => '1',
             self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT   => '1',
             self::SETTING_EMERCHANTPAY_WPF_TOKENIZATION      => '0',
-            self::SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES   => []
+            self::SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES   => [],
+            self::SETTING_EMERCHANTPAY_THREEDS_ALLOWED       => '1',
+            self::SETTING_EMERCHANTPAY_SCA_EXEMPTION         => 'low_risk',
+            self::SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT  => '100'
         ];
 
         try {
@@ -2596,5 +2772,18 @@ class Emerchantpay extends PaymentModule
         ]);
 
         return $this->context->smarty->fetch("module:{$this->name}/views/templates/front/methodform.tpl");
+    }
+
+    /**
+     * Returns SCA Exemption options
+     *
+     * @return array
+     */
+    private function getScaExemptionOptions()
+    {
+        return [
+            ScaExemptions::EXEMPTION_LOW_RISK  => 'Low risk',
+            ScaExemptions::EXEMPTION_LOW_VALUE => 'Low value'
+        ];
     }
 }
