@@ -1,5 +1,10 @@
 .idea
 .DS_Store
 vendor/*
-!modules/emerchantpay/lib/genesis/vendor/*
-
+!vendor/composer
+!vendor/autoload.php
+!vendor/index.php
+!vendor/genesisgateway
+.php-cs-fixer.cache
+*.zip
+bin/check-standards

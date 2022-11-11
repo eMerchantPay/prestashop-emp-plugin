@@ -1,0 +1,21 @@
+#!/bin/bash --login
+
+[ -f emerchantpay.zip ] && rm emerchantpay.zip
+composer install --no-dev
+[ ! -L emerchantpay ] && ln -s "$(pwd)" emerchantpay
+zip -r emerchantpay \
+    emerchantpay/classes \
+    emerchantpay/controllers \
+    emerchantpay/translations \
+    emerchantpay/vendor/composer \
+    emerchantpay/vendor/genesisgateway \
+    emerchantpay/vendor/autoload.php \
+    emerchantpay/vendor/index.php \
+    emerchantpay/views \
+    emerchantpay/composer.* \
+    emerchantpay/emerchantpay.php \
+    emerchantpay/logo.png \
+    emerchantpay/index.php \
+    emerchantpay/config.xml \
+    -x "*/.*"
+[ -L emerchantpay ] && rm emerchantpay
