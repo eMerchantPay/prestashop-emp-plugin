@@ -17,5 +17,3 @@
  *}
 
 {include file="./payment/checkout-1.6.tpl"}
-
-{include file="./payment/direct-1.6.tpl"}

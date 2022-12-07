@@ -51,8 +51,6 @@ class EmerchantpayValidationModuleFrontController extends ModuleFrontControllerC
 
         if (Tools::getIsset('submit' . $this->module->name . 'Checkout')) {
             $this->validateCheckout();
-        } elseif (Tools::getIsset('submit' . $this->module->name . 'Direct')) {
-            $this->validateDirect();
         }
     }
 
@@ -83,48 +81,5 @@ class EmerchantpayValidationModuleFrontController extends ModuleFrontControllerC
                 );
             }
         }
-    }
-
-    public function validateDirect()
-    {
-        // Is standard method allowed?
-        if (!$this->module->isDirectPaymentMethodAvailable()) {
-            $this->module->redirectToPage('order.php', ['step' => 3]);
-        }
-
-        // Is everything required filled in?
-        if (!$this->isRequiredFilled()) {
-            $this->module->setSessVar(
-                'error_direct',
-                $this->module->l('Please fill all of the required fields!')
-            );
-
-            $this->module->redirectToPage(
-                'order.php',
-                [
-                    'step' => '3',
-                    'select_payment_option' => Tools::getValue('select_payment_option'),
-                ]
-            );
-        }
-
-        $this->module->doPayment();
-    }
-
-    /**
-     * Check if all required fields are submitted
-     *
-     * @return bool
-     */
-    public function isRequiredFilled()
-    {
-        return Tools::getIsset($this->module->name . '-cvc') &&
-               !empty(Tools::getValue($this->module->name . '-cvc')) &&
-               Tools::getIsset($this->module->name . '-name') &&
-               !empty(Tools::getValue($this->module->name . '-name')) &&
-               Tools::getIsset($this->module->name . '-number') &&
-               !empty(Tools::getValue($this->module->name . '-number')) &&
-               Tools::getIsset($this->module->name . '-expiry') &&
-               !empty(Tools::getValue($this->module->name . '-expiry'));
     }
 }

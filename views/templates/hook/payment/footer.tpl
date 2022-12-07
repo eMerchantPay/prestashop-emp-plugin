@@ -42,20 +42,6 @@
 
             return true;
         }
-        function doBeforeSubmitEMerchantPayDirectPaymentForm(sender) {
-            doBeforeSubmitEMerchantPayCheckoutPaymentForm(sender);
-
-            $('#payment-method-emerchantpay-direct').find('form.payment-form').find('input').each(function(index) {
-                $('<input>').attr(
-                    {
-                        type: 'hidden',
-                        name: $(this).attr('name'),
-                        value: $(this).val()
-                    }
-                ).appendTo(sender);
-            });
-            return true;
-        }
     </script>
 
     <style type="text/css">
