@@ -87,7 +87,7 @@ class Emerchantpay extends PaymentModule
         $this->tab = 'payments_gateways';
         $this->displayName = 'emerchantpay Payment Gateway';
         $this->controllers = ['checkout', 'notification', 'redirect', 'validation'];
-        $this->version = '2.0.1';
+        $this->version = '2.0.2';
         $this->author = 'emerchantpay Ltd.';
         $this->need_instance = 1;
         $this->ps_versions_compliancy = ['min' => '1.6', 'max' => _PS_VERSION_];
@@ -1944,6 +1944,7 @@ class Emerchantpay extends PaymentModule
     {
         return [
             Genesis\API\Constants\Banks::CPI => 'Interac Combined Pay-in',
+            Genesis\API\Constants\Banks::BCT => 'Bancontact',
         ];
     }
 

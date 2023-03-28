@@ -12,6 +12,6 @@
  * GNU General Public License for more details.
  *
  * @author      emerchantpay
- * @copyright   2015-2022 emerchantpay Ltd.
+ * @copyright   2015-2023 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
