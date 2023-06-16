@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "79555952d92637a1073f7e3ecce5d3c4",
+    "content-hash": "52532bf0d74f9bb5f9767b59c015a919",
     "packages": [
         {
             "name": "genesisgateway/genesis_php",
-            "version": "1.21.6",
+            "version": "1.21.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/GenesisGateway/genesis_php.git",
-                "reference": "80ad7e732a9aabcfd2c5f1f2b7a2f641b8711716"
+                "reference": "4bc64a79b5b7238880bc25b8251e7a6818063af4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/GenesisGateway/genesis_php/zipball/80ad7e732a9aabcfd2c5f1f2b7a2f641b8711716",
-                "reference": "80ad7e732a9aabcfd2c5f1f2b7a2f641b8711716",
+                "url": "https://api.github.com/repos/GenesisGateway/genesis_php/zipball/4bc64a79b5b7238880bc25b8251e7a6818063af4",
+                "reference": "4bc64a79b5b7238880bc25b8251e7a6818063af4",
                 "shasum": ""
             },
             "require": {
@@ -158,9 +158,9 @@
             ],
             "support": {
                 "issues": "https://github.com/GenesisGateway/genesis_php/issues",
-                "source": "https://github.com/GenesisGateway/genesis_php/tree/1.21.6"
+                "source": "https://github.com/GenesisGateway/genesis_php/tree/1.21.9"
             },
-            "time": "2023-02-24T10:57:03+00:00"
+            "time": "2023-05-26T13:07:15+00:00"
         }
     ],
     "packages-dev": [

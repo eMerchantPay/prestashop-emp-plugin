@@ -6,8 +6,8 @@ This is a Payment Module for Prestashop that gives you the ability to process pa
 Requirements
 ------------
 
-* Prestashop 1.6.x - 8.0.x (Tested up to __8.0.0__)
-* [GenesisPHP v1.21.6](https://github.com/GenesisGateway/genesis_php/releases/tag/1.21.6) - (Integrated in Module)
+* Prestashop 1.6.x - 8.1.x (Tested up to __8.1.0 RC 1__)
+* [GenesisPHP v1.21.9](https://github.com/GenesisGateway/genesis_php/releases/tag/1.21.9) - (Integrated in Module)
 
 GenesisPHP Requirements
 ------------

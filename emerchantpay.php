@@ -87,7 +87,7 @@ class Emerchantpay extends PaymentModule
         $this->tab = 'payments_gateways';
         $this->displayName = 'emerchantpay Payment Gateway';
         $this->controllers = ['checkout', 'notification', 'redirect', 'validation'];
-        $this->version = '2.0.2';
+        $this->version = '2.0.3';
         $this->author = 'emerchantpay Ltd.';
         $this->need_instance = 1;
         $this->ps_versions_compliancy = ['min' => '1.6', 'max' => _PS_VERSION_];
@@ -1296,8 +1296,10 @@ class Emerchantpay extends PaymentModule
         $processedList = [];
         $aliasMap = [];
 
-        $selectedTypes = json_decode(
-            Configuration::get(self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES)
+        $selectedTypes = $this->orderCardTransactionTypes(
+            json_decode(
+                Configuration::get(self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES)
+            )
         );
 
         $pproSuffix = self::PPRO_TRANSACTION_SUFFIX;
@@ -2416,5 +2418,26 @@ class Emerchantpay extends PaymentModule
             Genesis\API\Constants\Transaction\Parameters\ScaExemptions::EXEMPTION_LOW_RISK => 'Low risk',
             Genesis\API\Constants\Transaction\Parameters\ScaExemptions::EXEMPTION_LOW_VALUE => 'Low value',
         ];
+    }
+
+    /**
+     * Order transaction types with Card Transaction types in front
+     *
+     * @param array $selectedTypes Selected transaction types
+     *
+     * @return array
+     */
+    protected function orderCardTransactionTypes($selectedTypes)
+    {
+        $creditCardTypes = \Genesis\API\Constants\Transaction\Types::getCardTransactionTypes();
+
+        asort($selectedTypes);
+
+        $sortedArray = array_intersect($creditCardTypes, $selectedTypes);
+
+        return array_merge(
+            $sortedArray,
+            array_diff($selectedTypes, $sortedArray)
+        );
     }
 }
