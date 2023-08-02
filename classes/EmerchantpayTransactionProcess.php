@@ -275,8 +275,8 @@ class EmerchantpayTransactionProcess
                     ->setShippingCountry($data->shipping->country);
         }
 
-        if (isset($data->url) &&
-            \Genesis\API\Constants\Transaction\Types::is3D($data->transaction_type)) {
+        if (isset($data->url)
+            && \Genesis\API\Constants\Transaction\Types::is3D($data->transaction_type)) {
             $genesis
                 ->request()
                     ->setNotificationUrl($data->url->notification)
@@ -313,8 +313,8 @@ class EmerchantpayTransactionProcess
                 ->setAmount($data['amount'])
                 ->setCurrency($data['currency']);
 
-        if ($data['transaction_type'] === \Genesis\API\Constants\Transaction\Types::KLARNA_AUTHORIZE &&
-            $data['items'] instanceof \Genesis\API\Request\Financial\Alternatives\Klarna\Items) {
+        if ($data['transaction_type'] === \Genesis\API\Constants\Transaction\Types::KLARNA_AUTHORIZE
+            && $data['items'] instanceof \Genesis\API\Request\Financial\Alternatives\Klarna\Items) {
             $genesis
                 ->request()
                 ->setItems($data['items']);
@@ -349,8 +349,8 @@ class EmerchantpayTransactionProcess
                 ->setAmount($data['amount'])
                 ->setCurrency($data['currency']);
 
-        if ($data['transaction_type'] === \Genesis\API\Constants\Transaction\Types::KLARNA_CAPTURE &&
-            $data['items'] instanceof \Genesis\API\Request\Financial\Alternatives\Klarna\Items) {
+        if ($data['transaction_type'] === \Genesis\API\Constants\Transaction\Types::KLARNA_CAPTURE
+            && $data['items'] instanceof \Genesis\API\Request\Financial\Alternatives\Klarna\Items) {
             $genesis
                 ->request()
                 ->setItems($data['items']);

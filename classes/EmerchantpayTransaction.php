@@ -441,8 +441,8 @@ class EmerchantpayTransaction extends ObjectModel
      */
     protected static function canVoid($transaction)
     {
-        return \Genesis\API\Constants\Transaction\Types::canVoid($transaction['type']) &&
-            static::isApprovedTransaction($transaction);
+        return \Genesis\API\Constants\Transaction\Types::canVoid($transaction['type'])
+            && static::isApprovedTransaction($transaction);
     }
 
     /**

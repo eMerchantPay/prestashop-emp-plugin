@@ -56,6 +56,7 @@ class Emerchantpay extends PaymentModule
     public const SETTING_EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR = 'EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR';
     public const SETTING_EMERCHANTPAY_SCA_EXEMPTION = 'EMERCHANTPAY_SCA_EXEMPTION';
     public const SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT = 'EMERCHANTPAY_SCA_EXEMPTION_AMOUNT';
+    public const SETTING_EMERCHANTPAY_IFRAME_ALLOWED = 'SETTING_EMERCHANTPAY_IFRAME_ALLOWED';
 
     /**
      * Transaction Type specifics
@@ -87,7 +88,7 @@ class Emerchantpay extends PaymentModule
         $this->tab = 'payments_gateways';
         $this->displayName = 'emerchantpay Payment Gateway';
         $this->controllers = ['checkout', 'notification', 'redirect', 'validation'];
-        $this->version = '2.0.3';
+        $this->version = '2.0.4';
         $this->author = 'emerchantpay Ltd.';
         $this->need_instance = 1;
         $this->ps_versions_compliancy = ['min' => '1.6', 'max' => _PS_VERSION_];
@@ -228,6 +229,16 @@ class Emerchantpay extends PaymentModule
     public function isThreedsAllowed()
     {
         return $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_THREEDS_ALLOWED);
+    }
+
+    /**
+     * Check if iframe processing enabled
+     *
+     * @return bool
+     */
+    public function isIframeEnabled()
+    {
+        return $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_IFRAME_ALLOWED);
     }
 
     /**
@@ -423,6 +434,7 @@ class Emerchantpay extends PaymentModule
                 'legal' => [
                     'year' => date('Y'),
                 ],
+                'iframe_enabled' => $this->isIframeEnabled(),
             ],
             true
         );
@@ -454,7 +466,8 @@ class Emerchantpay extends PaymentModule
                         $this->context->smarty->fetch(
                             "module:{$this->name}/views/templates/hook/payment/{$paymentMethod['name']}.tpl"
                         )
-                    );
+                    )
+                    ->setModuleName("{$this->name}_{$paymentMethod['name']}");
 
                 $paymentOptions[] = $paymentMethodOption;
             }
@@ -495,6 +508,7 @@ class Emerchantpay extends PaymentModule
                 'legal' => [
                     'year' => date('Y'),
                 ],
+                'iframe_enabled' => $this->isIframeEnabled(),
             ],
             true
         );
@@ -1218,7 +1232,10 @@ class Emerchantpay extends PaymentModule
      */
     private function getAsyncSuccessURL()
     {
-        return $this->getPageLink('order-confirmation.php');
+        $url = $this->getPageLink('order-confirmation.php');
+        $controllerUrl = $this->getIframeControllerUrl($url);
+
+        return $this->isIframeEnabled() ? $controllerUrl : $url;
     }
 
     /**
@@ -1228,7 +1245,7 @@ class Emerchantpay extends PaymentModule
      */
     private function getAsyncFailureURL()
     {
-        return $this->context->link->getModuleLink(
+        $url = $this->context->link->getModuleLink(
             $this->name,
             'redirect',
             [
@@ -1236,6 +1253,9 @@ class Emerchantpay extends PaymentModule
                 'id_cart' => (int) $this->context->cart->id,
             ]
         );
+        $controllerUrl = $this->getIframeControllerUrl($url);
+
+        return $this->isIframeEnabled() ? $controllerUrl : $url;
     }
 
     /**
@@ -1245,12 +1265,33 @@ class Emerchantpay extends PaymentModule
      */
     private function getAsyncCancelURL()
     {
-        return $this->context->link->getModuleLink(
+        $url = $this->context->link->getModuleLink(
             $this->name,
             'redirect',
             [
                 'action' => 'cancel',
                 'id_cart' => (int) $this->context->cart->id,
+            ]
+        );
+        $controllerUrl = $this->getIframeControllerUrl($url);
+
+        return $this->isIframeEnabled() ? $controllerUrl : $url;
+    }
+
+    /**
+     * Get link to the iframe handling controller
+     *
+     * @param $url string
+     *
+     * @return string
+     */
+    public function getIframeControllerUrl($url)
+    {
+        return $this->context->link->getModuleLink(
+            $this->name,
+            'frame',
+            [
+                'url' => rawurlencode($url),
             ]
         );
     }
@@ -1527,6 +1568,7 @@ class Emerchantpay extends PaymentModule
             self::SETTING_EMERCHANTPAY_USERNAME,
             self::SETTING_EMERCHANTPAY_PASSWORD,
             self::SETTING_EMERCHANTPAY_ENVIRONMENT,
+            self::SETTING_EMERCHANTPAY_IFRAME_ALLOWED,
             self::SETTING_EMERCHANTPAY_CHECKOUT,
             self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
             self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE,
@@ -1677,6 +1719,36 @@ class Emerchantpay extends PaymentModule
                     ],
                     'id' => 'id',
                     'name' => 'name',
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Get form option for iframe processing
+     *
+     * @return array[]
+     */
+    private function getFormIframeOptionFields()
+    {
+        return [
+            [
+                'type' => 'switch',
+                'label' => 'Enable payment processing into an iframe',
+                'desc' => $this->l('Enable payment processing into an iframe by removing the redirects to the') .
+                    $this->l(' Gateway Web Payment Form Page. The iFrame processing requires a specific') .
+                    $this->l(' setting inside Merchant Console. For more info ask:') .
+                    $this->l(' tech-support@emerchantpay.com'),
+                'name' => self::SETTING_EMERCHANTPAY_IFRAME_ALLOWED,
+                'values' => [
+                    [
+                        'id' => 'active_on',
+                        'value' => '1',
+                    ],
+                    [
+                        'id' => 'active_off',
+                        'value' => '0',
+                    ],
                 ],
             ],
         ];
@@ -2028,6 +2100,7 @@ class Emerchantpay extends PaymentModule
         /* Add form fields */
         $form_structure['form']['input'] = array_merge(
             $this->getFormCredentialsFields(),
+            $this->getFormIframeOptionFields(),
             $this->getFormTransactionFields(),
             $this->getFormThreedsFields(),
             $this->getFormScaFields(),
@@ -2255,6 +2328,7 @@ class Emerchantpay extends PaymentModule
             self::SETTING_EMERCHANTPAY_THREEDS_ALLOWED => '1',
             self::SETTING_EMERCHANTPAY_SCA_EXEMPTION => 'low_risk',
             self::SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT => '100',
+            self::SETTING_EMERCHANTPAY_IFRAME_ALLOWED => '0',
         ];
 
         try {

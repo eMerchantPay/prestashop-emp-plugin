@@ -43,6 +43,10 @@
         </div>
     {/if}
 </div>
+
+{if array_key_exists('iframe_enabled', $emerchantpay) && $emerchantpay['iframe_enabled']}
+    {include file="module:emerchantpay/views/templates/front/iframe-checkout-helper.tpl"}
+{/if}
 {include file='module:emerchantpay/views/templates/hook/payment/footer.tpl'}
 
 <style>

@@ -86,8 +86,8 @@ class EmerchantpayRedirectModuleFrontController extends ModuleFrontController
      */
     protected function shouldRestoreCustomerCart()
     {
-        return Tools::getValue('restore') === 'cart' ||
-               in_array(
+        return Tools::getValue('restore') === 'cart'
+               || in_array(
                    Tools::getValue('action'),
                    $this->actionsToRestoreCart
                );
@@ -108,8 +108,8 @@ class EmerchantpayRedirectModuleFrontController extends ModuleFrontController
      */
     protected function isOrderProcessTypeOPC()
     {
-        return defined('PS_ORDER_PROCESS_OPC') &&
-               Configuration::get('PS_ORDER_PROCESS_TYPE') == PS_ORDER_PROCESS_OPC;
+        return defined('PS_ORDER_PROCESS_OPC')
+               && Configuration::get('PS_ORDER_PROCESS_TYPE') == PS_ORDER_PROCESS_OPC;
     }
 
     /**

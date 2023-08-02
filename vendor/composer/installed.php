@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'emerchantpay/prestashop-emp-plugin',
-        'pretty_version' => '2.0.3',
-        'version' => '2.0.3.0',
+        'pretty_version' => '2.0.4',
+        'version' => '2.0.4.0',
         'reference' => NULL,
         'type' => 'prestashop-module',
         'install_path' => __DIR__ . '/../../',
@@ -11,8 +11,8 @@
     ),
     'versions' => array(
         'emerchantpay/prestashop-emp-plugin' => array(
-            'pretty_version' => '2.0.3',
-            'version' => '2.0.3.0',
+            'pretty_version' => '2.0.4',
+            'version' => '2.0.4.0',
             'reference' => NULL,
             'type' => 'prestashop-module',
             'install_path' => __DIR__ . '/../../',
@@ -20,9 +20,9 @@
             'dev_requirement' => false,
         ),
         'genesisgateway/genesis_php' => array(
-            'pretty_version' => '1.21.9',
-            'version' => '1.21.9.0',
-            'reference' => '4bc64a79b5b7238880bc25b8251e7a6818063af4',
+            'pretty_version' => '1.21.11',
+            'version' => '1.21.11.0',
+            'reference' => 'bfa424bd2af6e5e93bd653d6450f2985c34df9ee',
             'type' => 'library',
             'install_path' => __DIR__ . '/../genesisgateway/genesis_php',
             'aliases' => array(),

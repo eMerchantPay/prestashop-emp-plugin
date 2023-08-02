@@ -2,7 +2,7 @@
     "name": "emerchantpay/prestashop-emp-plugin",
     "description": "emerchantpay Payment Gateway for Prestashop",
     "type": "prestashop-module",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "license": "GPL-2.0",
     "config": {
         "prepend-autoloader": false
@@ -16,7 +16,7 @@
     ],
     "minimum-stability": "stable",
     "require": {
-        "genesisgateway/genesis_php": "1.21.9"
+        "genesisgateway/genesis_php": "1.21.11"
     },
     "require-dev": {
         "prestashop/php-dev-tools": "^4.3",

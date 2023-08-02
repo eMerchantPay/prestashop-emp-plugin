@@ -31,7 +31,7 @@ class EmerchantpayValidationModuleFrontController extends ModuleFrontControllerC
     public $module;
 
     /**
-     * @see FrontControlwler::initContent()
+     * @see FrontController::initContent()
      */
     public function initContent()
     {
@@ -64,22 +64,25 @@ class EmerchantpayValidationModuleFrontController extends ModuleFrontControllerC
         // Send transaction
         $url = $this->module->doCheckout();
 
-        if (isset($url)) {
-            Tools::redirect($url);
-        } else {
-            if (version_compare(_PS_VERSION_, '1.7', '<')) {
-                Tools::redirect(
-                    $this->context->link->getModuleLink($this->module->name, 'checkout')
-                );
-            } else {
-                $this->module->redirectToPage(
+        if (!isset($url)) {
+            $url = (version_compare(_PS_VERSION_, '1.7', '<')) ?
+                $this->context->link->getModuleLink($this->module->name, 'checkout') :
+                $this->module->getPageLink(
                     'order.php',
                     [
                         'step' => 3,
                         'select_payment_option' => Tools::getValue('select_payment_option'),
                     ]
                 );
-            }
+            $url = $this->module->isIframeEnabled() ? $this->module->getIframeControllerUrl($url) : $url;
         }
+
+        if ($this->module->isIframeEnabled()) {
+            $this->ajaxRender(json_encode(['redirect' => $url]));
+
+            exit;
+        }
+
+        Tools::redirect($url);
     }
 }

@@ -98,8 +98,8 @@ class EmerchantpayThreeds
         if (!$isGuest) {
             $indicator = ShippingIndicators::STORED_ADDRESS;
 
-            if ($cart->id_address_invoice === $cart->id_address_delivery &&
-                self::areAddressesSame($invoice, $shipping)) {
+            if ($cart->id_address_invoice === $cart->id_address_delivery
+                && self::areAddressesSame($invoice, $shipping)) {
                 $indicator = ShippingIndicators::SAME_AS_BILLING;
             }
         }

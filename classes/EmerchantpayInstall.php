@@ -168,8 +168,8 @@ class EmerchantpayInstall
     public function registerHooks($instance)
     {
         foreach ($this->hooks as $hook) {
-            if (version_compare(_PS_VERSION_, '1.7', '>=') &&
-                in_array($hook, $this->skippable17Hooks)) {
+            if (version_compare(_PS_VERSION_, '1.7', '>=')
+                && in_array($hook, $this->skippable17Hooks)) {
                 continue;
             }
 
@@ -225,8 +225,8 @@ class EmerchantpayInstall
     public function dropHooks($instance)
     {
         foreach ($this->hooks as $hook) {
-            if (version_compare(_PS_VERSION_, '1.7', '>=') &&
-                in_array($hook, $this->skippable17Hooks)) {
+            if (version_compare(_PS_VERSION_, '1.7', '>=')
+                && in_array($hook, $this->skippable17Hooks)) {
                 continue;
             }
 
