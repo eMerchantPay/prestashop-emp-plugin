@@ -16,6 +16,11 @@
  * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
+
+namespace Emerchantpay\Genesis;
+
+use Emerchantpay\Genesis\Settings\Base\Settings;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -30,9 +35,6 @@ class EmerchantpayInstall
     private $status = true;
 
     private $hooks = [
-        'header',
-        'payment',
-        'paymentTop',
         'orderConfirmation',
         'adminOrder',
         /*
@@ -42,15 +44,6 @@ class EmerchantpayInstall
         'displayOrderDetail',
         'paymentOptions',
         'displayBackOfficeHeader',
-    ];
-
-    /**
-     * Skip registration of the following hook for PS >=1.7
-     *
-     * @var string[]
-     */
-    private $skippable17Hooks = [
-        'payment',
     ];
 
     /**
@@ -64,6 +57,8 @@ class EmerchantpayInstall
 
     /**
      * Creates transactions table
+     *
+     * @throws \PrestaShopException
      */
     protected function createTransactionsSchema()
     {
@@ -88,20 +83,22 @@ class EmerchantpayInstall
             engine=`' . _MYSQL_ENGINE_ . '`
             DEFAULT charset=utf8;';
 
-        if (!Db::getInstance()->execute($schema)) {
+        if (!\Db::getInstance()->execute($schema)) {
             $this->status = false;
-            throw new PrestaShopException('Module Install: Unable to create MySQL Database');
+            throw new \PrestaShopException('Module Install: Unable to create MySQL Database');
         }
     }
 
     /**
      * Creates consumers table
+     *
+     * @throws \PrestaShopException
      */
     protected function createConsumersSchema()
     {
-        if (!Db::getInstance()->execute(static::getCreateConsumersSchemaQuery())) {
+        if (!\Db::getInstance()->execute(static::getCreateConsumersSchemaQuery())) {
             $this->status = false;
-            throw new PrestaShopException('Module Install: Unable to create MySQL Database');
+            throw new \PrestaShopException('Module Install: Unable to create MySQL Database');
         }
     }
 
@@ -139,12 +136,12 @@ class EmerchantpayInstall
      */
     protected static function updateTransactionsSchema()
     {
-        if (!Db::getInstance()->Execute('SELECT transaction_id from `' . _DB_PREFIX_ . 'emerchantpay_transactions`')) {
+        if (!\Db::getInstance()->Execute('SELECT transaction_id from `' . _DB_PREFIX_ . 'emerchantpay_transactions`')) {
             $sqlAddTransactionIdField = '
               ALTER TABLE `' . _DB_PREFIX_ . 'emerchantpay_transactions`
                 ADD `transaction_id` VARCHAR(255) NOT NULL AFTER `ref_order`';
 
-            Db::getInstance()->Execute($sqlAddTransactionIdField);
+            \Db::getInstance()->Execute($sqlAddTransactionIdField);
         }
     }
 
@@ -153,29 +150,24 @@ class EmerchantpayInstall
      */
     protected static function updateConsumersSchema()
     {
-        if (!Db::getInstance()->Execute('SELECT consumer_id from `' . _DB_PREFIX_ . 'emerchantpay_consumers`')) {
-            Db::getInstance()->Execute(static::getCreateConsumersSchemaQuery());
+        if (!\Db::getInstance()->Execute('SELECT consumer_id from `' . _DB_PREFIX_ . 'emerchantpay_consumers`')) {
+            \Db::getInstance()->Execute(static::getCreateConsumersSchemaQuery());
         }
     }
 
     /**
      * Register all Hooks required by the module
      *
-     * @param $instance emerchantpay
+     * @param \Emerchantpay $instance
      *
-     * @throws PrestaShopException
+     * @throws \PrestaShopException
      */
     public function registerHooks($instance)
     {
         foreach ($this->hooks as $hook) {
-            if (version_compare(_PS_VERSION_, '1.7', '>=')
-                && in_array($hook, $this->skippable17Hooks)) {
-                continue;
-            }
-
             if (!$instance->registerHook($hook)) {
                 $this->status = false;
-                throw new PrestaShopException('Module Install: Hook (' . $hook . ') can\'t be registered!');
+                throw new \PrestaShopException('Module Install: Hook (' . $hook . ') can\'t be registered!');
             }
         }
     }
@@ -191,48 +183,47 @@ class EmerchantpayInstall
 
     /**
      * Drops transactions table
+     *
+     * @throws \PrestaShopException
      */
     protected function dropTransactionsSchema()
     {
         $schema = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'emerchantpay_transactions`';
 
-        if (!Db::getInstance()->execute($schema)) {
+        if (!\Db::getInstance()->execute($schema)) {
             $this->status = false;
-            throw new PrestaShopException('Module Uninstall: Unable to DROP transactions table!');
+            throw new \PrestaShopException('Module Uninstall: Unable to DROP transactions table!');
         }
     }
 
     /**
      * Drops transactions table
+     *
+     * @throws \PrestaShopException
      */
     protected function dropConsumersSchema()
     {
         $schema = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'emerchantpay_consumers`';
 
-        if (!Db::getInstance()->execute($schema)) {
+        if (!\Db::getInstance()->execute($schema)) {
             $this->status = false;
-            throw new PrestaShopException('Module Uninstall: Unable to DROP consumers table!');
+            throw new \PrestaShopException('Module Uninstall: Unable to DROP consumers table!');
         }
     }
 
     /**
      * Delete registered hooks
      *
-     * @param $instance emerchantpay
+     * @param \Emerchantpay $instance
      *
-     * @throws PrestaShopException
+     * @throws \PrestaShopException
      */
     public function dropHooks($instance)
     {
         foreach ($this->hooks as $hook) {
-            if (version_compare(_PS_VERSION_, '1.7', '>=')
-                && in_array($hook, $this->skippable17Hooks)) {
-                continue;
-            }
-
             if (!$instance->unregisterHook($hook)) {
                 $this->status = false;
-                throw new PrestaShopException('Module Uninstall: Hook (' . $hook . ') can\'t be unregistered!');
+                throw new \PrestaShopException('Module Uninstall: Hook (' . $hook . ') can\'t be unregistered!');
             }
         }
     }
@@ -240,16 +231,16 @@ class EmerchantpayInstall
     /**
      * Delete module configuration
      *
-     * @param emerchantpay $instance
+     * @param Settings $instance
      *
-     * @throws PrestaShopException
+     * @throws \PrestaShopException
      */
     public function dropKeys($instance)
     {
         foreach ($instance->getConfigKeys() as $key) {
-            if (!Configuration::deleteByName($key)) {
+            if (!\Configuration::deleteByName($key)) {
                 $this->status = false;
-                throw new PrestaShopException('Module Uninstall: Unable to remove configuration keys');
+                throw new \PrestaShopException('Module Uninstall: Unable to remove configuration keys');
             }
         }
     }

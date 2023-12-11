@@ -4,7 +4,7 @@
 composer install --no-dev
 [ ! -L emerchantpay ] && ln -s "$(pwd)" emerchantpay
 zip -r emerchantpay \
-    emerchantpay/classes \
+    emerchantpay/src \
     emerchantpay/controllers \
     emerchantpay/translations \
     emerchantpay/vendor/composer \
@@ -17,5 +17,5 @@ zip -r emerchantpay \
     emerchantpay/logo.png \
     emerchantpay/index.php \
     emerchantpay/config.xml \
-    -x "*/.*"
+    emerchantpay/.htaccess
 [ -L emerchantpay ] && rm emerchantpay

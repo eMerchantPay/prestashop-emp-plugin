@@ -16,6 +16,9 @@
  * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
+
+use Genesis\Exceptions\InvalidArgument;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -25,7 +28,7 @@ if (!defined('_PS_VERSION_')) {
  *
  * Validation Front-End Controller
  */
-class EmerchantpayValidationModuleFrontController extends ModuleFrontControllerCore
+class EmerchantpayValidationModuleFrontController extends ModuleFrontController
 {
     /** @var emerchantpay */
     public $module;
@@ -54,6 +57,13 @@ class EmerchantpayValidationModuleFrontController extends ModuleFrontControllerC
         }
     }
 
+    /**
+     * Validate checkout process
+     *
+     * @return void
+     *
+     * @throws InvalidArgument
+     */
     public function validateCheckout()
     {
         // Is Checkout allowed?
@@ -65,24 +75,40 @@ class EmerchantpayValidationModuleFrontController extends ModuleFrontControllerC
         $url = $this->module->doCheckout();
 
         if (!isset($url)) {
-            $url = (version_compare(_PS_VERSION_, '1.7', '<')) ?
-                $this->context->link->getModuleLink($this->module->name, 'checkout') :
-                $this->module->getPageLink(
-                    'order.php',
-                    [
-                        'step' => 3,
-                        'select_payment_option' => Tools::getValue('select_payment_option'),
-                    ]
-                );
+            $url = $this->module->getPageLink(
+                'order.php',
+                [
+                    'step' => 3,
+                    'select_payment_option' => Tools::getValue('select_payment_option'),
+                ]
+            );
             $url = $this->module->isIframeEnabled() ? $this->module->getIframeControllerUrl($url) : $url;
         }
 
         if ($this->module->isIframeEnabled()) {
-            $this->ajaxRender(json_encode(['redirect' => $url]));
-
-            exit;
+            $this->ajaxRenderWrapper(json_encode(['redirect' => $url]));
         }
 
         Tools::redirect($url);
+    }
+
+    /**
+     * Check if ajaxRender method exists
+     *
+     * @param string $json
+     *
+     * @return void
+     *
+     * @throws PrestaShopException
+     */
+    private function ajaxRenderWrapper($json)
+    {
+        if (!method_exists(get_parent_class($this), 'ajaxRender')) {
+            $this->ajaxDie($json);
+        }
+
+        $this->ajaxRender($json);
+
+        exit;
     }
 }

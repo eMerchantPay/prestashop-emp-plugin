@@ -16,6 +16,17 @@
  * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
+
+namespace Emerchantpay\Genesis;
+
+use Genesis\API\Constants\Transaction\States;
+use Genesis\API\Constants\Transaction\Types;
+use Genesis\API\Request\Financial\Alternatives\Klarna\Items;
+use Genesis\API\Request\WPF\Create;
+use Genesis\API\Response;
+use Genesis\Config;
+use Genesis\Genesis;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -32,13 +43,13 @@ class EmerchantpayTransactionProcess
      *
      * @param $data
      *
-     * @return \Genesis\API\Response
+     * @return Response
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public static function checkout($data)
     {
-        $genesis = new \Genesis\Genesis('WPF\Create');
+        $genesis = new Genesis('WPF\Create');
 
         $genesis
             ->request()
@@ -118,7 +129,7 @@ class EmerchantpayTransactionProcess
 
         if ($data->is_wpf_tokenization_enabled) {
             $consumerId = EmerchantpayConsumer::getConsumerId(
-                \Genesis\Config::getUsername(),
+                Config::getUsername(),
                 $data->customer_email
             );
 
@@ -134,7 +145,7 @@ class EmerchantpayTransactionProcess
         }
 
         if ($data->is_threeds_allowed) {
-            /** @var \Genesis\API\Request\WPF\Create $request */
+            /** @var Create $request */
             $request = $genesis->request();
             $request
                 ->setThreedsV2ControlChallengeIndicator($data->threeds_challenge_indicator)
@@ -176,6 +187,10 @@ class EmerchantpayTransactionProcess
             $genesis->request()->setScaExemption($data->sca_exemption_value);
         }
 
+        if (isset($data->web_payment_form_id)) {
+            $genesis->request()->setWebPaymentFormId($data->web_payment_form_id);
+        }
+
         $genesis->execute();
 
         return $genesis->response();
@@ -189,7 +204,7 @@ class EmerchantpayTransactionProcess
     protected static function retrieveConsumerIdFromEmail($email)
     {
         try {
-            $genesis = new \Genesis\Genesis('NonFinancial\Consumers\Retrieve');
+            $genesis = new Genesis('NonFinancial\Consumers\Retrieve');
             $genesis->request()->setEmail($email);
 
             $genesis->execute();
@@ -213,7 +228,7 @@ class EmerchantpayTransactionProcess
      */
     private static function isConsumerEnabled($response)
     {
-        $state = new \Genesis\API\Constants\Transaction\States($response->status);
+        $state = new States($response->status);
 
         return $state->isEnabled();
     }
@@ -223,16 +238,16 @@ class EmerchantpayTransactionProcess
      *
      * Note: the transaction type depends on the Admin Panel selection
      *
-     * @param $data stdClass Parameters for the transaction
+     * @param $data \stdClass Parameters for the transaction
      *
-     * @return \Genesis\API\Response
+     * @return Response
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public static function pay($data)
     {
-        $genesis = new \Genesis\Genesis(
-            \Genesis\API\Constants\Transaction\Types::getFinancialRequestClassForTrxType($data->transaction_type)
+        $genesis = new Genesis(
+            Types::getFinancialRequestClassForTrxType($data->transaction_type)
         );
 
         $genesis
@@ -275,8 +290,7 @@ class EmerchantpayTransactionProcess
                     ->setShippingCountry($data->shipping->country);
         }
 
-        if (isset($data->url)
-            && \Genesis\API\Constants\Transaction\Types::is3D($data->transaction_type)) {
+        if (isset($data->url) && Types::is3D($data->transaction_type)) {
             $genesis
                 ->request()
                     ->setNotificationUrl($data->url->notification)
@@ -294,14 +308,14 @@ class EmerchantpayTransactionProcess
      *
      * @param $data array Parameters for the transaction
      *
-     * @return \Genesis\API\Response|null
+     * @return Response|null
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public static function capture($data)
     {
-        $genesis = new \Genesis\Genesis(
-            \Genesis\API\Constants\Transaction\Types::getCaptureTransactionClass($data['transaction_type'])
+        $genesis = new Genesis(
+            Types::getCaptureTransactionClass($data['transaction_type'])
         );
 
         $genesis
@@ -313,8 +327,7 @@ class EmerchantpayTransactionProcess
                 ->setAmount($data['amount'])
                 ->setCurrency($data['currency']);
 
-        if ($data['transaction_type'] === \Genesis\API\Constants\Transaction\Types::KLARNA_AUTHORIZE
-            && $data['items'] instanceof \Genesis\API\Request\Financial\Alternatives\Klarna\Items) {
+        if ($data['transaction_type'] === Types::KLARNA_AUTHORIZE && $data['items'] instanceof Items) {
             $genesis
                 ->request()
                 ->setItems($data['items']);
@@ -330,14 +343,14 @@ class EmerchantpayTransactionProcess
      *
      * @param $data array Parameters for the transaction
      *
-     * @return \Genesis\API\Response
+     * @return Response
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public static function refund($data)
     {
-        $genesis = new \Genesis\Genesis(
-            \Genesis\API\Constants\Transaction\Types::getRefundTransactionClass($data['transaction_type'])
+        $genesis = new Genesis(
+            Types::getRefundTransactionClass($data['transaction_type'])
         );
 
         $genesis
@@ -349,8 +362,7 @@ class EmerchantpayTransactionProcess
                 ->setAmount($data['amount'])
                 ->setCurrency($data['currency']);
 
-        if ($data['transaction_type'] === \Genesis\API\Constants\Transaction\Types::KLARNA_CAPTURE
-            && $data['items'] instanceof \Genesis\API\Request\Financial\Alternatives\Klarna\Items) {
+        if ($data['transaction_type'] === Types::KLARNA_CAPTURE && $data['items'] instanceof Items) {
             $genesis
                 ->request()
                 ->setItems($data['items']);
@@ -366,13 +378,13 @@ class EmerchantpayTransactionProcess
      *
      * @param $data array Parameters for the transaction
      *
-     * @return \Genesis\API\Response
+     * @return Response
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public static function void($data)
     {
-        $genesis = new \Genesis\Genesis('Financial\Cancel');
+        $genesis = new Genesis('Financial\Cancel');
 
         $genesis
             ->request()

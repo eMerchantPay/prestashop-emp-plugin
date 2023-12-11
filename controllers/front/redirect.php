@@ -122,6 +122,10 @@ class EmerchantpayRedirectModuleFrontController extends ModuleFrontController
         $order = Order::getCustomerOrders($this->context->customer->id, false, $this->context);
         $order = reset($order);
 
+        if (!$order || !isset($order['id_order'])) {
+            return;
+        }
+
         $duplication = $this->getCart(
             $order['id_order']
         )->duplicate();

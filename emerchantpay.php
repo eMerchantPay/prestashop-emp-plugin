@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018 emerchantpay Ltd.
+ * Copyright (C) 2018-2023 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -13,9 +13,38 @@
  * GNU General Public License for more details.
  *
  * @author      emerchantpay
- * @copyright   2018 emerchantpay Ltd.
+ * @copyright   2018-2023 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
+require_once __DIR__ . '/vendor/autoload.php';
+
+use Emerchantpay\Genesis\EmerchantpayConsumer;
+use Emerchantpay\Genesis\EmerchantpayInstall;
+use Emerchantpay\Genesis\EmerchantpayThreeds;
+use Emerchantpay\Genesis\EmerchantpayTransaction;
+use Emerchantpay\Genesis\EmerchantpayTransactionProcess;
+use Emerchantpay\Genesis\Helpers\Constants\ConfigurationKeys;
+use Emerchantpay\Genesis\Settings\Checkout\CheckoutSettings;
+use Genesis\API\Constants\Endpoints;
+use Genesis\API\Constants\i18n;
+use Genesis\API\Constants\Payment\Methods;
+use Genesis\API\Constants\Transaction\Parameters\PayByVouchers\CardTypes;
+use Genesis\API\Constants\Transaction\Parameters\PayByVouchers\RedeemTypes;
+use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\CardHolderAccount\RegistrationIndicators;
+use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\MerchantRisk\DeliveryTimeframes;
+use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\Purchase\Categories;
+use Genesis\API\Constants\Transaction\States;
+use Genesis\API\Constants\Transaction\Types;
+use Genesis\API\Request\Financial\Alternatives\Klarna\Item;
+use Genesis\API\Request\Financial\Alternatives\Klarna\Items;
+use Genesis\Config;
+use Genesis\Exceptions\ErrorAPI;
+use Genesis\Exceptions\ErrorParameter;
+use Genesis\Exceptions\InvalidArgument;
+use Genesis\Utils\Common;
+use Genesis\Utils\Requirements;
+use PrestaShopLogger as Logger;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -29,7 +58,7 @@ class Emerchantpay extends PaymentModule
     /**
      * Name of the BO orders controller
      */
-    public const PS_CONTROLLER_ADMIN_ORDERS = 'AdminOrders';
+    const PS_CONTROLLER_ADMIN_ORDERS = 'AdminOrders';
 
     /**
      * List supported languages
@@ -39,44 +68,14 @@ class Emerchantpay extends PaymentModule
     private $languages = [];
 
     /**
-     * Configurable module settings
-     */
-    public const SETTING_EMERCHANTPAY_USERNAME = 'EMERCHANTPAY_USERNAME';
-    public const SETTING_EMERCHANTPAY_PASSWORD = 'EMERCHANTPAY_PASSWORD';
-    public const SETTING_EMERCHANTPAY_ENVIRONMENT = 'EMERCHANTPAY_ENVIRONMENT';
-    public const SETTING_EMERCHANTPAY_CHECKOUT = 'EMERCHANTPAY_CHECKOUT';
-    public const SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES = 'EMERCHANTPAY_CHECKOUT_TRX_TYPES';
-    public const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE = 'EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE';
-    public const SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND = 'EMERCHANTPAY_ALLOW_PARTIAL_REFUND';
-    public const SETTING_EMERCHANTPAY_ALLOW_VOID = 'EMERCHANTPAY_ALLOW_VOID';
-    public const SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT = 'EMERCHANTPAY_ADD_JQUERY_CHECKOUT';
-    public const SETTING_EMERCHANTPAY_WPF_TOKENIZATION = 'EMERCHANTPAY_WPF_TOKENIZATION';
-    public const SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES = 'EMERCHANTPAY_CHECKOUT_BANK_CODES';
-    public const SETTING_EMERCHANTPAY_THREEDS_ALLOWED = 'EMERCHANTPAY_THREEDS_ALLOWED';
-    public const SETTING_EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR = 'EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR';
-    public const SETTING_EMERCHANTPAY_SCA_EXEMPTION = 'EMERCHANTPAY_SCA_EXEMPTION';
-    public const SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT = 'EMERCHANTPAY_SCA_EXEMPTION_AMOUNT';
-    public const SETTING_EMERCHANTPAY_IFRAME_ALLOWED = 'SETTING_EMERCHANTPAY_IFRAME_ALLOWED';
-
-    /**
-     * Transaction Type specifics
-     */
-    public const PPRO_TRANSACTION_SUFFIX = '_ppro';
-    public const GOOGLE_PAY_TRANSACTION_PREFIX = 'google_pay_';
-    public const GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE = 'authorize';
-    public const GOOGLE_PAY_PAYMENT_TYPE_SALE = 'sale';
-    public const PAYPAL_TRANSACTION_PREFIX = 'pay_pal_';
-    public const PAYPAL_PAYMENT_TYPE_AUTHORIZE = 'authorize';
-    public const PAYPAL_PAYMENT_TYPE_SALE = 'sale';
-    public const PAYPAL_PAYMENT_TYPE_EXPRESS = 'express';
-    public const APPLE_PAY_TRANSACTION_PREFIX = 'apple_pay_';
-    public const APPLE_PAY_PAYMENT_TYPE_AUTHORIZE = 'authorize';
-    public const APPLE_PAY_PAYMENT_TYPE_SALE = 'sale';
-
-    /**
      * Custom prefix
      */
-    public const PLATFORM_TRANSACTION_PREFIX = 'ps-';
+    const PLATFORM_TRANSACTION_PREFIX = 'ps-';
+
+    /**
+     * @var stdClass
+     */
+    private $transaction_data;
 
     /**
      * Constructor
@@ -87,20 +86,15 @@ class Emerchantpay extends PaymentModule
         $this->name = 'emerchantpay';
         $this->tab = 'payments_gateways';
         $this->displayName = 'emerchantpay Payment Gateway';
-        $this->controllers = ['checkout', 'notification', 'redirect', 'validation'];
-        $this->version = '2.0.4';
+        $this->controllers = ['frame', 'notification', 'redirect', 'validation'];
+        $this->version = '2.1.1';
         $this->author = 'emerchantpay Ltd.';
         $this->need_instance = 1;
-        $this->ps_versions_compliancy = ['min' => '1.6', 'max' => _PS_VERSION_];
+        $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
         $this->bootstrap = true;
         $this->module_key = '944a03157ee547ee63f641035f559380';
 
-        /* The parent construct is required for translations */
-        $this->page = basename(__FILE__, '.php');
         $this->description = $this->l('Accept payments through emerchantpay Payment Gateway - Genesis');
-
-        /* Use Bootstrap */
-        $this->bootstrap = true;
 
         /* Storage for transaction data to avoid init/call every-time */
         $this->transaction_data = null;
@@ -111,9 +105,7 @@ class Emerchantpay extends PaymentModule
         /* Initialize Genesis Client */
         $this->init();
 
-        /* Error if conditions are not met */
-        $this->isAvailable();
-
+        /* The parent construct is required for translations */
         /* Run all parent constructors */
         parent::__construct();
 
@@ -142,9 +134,11 @@ class Emerchantpay extends PaymentModule
     /**
      * Install logic
      *
-     * Install and create/register the require hooks
+     * Install and create/register the required hooks
      *
      * @return bool
+     *
+     * @throws PrestaShopException
      */
     public function install()
     {
@@ -159,7 +153,9 @@ class Emerchantpay extends PaymentModule
         // Create Tables
         $install->createSchema();
 
-        return $pre_install && $install->isSuccessful() && $this->setDefaultSettingsToDB();
+        $checkoutSettings = $this->getCheckoutSettings();
+
+        return $pre_install && $install->isSuccessful() && $checkoutSettings->setDefaultSettingsToDB();
     }
 
     /**
@@ -168,6 +164,8 @@ class Emerchantpay extends PaymentModule
      * Remove all the set Configuration keys and un-register all hooks
      *
      * @return bool
+     *
+     * @throws PrestaShopException
      */
     public function uninstall()
     {
@@ -179,7 +177,7 @@ class Emerchantpay extends PaymentModule
         $uninstall->dropSchema();
 
         // Remove the current configuration
-        $uninstall->dropKeys($this);
+        $uninstall->dropKeys($this->getCheckoutSettings());
 
         // Remove attached Hooks
         $uninstall->dropHooks($this);
@@ -194,11 +192,7 @@ class Emerchantpay extends PaymentModule
      */
     public function isAvailable()
     {
-        if (isset($this->warning) && !empty($this->warning)) {
-            return false;
-        }
-
-        return true;
+        return empty($this->warning);
     }
 
     /**
@@ -208,7 +202,7 @@ class Emerchantpay extends PaymentModule
      */
     public function isCheckoutPaymentMethodAvailable()
     {
-        return $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_CHECKOUT);
+        return $this->getBoolConfigurationValue(ConfigurationKeys::SETTING_EMERCHANTPAY_CHECKOUT);
     }
 
     /**
@@ -218,7 +212,7 @@ class Emerchantpay extends PaymentModule
      */
     public function isWpfTokenizationEnabled()
     {
-        return $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_WPF_TOKENIZATION);
+        return $this->getBoolConfigurationValue(ConfigurationKeys::SETTING_EMERCHANTPAY_WPF_TOKENIZATION);
     }
 
     /**
@@ -228,7 +222,7 @@ class Emerchantpay extends PaymentModule
      */
     public function isThreedsAllowed()
     {
-        return $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_THREEDS_ALLOWED);
+        return $this->getBoolConfigurationValue(ConfigurationKeys::SETTING_EMERCHANTPAY_THREEDS_ALLOWED);
     }
 
     /**
@@ -238,7 +232,7 @@ class Emerchantpay extends PaymentModule
      */
     public function isIframeEnabled()
     {
-        return $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_IFRAME_ALLOWED);
+        return $this->getBoolConfigurationValue(ConfigurationKeys::SETTING_EMERCHANTPAY_IFRAME_ALLOWED);
     }
 
     /**
@@ -301,13 +295,13 @@ class Emerchantpay extends PaymentModule
                     ],
                     'options' => [
                         'allow_partial_capture' => $this->getBoolConfigurationValue(
-                            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE
+                            ConfigurationKeys::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE
                         ),
                         'allow_partial_refund' => $this->getBoolConfigurationValue(
-                            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND
+                            ConfigurationKeys::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND
                         ),
                         'allow_void' => $this->getBoolConfigurationValue(
-                            self::SETTING_EMERCHANTPAY_ALLOW_VOID
+                            ConfigurationKeys::SETTING_EMERCHANTPAY_ALLOW_VOID
                         ),
                     ],
                     'text' => [
@@ -322,7 +316,9 @@ class Emerchantpay extends PaymentModule
                         ),
                     ],
                     'error' => $this->getSessVar('error_transaction'),
-                    'tree' => EmerchantpayTransaction::getTransactionTree((int) $params['id_order']),
+                    'tree' => EmerchantpayTransaction::getTransactionTree(
+                        (int) $params['id_order']
+                    ),
                 ],
             ],
             true
@@ -353,6 +349,9 @@ class Emerchantpay extends PaymentModule
      * @param array $params
      *
      * @return string HTML source
+     *
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
      */
     public function hookDisplayOrderDetail($params)
     {
@@ -367,7 +366,9 @@ class Emerchantpay extends PaymentModule
             'all'
         );
 
-        if ($this->isPrestaVersion17() && $this->getBoolConfigurationValue(self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT)) {
+        if ($this->isPrestaVersion17() && $this->getBoolConfigurationValue(
+            ConfigurationKeys::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT
+        )) {
             $this->registerCore17Javascript(
                 $this->getJQueryUri()
             );
@@ -400,7 +401,9 @@ class Emerchantpay extends PaymentModule
      *
      * @param array $params
      *
-     * @return array
+     * @return array|null
+     *
+     * @throws SmartyException
      */
     public function hookPaymentOptions($params)
     {
@@ -409,7 +412,7 @@ class Emerchantpay extends PaymentModule
         }
 
         if (!$this->checkCurrency($params['cart'])) {
-            return;
+            return null;
         }
 
         $this->context->smarty->append(
@@ -477,69 +480,11 @@ class Emerchantpay extends PaymentModule
     }
 
     /**
-     * List our payment methods
-     * Works only with version <= 1.6.x
-     *
-     * @return mixed
-     */
-    public function hookPayment()
-    {
-        if (!$this->isAvailable()) {
-            return $this->display(__FILE__, 'blank.tpl');
-        }
-
-        $this->context->smarty->append(
-            'emerchantpay',
-            [
-                'payment' => [
-                    'urls' => [
-                        'checkout' => $this->context->link->getModuleLink($this->name, 'checkout'),
-                    ],
-                    'errors' => [
-                        'checkout' => $this->getSessVar('error_checkout'),
-                    ],
-                    'methods' => [
-                        'checkout' => $this->isCheckoutPaymentMethodAvailable(),
-                    ],
-                ],
-                'ssl' => [
-                    'enabled' => $this->getIsSSLEnabled(),
-                ],
-                'legal' => [
-                    'year' => date('Y'),
-                ],
-                'iframe_enabled' => $this->isIframeEnabled(),
-            ],
-            true
-        );
-
-        return $this->display(__FILE__, 'payment.tpl');
-    }
-
-    /**
-     * Load the CSS/JS needed in advance to ensure that
-     * when the form is called through hookPayment we
-     * have loaded the CSS/JS.
-     *
-     * @return void
-     */
-    public function hookPaymentTop()
-    {
-        if (!$this->isAvailable()) {
-            return null;
-        }
-
-        $this->context->controller->addJS(
-            $this->getPathUri() . 'views/js/card/card.min.js'
-        );
-    }
-
-    /**
      * Show an information about the customers order
      *
      * @param $params
      *
-     * @return bool|mixed
+     * @return bool
      */
     public function hookOrderConfirmation($params)
     {
@@ -606,19 +551,21 @@ class Emerchantpay extends PaymentModule
      * Collect and process the data required for the initial payment.
      *
      * @return stdClass Processed data
+     *
+     * @throws ErrorParameter
      */
     public function populateTransactionData()
     {
-        /** @var CartCore $cart */
+        /** @var Cart $cart */
         $cart = new Cart((int) $this->context->cart->id);
 
-        /** @var AddressCore $shipping */
+        /** @var Address $shipping */
         $shipping = new Address((int) $cart->id_address_delivery);
-        /** @var AddressCore $invoice */
+        /** @var Address $invoice */
         $invoice = new Address((int) $cart->id_address_invoice);
-        /** @var CustomerCore $customer */
+        /** @var Customer $customer */
         $customer = new Customer((int) $cart->id_customer);
-        /** @var CurrencyCore $currency */
+        /** @var Currency $currency */
         $currency = new Currency((int) $cart->id_currency);
 
         $data = new stdClass();
@@ -697,20 +644,23 @@ class Emerchantpay extends PaymentModule
         // Set WPF tokenization flag
         $data->is_wpf_tokenization_enabled = $this->isWpfTokenizationEnabled();
 
+        // Set web payment form ID
+        $data->web_payment_form_id = Configuration::get(ConfigurationKeys::SETTING_EMERCHANTPAY_WEB_PAYMENT_FORM_ID);
+
         // Threeds
         $data->is_guest = Cart::isGuestCartByCartId($cart->id);
 
         // Order parameters
         $data->is_threeds_allowed = $this->isThreedsAllowed();
         $data->threeds_challenge_indicator = Configuration::get(
-            self::SETTING_EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR
+            ConfigurationKeys::SETTING_EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR
         );
         $data->threeds_purchase_category = $cart->isVirtualCart() ?
-            Genesis\API\Constants\Transaction\Parameters\Threeds\V2\Purchase\Categories::SERVICE :
-            Genesis\API\Constants\Transaction\Parameters\Threeds\V2\Purchase\Categories::GOODS;
+            Categories::SERVICE :
+            Categories::GOODS;
         $data->threeds_delivery_timeframe = $cart->isVirtualCart() ?
-            Genesis\API\Constants\Transaction\Parameters\Threeds\V2\MerchantRisk\DeliveryTimeframes::ELECTRONICS :
-            Genesis\API\Constants\Transaction\Parameters\Threeds\V2\MerchantRisk\DeliveryTimeframes::ANOTHER_DAY;
+            DeliveryTimeframes::ELECTRONICS :
+            DeliveryTimeframes::ANOTHER_DAY;
         $data->threeds_shipping_indicator = EmerchantpayThreeds::getShippingIndicator(
             $cart,
             $invoice,
@@ -723,7 +673,7 @@ class Emerchantpay extends PaymentModule
             Cart::isGuestCartByCartId($cart->id)
         );
         $data->threeds_registration_indicator =
-            Genesis\API\Constants\Transaction\Parameters\Threeds\V2\CardHolderAccount\RegistrationIndicators::GUEST_CHECKOUT;
+            RegistrationIndicators::GUEST_CHECKOUT;
 
         // Cardholder parameters
         if (!Cart::isGuestCartByCartId($cart->id)) {
@@ -765,8 +715,9 @@ class Emerchantpay extends PaymentModule
         }
 
         // SCA Exemption
-        $data->sca_exemption_value = Configuration::get(self::SETTING_EMERCHANTPAY_SCA_EXEMPTION);
-        $data->sca_exemption_amount = Configuration::get(self::SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT);
+        $data->sca_exemption_value = Configuration::get(ConfigurationKeys::SETTING_EMERCHANTPAY_SCA_EXEMPTION);
+        $data->sca_exemption_amount =
+            Configuration::get(ConfigurationKeys::SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT);
 
         return $this->transaction_data = $data;
     }
@@ -790,6 +741,8 @@ class Emerchantpay extends PaymentModule
      * if unsuccessful - we show them an error message
      *
      * @return string url
+     *
+     * @throws InvalidArgument
      */
     public function doCheckout()
     {
@@ -836,18 +789,18 @@ class Emerchantpay extends PaymentModule
 
             if (!empty($response->consumer_id)) {
                 EmerchantpayConsumer::createConsumer(
-                    \Genesis\Config::getUsername(),
+                    Config::getUsername(),
                     $data->customer_email,
                     $response->consumer_id
                 );
             }
 
             return $response->redirect_url;
-        } catch (\Genesis\Exceptions\ErrorAPI $api) {
+        } catch (ErrorAPI $api) {
             $this->logError($api);
 
             $this->setSessVar('error_checkout', $api->getMessage());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logError($e);
 
             $this->setSessVar(
@@ -862,7 +815,9 @@ class Emerchantpay extends PaymentModule
     /**
      * Perform a Capture on a Genesis Transaction
      *
-     * @return bool
+     * @return void
+     *
+     * @throws InvalidArgument
      */
     public function doCapture()
     {
@@ -880,10 +835,10 @@ class Emerchantpay extends PaymentModule
             $items = null;
 
             if ($transaction->terminal) {
-                \Genesis\Config::setToken($transaction->terminal);
+                Config::setToken($transaction->terminal);
             }
 
-            if ($transaction->type === Genesis\API\Constants\Transaction\Types::KLARNA_AUTHORIZE) {
+            if ($transaction->type === Types::KLARNA_AUTHORIZE) {
                 $cart = new Cart($this->context->cart->id);
                 $items = $this->getKlarnaCustomParamItems($cart);
             }
@@ -914,7 +869,7 @@ class Emerchantpay extends PaymentModule
                 true
             );
             $transaction_response->add();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logError($e);
 
             $this->setSessVar(
@@ -927,7 +882,9 @@ class Emerchantpay extends PaymentModule
     /**
      * Perform a Refund on a Genesis Transaction
      *
-     * @return bool
+     * @return void
+     *
+     * @throws InvalidArgument
      */
     public function doRefund()
     {
@@ -944,10 +901,10 @@ class Emerchantpay extends PaymentModule
             $items = null;
 
             if ($transaction->terminal) {
-                \Genesis\Config::setToken($transaction->terminal);
+                Config::setToken($transaction->terminal);
             }
 
-            if ($transaction->type === Genesis\API\Constants\Transaction\Types::KLARNA_CAPTURE) {
+            if ($transaction->type === Types::KLARNA_CAPTURE) {
                 $cart = new Cart($this->context->cart->id);
                 $items = $this->getKlarnaCustomParamItems($cart);
             }
@@ -976,7 +933,7 @@ class Emerchantpay extends PaymentModule
             $transaction_response->add();
 
             $transaction_response->changeParentStatus();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logError($e);
 
             $this->setSessVar(
@@ -989,7 +946,9 @@ class Emerchantpay extends PaymentModule
     /**
      * Perform Void (cancellation) on a Genesis Transaction
      *
-     * @return bool
+     * @return void
+     *
+     * @throws InvalidArgument
      */
     public function doVoid()
     {
@@ -1004,7 +963,7 @@ class Emerchantpay extends PaymentModule
             $transaction = EmerchantpayTransaction::getByUniqueId($id_unique);
 
             if ($transaction->terminal) {
-                \Genesis\Config::setToken($transaction->terminal);
+                Config::setToken($transaction->terminal);
             }
 
             $data = [
@@ -1027,7 +986,7 @@ class Emerchantpay extends PaymentModule
             $transaction_response->add();
 
             $transaction_response->changeParentStatus();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logError($e);
 
             $this->setSessVar(
@@ -1038,50 +997,21 @@ class Emerchantpay extends PaymentModule
     }
 
     /**
-     * Try to match a CreditCard Number to their CreditCard Brand
-     *
-     * @param $number string
-     *
-     * @return string
-     **/
-    public static function getCardTypeByNumber($number)
-    {
-        // Strip everything, but the digits
-        $number = preg_replace('/[^\d]/', '', $number);
-
-        if (preg_match('/^3[47][0-9]{13}$/', $number)) {
-            return 'American Express';
-        } elseif (preg_match('/^3(?:0[0-5]|[68][0-9])[0-9]{11}$/', $number)) {
-            return 'Diners Club';
-        } elseif (preg_match('/^6(?:011|5[0-9][0-9])[0-9]{12}$/', $number)) {
-            return 'Discover';
-        } elseif (preg_match('/^(?:2131|1800|35\d{3})\d{11}$/', $number)) {
-            return 'JCB';
-        } elseif (preg_match('/^5[1-5][0-9]{14}$/', $number)) {
-            return 'MasterCard';
-        } elseif (preg_match('/^4[0-9]{12}(?:[0-9]{3})?$/', $number)) {
-            return 'Visa';
-        } else {
-            return 'Unknown';
-        }
-    }
-
-    /**
      * Get Prestashop status based on Genesis status
      *
      * @param string $status
      *
-     * @return mixed
+     * @return false|string
      */
     public function getPrestaStatus($status)
     {
         switch ($status) {
-            case \Genesis\API\Constants\Transaction\States::APPROVED:
+            case States::APPROVED:
                 return Configuration::get('PS_OS_WS_PAYMENT');
-            case \Genesis\API\Constants\Transaction\States::REFUNDED:
+            case States::REFUNDED:
                 return Configuration::get('PS_OS_REFUND');
-            case \Genesis\API\Constants\Transaction\States::PENDING:
-            case \Genesis\API\Constants\Transaction\States::PENDING_ASYNC:
+            case States::PENDING:
+            case States::PENDING_ASYNC:
                 return Configuration::get('PS_OS_PREPARATION');
             default:
                 return Configuration::get('PS_OS_ERROR');
@@ -1095,16 +1025,16 @@ class Emerchantpay extends PaymentModule
      *
      * @param string $transaction_type
      *
-     * @return int
+     * @return false|string
      */
     public function getPrestaBackendStatus($transaction_type)
     {
         switch ($transaction_type) {
             case Types::CAPTURE:
                 return Configuration::get('PS_OS_WS_PAYMENT');
-            case Genesis\API\Constants\Transaction\Types::REFUND:
+            case Types::REFUND:
                 return Configuration::get('PS_OS_REFUND');
-            case Genesis\API\Constants\Transaction\Types::VOID:
+            case Types::VOID:
                 return Configuration::get('PS_OS_CANCELED');
             default:
                 return Configuration::get('PS_OS_PREPARATION');
@@ -1174,6 +1104,8 @@ class Emerchantpay extends PaymentModule
      * @param string $key Name of the variable
      *
      * @return mixed
+     *
+     * @throws Exception
      */
     public function getSessVar($key)
     {
@@ -1199,6 +1131,8 @@ class Emerchantpay extends PaymentModule
      * @param mixed $value Value of the variable
      *
      * @return void
+     *
+     * @throws Exception
      */
     public function setSessVar($key = null, $value = null)
     {
@@ -1218,7 +1152,7 @@ class Emerchantpay extends PaymentModule
     /**
      * Get Notification URL
      *
-     * @return mixed Http URL
+     * @return string Http URL
      */
     private function getNotificationURL()
     {
@@ -1228,7 +1162,7 @@ class Emerchantpay extends PaymentModule
     /**
      * Get Success URL for Async Transactions
      *
-     * @return mixed Http URL
+     * @return string Http URL
      */
     private function getAsyncSuccessURL()
     {
@@ -1241,7 +1175,7 @@ class Emerchantpay extends PaymentModule
     /**
      * Get Failure URL for Async Transactions
      *
-     * @return mixed Http URL
+     * @return string Http URL
      */
     private function getAsyncFailureURL()
     {
@@ -1261,7 +1195,7 @@ class Emerchantpay extends PaymentModule
     /**
      * Get Cancel URL for Async Transactions
      *
-     * @return mixed Http URL
+     * @return string Http URL
      */
     private function getAsyncCancelURL()
     {
@@ -1301,7 +1235,7 @@ class Emerchantpay extends PaymentModule
      *
      * @return array
      *
-     * @throws \Genesis\Exceptions\ErrorParameter
+     * @throws ErrorParameter
      */
     private function getCheckoutTransactionTypes($cart)
     {
@@ -1339,25 +1273,32 @@ class Emerchantpay extends PaymentModule
 
         $selectedTypes = $this->orderCardTransactionTypes(
             json_decode(
-                Configuration::get(self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES)
+                Configuration::get(ConfigurationKeys::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES)
             )
         );
 
-        $pproSuffix = self::PPRO_TRANSACTION_SUFFIX;
-        $methods = \Genesis\API\Constants\Payment\Methods::getMethods();
+        $pproSuffix = CheckoutSettings::PPRO_TRANSACTION_SUFFIX;
+        $methods = Methods::getMethods();
 
         foreach ($methods as $method) {
             $aliasMap[$method . $pproSuffix] = Genesis\API\Constants\Transaction\Types::PPRO;
         }
 
         $aliasMap = array_merge($aliasMap, [
-            self::GOOGLE_PAY_TRANSACTION_PREFIX . self::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE => Genesis\API\Constants\Transaction\Types::GOOGLE_PAY,
-            self::GOOGLE_PAY_TRANSACTION_PREFIX . self::GOOGLE_PAY_PAYMENT_TYPE_SALE => Genesis\API\Constants\Transaction\Types::GOOGLE_PAY,
-            self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_AUTHORIZE => Genesis\API\Constants\Transaction\Types::PAY_PAL,
-            self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_SALE => Genesis\API\Constants\Transaction\Types::PAY_PAL,
-            self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_EXPRESS => Genesis\API\Constants\Transaction\Types::PAY_PAL,
-            self::APPLE_PAY_TRANSACTION_PREFIX . self::APPLE_PAY_PAYMENT_TYPE_AUTHORIZE => Genesis\API\Constants\Transaction\Types::APPLE_PAY,
-            self::APPLE_PAY_TRANSACTION_PREFIX . self::APPLE_PAY_PAYMENT_TYPE_SALE => Genesis\API\Constants\Transaction\Types::APPLE_PAY,
+            CheckoutSettings::GOOGLE_PAY_TRANSACTION_PREFIX .
+            CheckoutSettings::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE => Types::GOOGLE_PAY,
+            CheckoutSettings::GOOGLE_PAY_TRANSACTION_PREFIX .
+            CheckoutSettings::GOOGLE_PAY_PAYMENT_TYPE_SALE => Types::GOOGLE_PAY,
+            CheckoutSettings::PAYPAL_TRANSACTION_PREFIX .
+            CheckoutSettings::PAYPAL_PAYMENT_TYPE_AUTHORIZE => Types::PAY_PAL,
+            CheckoutSettings::PAYPAL_TRANSACTION_PREFIX .
+            CheckoutSettings::PAYPAL_PAYMENT_TYPE_SALE => Types::PAY_PAL,
+            CheckoutSettings::PAYPAL_TRANSACTION_PREFIX .
+            CheckoutSettings::PAYPAL_PAYMENT_TYPE_EXPRESS => Types::PAY_PAL,
+            CheckoutSettings::APPLE_PAY_TRANSACTION_PREFIX .
+            CheckoutSettings::APPLE_PAY_PAYMENT_TYPE_AUTHORIZE => Types::APPLE_PAY,
+            CheckoutSettings::APPLE_PAY_TRANSACTION_PREFIX .
+            CheckoutSettings::APPLE_PAY_PAYMENT_TYPE_SALE => Types::APPLE_PAY,
         ]);
 
         foreach ($selectedTypes as $selectedType) {
@@ -1372,9 +1313,9 @@ class Emerchantpay extends PaymentModule
                     $key => str_replace(
                         [
                             $pproSuffix,
-                            self::GOOGLE_PAY_TRANSACTION_PREFIX,
-                            self::PAYPAL_TRANSACTION_PREFIX,
-                            self::APPLE_PAY_TRANSACTION_PREFIX,
+                            CheckoutSettings::GOOGLE_PAY_TRANSACTION_PREFIX,
+                            CheckoutSettings::PAYPAL_TRANSACTION_PREFIX,
+                            CheckoutSettings::APPLE_PAY_TRANSACTION_PREFIX,
                         ],
                         '',
                         $selectedType
@@ -1390,11 +1331,11 @@ class Emerchantpay extends PaymentModule
 
     /**
      * @param string $transactionType
-     * @param CartCore $cart
+     * @param Cart $cart
      *
      * @return array
      *
-     * @throws \Genesis\Exceptions\ErrorParameter
+     * @throws ErrorParameter
      */
     private function getCustomRequiredAttributes($transactionType, $cart)
     {
@@ -1402,19 +1343,19 @@ class Emerchantpay extends PaymentModule
         $userIdHash = $this->getCurrentUserIdHash();
 
         switch ($transactionType) {
-            case Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE:
+            case Types::PAYBYVOUCHER_SALE:
                 $attributes = [
-                    'card_type' => \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\CardTypes::VIRTUAL,
-                    'redeem_type' => \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\RedeemTypes::INSTANT,
+                    'card_type' => CardTypes::VIRTUAL,
+                    'redeem_type' => RedeemTypes::INSTANT,
                 ];
                 break;
-            case Genesis\API\Constants\Transaction\Types::IDEBIT_PAYIN:
-            case Genesis\API\Constants\Transaction\Types::INSTA_DEBIT_PAYOUT:
+            case Types::IDEBIT_PAYIN:
+            case Types::INSTA_DEBIT_PAYOUT:
                 $attributes = [
                     'customer_account_id' => $userIdHash,
                 ];
                 break;
-            case Genesis\API\Constants\Transaction\Types::TRUSTLY_SALE:
+            case Types::TRUSTLY_SALE:
                 $userId = $this->getCurrentUserId();
                 $trustlyUser = empty($userId) ? $userIdHash : $userId;
 
@@ -1422,14 +1363,14 @@ class Emerchantpay extends PaymentModule
                     'user_id' => $trustlyUser,
                 ];
                 break;
-            case Genesis\API\Constants\Transaction\Types::KLARNA_AUTHORIZE:
+            case Types::KLARNA_AUTHORIZE:
                 $attributes = $this->getKlarnaCustomParamItems($cart)->toArray();
                 break;
-            case Genesis\API\Constants\Transaction\Types::ONLINE_BANKING_PAYIN:
+            case Types::ONLINE_BANKING_PAYIN:
                 $selectedBankCodes = json_decode(
-                    Configuration::get(self::SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES)
+                    Configuration::get(ConfigurationKeys::SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES)
                 );
-                if (Genesis\Utils\Common::isValidArray($selectedBankCodes)) {
+                if (Common::isValidArray($selectedBankCodes)) {
                     $attributes['bank_codes'] = array_map(
                         function ($value) {
                             return ['bank_code' => $value];
@@ -1438,31 +1379,39 @@ class Emerchantpay extends PaymentModule
                     );
                 }
                 break;
+            case Types::PAYSAFECARD:
+                $userId = $this->getCurrentUserId();
+                $customerId = empty($userId) ? $userIdHash : $userId;
+
+                $attributes = [
+                    'customer_id' => $customerId,
+                ];
+                break;
         }
 
         return $attributes;
     }
 
     /**
-     * @param CartCore $cart
+     * @param Cart $cart
      *
-     * @return \Genesis\API\Request\Financial\Alternatives\Klarna\Items
+     * @return Items
      *
-     * @throws \Genesis\Exceptions\ErrorParameter
+     * @throws ErrorParameter
      */
     private function getKlarnaCustomParamItems($cart)
     {
-        /** @var CurrencyCore $currency */
+        /** @var Currency $currency */
         $currency = new Currency((int) $cart->id_currency);
         $cartSummary = $cart->getSummaryDetails();
-        $items = new \Genesis\API\Request\Financial\Alternatives\Klarna\Items($currency->iso_code);
+        $items = new Items($currency->iso_code);
 
         foreach ($cartSummary['products'] as $product) {
             $type = $product['is_virtual'] ?
-                \Genesis\API\Request\Financial\Alternatives\Klarna\Item::ITEM_TYPE_DIGITAL :
-                \Genesis\API\Request\Financial\Alternatives\Klarna\Item::ITEM_TYPE_PHYSICAL;
+                Item::ITEM_TYPE_DIGITAL :
+                Item::ITEM_TYPE_PHYSICAL;
 
-            $klarnaItem = new \Genesis\API\Request\Financial\Alternatives\Klarna\Item(
+            $klarnaItem = new Item(
                 $product['name'],
                 $type,
                 $product['quantity'],
@@ -1474,9 +1423,9 @@ class Emerchantpay extends PaymentModule
         $discount = (float) $cartSummary['total_discounts'];
         if ($discount) {
             $items->addItem(
-                new \Genesis\API\Request\Financial\Alternatives\Klarna\Item(
+                new Item(
                     'Discount',
-                    \Genesis\API\Request\Financial\Alternatives\Klarna\Item::ITEM_TYPE_DISCOUNT,
+                    Item::ITEM_TYPE_DISCOUNT,
                     1,
                     -$discount
                 )
@@ -1486,9 +1435,9 @@ class Emerchantpay extends PaymentModule
         $tax = (float) $cartSummary['total_tax'];
         if ($tax) {
             $items->addItem(
-                new \Genesis\API\Request\Financial\Alternatives\Klarna\Item(
+                new Item(
                     'Tax',
-                    \Genesis\API\Request\Financial\Alternatives\Klarna\Item::ITEM_TYPE_SURCHARGE,
+                    Item::ITEM_TYPE_SURCHARGE,
                     1,
                     $tax
                 )
@@ -1498,9 +1447,9 @@ class Emerchantpay extends PaymentModule
         $shippingCost = (float) $cartSummary['total_shipping'];
         if ($shippingCost) {
             $items->addItem(
-                new \Genesis\API\Request\Financial\Alternatives\Klarna\Item(
+                new Item(
                     'Shipping Cost',
-                    \Genesis\API\Request\Financial\Alternatives\Klarna\Item::ITEM_TYPE_SHIPPING_FEE,
+                    Item::ITEM_TYPE_SHIPPING_FEE,
                     1,
                     $shippingCost
                 )
@@ -1537,134 +1486,32 @@ class Emerchantpay extends PaymentModule
     }
 
     /**
-     * Get list of items in the order
-     *
-     * @return string Formatted List of Items
-     */
-    public function getItemList()
-    {
-        $description = '';
-
-        foreach ($this->context->cart->getProducts() as $product) {
-            $description .= sprintf(
-                "%s (%s) x %d\r\n",
-                $product['name'],
-                $product['category'],
-                $product['cart_quantity']
-            );
-        }
-
-        return $description;
-    }
-
-    /**
-     * Get Module's configuration fields
-     *
-     * @return array field keys
-     */
-    public function getConfigKeys()
-    {
-        return [
-            self::SETTING_EMERCHANTPAY_USERNAME,
-            self::SETTING_EMERCHANTPAY_PASSWORD,
-            self::SETTING_EMERCHANTPAY_ENVIRONMENT,
-            self::SETTING_EMERCHANTPAY_IFRAME_ALLOWED,
-            self::SETTING_EMERCHANTPAY_CHECKOUT,
-            self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
-            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE,
-            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND,
-            self::SETTING_EMERCHANTPAY_ALLOW_VOID,
-            self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT,
-            self::SETTING_EMERCHANTPAY_WPF_TOKENIZATION,
-            self::SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES,
-            self::SETTING_EMERCHANTPAY_THREEDS_ALLOWED,
-            self::SETTING_EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR,
-            self::SETTING_EMERCHANTPAY_SCA_EXEMPTION,
-            self::SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT,
-        ];
-    }
-
-    /**
-     * Get the configuration keys and their respective values
-     *
-     * @return array Key => Value array
-     */
-    private function getConfigValues()
-    {
-        $config_key_value = [];
-
-        foreach ($this->getConfigKeys() as $config_key) {
-            if (in_array($config_key, [
-                self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
-                self::SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES,
-                ])) {
-                $config_key_value[$config_key . '[]'] = json_decode(Configuration::get($config_key));
-            } else {
-                $config_key_value[$config_key] = Configuration::get($config_key);
-            }
-        }
-
-        return $config_key_value;
-    }
-
-    /**
      * Get the Module Settings HTML code
      *
      * @return string HTML code
      */
     public function getContent()
     {
-        $output = '';
+        $checkoutSettings = $this->getCheckoutSettings();
 
-        if (Tools::isSubmit('submit' . $this->name)) {
-            foreach ($this->getConfigKeys() as $key) {
-                $value = Tools::getValue($key);
-
-                if (in_array(
-                    $key,
-                    [
-                    self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
-                    self::SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES,
-                    ]
-                )) {
-                    $value = json_encode($value);
-                }
-
-                if (!Validate::isConfigName($key)) {
-                    $message = $this->l('Invalid config name: %s');
-                    $output = $this->displayError(sprintf($message, $key));
-                } elseif (is_string($value) && strlen($value) == 0) {
-                    $message = $this->l('Invalid content for: %s');
-                    $output = $this->displayError(sprintf($message, $key));
-                } else {
-                    Configuration::updateValue($key, $value);
-                }
-            }
-
-            // If $output is empty - everything went fine
-            if (empty($output)) {
-                $output = $this->displayConfirmation($this->l('Settings updated'));
-            }
-        }
-
-        return $output . $this->_displayForm();
+        return $checkoutSettings->getContent();
     }
 
     /**
      * Log an exception in PHP's error log
      *
-     * @param \Exception $exception
+     * @param Exception $exception
      */
     private function logError($exception)
     {
         error_log($exception->getMessage());
 
-        if (class_exists('Logger')) {
+        if (class_exists('PrestaShopLogger')) {
             Logger::addLog(
                 $exception->getMessage(),
                 4,
                 $exception->getCode(),
-                $this->displayName,
+                $this->name,
                 $this->id,
                 true
             );
@@ -1672,524 +1519,14 @@ class Emerchantpay extends PaymentModule
     }
 
     /**
-     * Get form credentials fields (User, Pass, Token ...)
-     *
-     * @return array
-     */
-    private function getFormCredentialsFields()
-    {
-        return [
-            [
-                'type' => 'text',
-                'label' => $this->l('Username'),
-                'desc' => $this->l(
-                    'Enter your Username, required for accessing the Genesis Gateway'
-                ),
-                'name' => self::SETTING_EMERCHANTPAY_USERNAME,
-                'size' => 20,
-                'required' => true,
-            ],
-            [
-                'type' => 'text',
-                'label' => $this->l('Password'),
-                'desc' => $this->l(
-                    'Enter your Password, required for accessing the Genesis Gateway'
-                ),
-                'name' => self::SETTING_EMERCHANTPAY_PASSWORD,
-                'size' => 20,
-                'required' => true,
-            ],
-            [
-                'type' => 'select',
-                'label' => $this->l('Environment'),
-                'desc' => $this->l('Select the environment you wish to use for processing your transactions.') .
-                    PHP_EOL . $this->l('Note: Its recommended to use the Sandbox environment every-time you alter ') .
-                    $this->l('your settings, in order to ensure everything works as intended.'),
-                'name' => self::SETTING_EMERCHANTPAY_ENVIRONMENT,
-                'options' => [
-                    'query' => [
-                        [
-                            'id' => 'sandbox',
-                            'name' => $this->l('Sandbox'),
-                        ],
-                        [
-                            'id' => 'production',
-                            'name' => $this->l('Production'),
-                        ],
-                    ],
-                    'id' => 'id',
-                    'name' => 'name',
-                ],
-            ],
-        ];
-    }
-
-    /**
-     * Get form option for iframe processing
-     *
-     * @return array[]
-     */
-    private function getFormIframeOptionFields()
-    {
-        return [
-            [
-                'type' => 'switch',
-                'label' => 'Enable payment processing into an iframe',
-                'desc' => $this->l('Enable payment processing into an iframe by removing the redirects to the') .
-                    $this->l(' Gateway Web Payment Form Page. The iFrame processing requires a specific') .
-                    $this->l(' setting inside Merchant Console. For more info ask:') .
-                    $this->l(' tech-support@emerchantpay.com'),
-                'name' => self::SETTING_EMERCHANTPAY_IFRAME_ALLOWED,
-                'values' => [
-                    [
-                        'id' => 'active_on',
-                        'value' => '1',
-                    ],
-                    [
-                        'id' => 'active_off',
-                        'value' => '0',
-                    ],
-                ],
-            ],
-        ];
-    }
-
-    /**
-     * Generate form select options from array.
-     * Array key will be used as id attribute, value as name
-     *
-     * @param $options
-     * @param string $id
-     * @param string $name
-     *
-     * @return mixed
-     */
-    private function generateOptionsFromArray($options, $id = 'id', $name = 'name')
-    {
-        foreach ($options as $key => &$value) {
-            $value = [
-                $id => $key,
-                $name => $value,
-            ];
-        }
-
-        return $options;
-    }
-
-    /**
-     * Get form transactions fields
-     *
-     * @return array
-     */
-    private function getFormTransactionFields()
-    {
-        return [
-            [
-                'type' => 'switch',
-                'label' => 'Checkout (Remote) Payment Method',
-                'desc' => $this->l('Enable/Disable the Checkout payment method - ') .
-                    $this->l('receive credit-card payments, without the need of PCI-DSS certificate or HTTPS.') .
-                    PHP_EOL .
-                    $this->l('Note: Upon checkout, the customer will be redirected to a secure payment form, ') .
-                    $this->l('located on our servers and we will notify you, once the payment reached a final status'),
-                'name' => self::SETTING_EMERCHANTPAY_CHECKOUT,
-                'values' => [
-                    [
-                        'id' => 'active_on',
-                        'value' => '1',
-                    ],
-                    [
-                        'id' => 'active_off',
-                        'value' => '0',
-                    ],
-                ],
-            ],
-            [
-                'type' => 'select',
-                'label' => $this->l('Checkout Transaction Types'),
-                'desc' => $this->l(
-                    'Select the transaction types you want to use during Checkout session.'
-                ),
-                'id' => self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES,
-                'name' => self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES . '[]',
-                'multiple' => true,
-                'options' => [
-                    'query' => $this->generateOptionsFromArray(self::getSupportedWpfTransactionTypes()),
-                    'id' => 'id',
-                    'name' => 'name',
-                ],
-            ],
-            [
-                'type' => 'select',
-                'label' => $this->l('Checkout Bank codes for Online banking'),
-                'desc' => $this->l(
-                    'Select Bank code(s) to use with Online banking transaction type.'
-                ),
-                'id' => self::SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES,
-                'name' => self::SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES . '[]',
-                'multiple' => true,
-                'options' => [
-                    'query' => $this->generateOptionsFromArray(self::getAvailableBankCodes()),
-                    'id' => 'id',
-                    'name' => 'name',
-                ],
-            ],
-            [
-                'type' => 'switch',
-                'label' => 'WPF Tokenization',
-                'desc' => $this->l('Enable/Disable tokenization for Web Payment Form. Guest checkout has to be ') .
-                    $this->l('disabled when tokenization is enabled'),
-                'name' => self::SETTING_EMERCHANTPAY_WPF_TOKENIZATION,
-                'values' => [
-                    [
-                        'id' => 'active_on',
-                        'value' => '1',
-                    ],
-                    [
-                        'id' => 'active_off',
-                        'value' => '0',
-                    ],
-                ],
-            ],
-        ];
-    }
-
-    /**
-     * Get form threeds fields
-     *
-     * @return array
-     */
-    private function getFormThreedsFields()
-    {
-        return [
-            [
-                'type' => 'switch',
-                'label' => 'Enable 3DSv2',
-                'desc' => $this->l('Enable 3DSv2 optional parameters'),
-                'name' => self::SETTING_EMERCHANTPAY_THREEDS_ALLOWED,
-                'values' => [
-                    [
-                        'id' => 'active_on',
-                        'value' => '1',
-                    ],
-                    [
-                        'id' => 'active_off',
-                        'value' => '0',
-                    ],
-                ],
-            ],
-            [
-                'type' => 'select',
-                'label' => $this->l('3DSv2 Challenge'),
-                'desc' => $this->l(
-                    'The value has weight and might impact the decision whether a challenge will be required for the transaction or not.'
-                ),
-                'id' => self::SETTING_EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR,
-                'name' => self::SETTING_EMERCHANTPAY_THREEDS_CHALLENGE_INDICATOR,
-                'multiple' => false,
-                'options' => [
-                    'query' => $this->generateOptionsFromArray(EmerchantpayThreeds::getChallengeIndicators()),
-                    'id' => 'id',
-                    'name' => 'name',
-                ],
-            ],
-        ];
-    }
-
-    /**
-     * Get SCA options form fields
-     *
-     * @return array
-     */
-    private function getFormScaFields()
-    {
-        return [
-            [
-                'type' => 'select',
-                'label' => $this->l('SCA Exemption'),
-                'desc' => $this->l('Exemption for the Strong Customer Authentication.'),
-                'id' => self::SETTING_EMERCHANTPAY_SCA_EXEMPTION,
-                'name' => self::SETTING_EMERCHANTPAY_SCA_EXEMPTION,
-                'multiple' => false,
-                'options' => [
-                    'query' => $this->generateOptionsFromArray($this->getScaExemptionOptions()),
-                    'id' => 'id',
-                    'name' => 'name',
-                ],
-            ],
-            [
-                'type' => 'text',
-                'label' => $this->l('Exemption Amount'),
-                'desc' => $this->l(
-                    'Exemption Amount determinate if the SCA Exemption should be included in the request to the Gateway.'
-                ),
-                'name' => self::SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT,
-                'required' => true,
-            ],
-        ];
-    }
-
-    public function getSupportedWpfTransactionTypes()
-    {
-        $data = [];
-
-        $transactionTypes = Genesis\API\Constants\Transaction\Types::getWPFTransactionTypes();
-        $excludedTypes = [
-            Genesis\API\Constants\Transaction\Types::INIT_RECURRING_SALE,
-            Genesis\API\Constants\Transaction\Types::INIT_RECURRING_SALE_3D,
-            Genesis\API\Constants\Transaction\Types::SDD_INIT_RECURRING_SALE,
-            Genesis\API\Constants\Transaction\Types::PPRO,
-            Genesis\API\Constants\Transaction\Types::GOOGLE_PAY,
-            Genesis\API\Constants\Transaction\Types::PAY_PAL,
-            Genesis\API\Constants\Transaction\Types::APPLE_PAY,
-        ];
-
-        $transactionTypes = array_diff($transactionTypes, $excludedTypes);
-
-        // Add PPRO specific Types
-        $pproTypes = array_map(
-            function ($type) {
-                return $type . self::PPRO_TRANSACTION_SUFFIX;
-            },
-            \Genesis\API\Constants\Payment\Methods::getMethods()
-        );
-
-        // Add Google Pay Transaction Methods
-        $googlePayMethods = array_map(
-            function ($type) {
-                return self::GOOGLE_PAY_TRANSACTION_PREFIX . $type;
-            },
-            [
-                self::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE,
-                self::GOOGLE_PAY_PAYMENT_TYPE_SALE,
-            ]
-        );
-
-        // Add PayPal Transaction Methods
-        $payPalMethods = array_map(
-            function ($type) {
-                return self::PAYPAL_TRANSACTION_PREFIX . $type;
-            },
-            [
-                self::PAYPAL_PAYMENT_TYPE_AUTHORIZE,
-                self::PAYPAL_PAYMENT_TYPE_SALE,
-                self::PAYPAL_PAYMENT_TYPE_EXPRESS,
-            ]
-        );
-
-        // Add Apple Pay Transaction Methods
-        $applePayMethods = array_map(
-            function ($type) {
-                return self::APPLE_PAY_TRANSACTION_PREFIX . $type;
-            },
-            [
-                self::APPLE_PAY_PAYMENT_TYPE_AUTHORIZE,
-                self::APPLE_PAY_PAYMENT_TYPE_SALE,
-            ]
-        );
-
-        $transactionTypes = array_merge(
-            $transactionTypes,
-            $pproTypes,
-            $googlePayMethods,
-            $payPalMethods,
-            $applePayMethods
-        );
-        asort($transactionTypes);
-
-        foreach ($transactionTypes as $type) {
-            $name = Genesis\API\Constants\Transaction\Names::getName($type);
-            if (!Genesis\API\Constants\Transaction\Types::isValidTransactionType($type)) {
-                $name = Tools::strtoupper($type);
-            }
-
-            $data[$type] = $this->l($name);
-        }
-
-        return $data;
-    }
-
-    /**
-     * List of available Bank codes for Online banking
-     *
-     * @return array
-     */
-    public static function getAvailableBankCodes()
-    {
-        return [
-            Genesis\API\Constants\Banks::CPI => 'Interac Combined Pay-in',
-            Genesis\API\Constants\Banks::BCT => 'Bancontact',
-        ];
-    }
-
-    /**
-     * Generate the Module Settings HTML via HelperForm()
-     *
-     * @return mixed HTML Content
-     */
-    private function _displayForm()
-    {
-        $form_structure = [
-            'form' => [
-                'legend' => [
-                    'title' => $this->l('emerchantpay Configuration'),
-                    'icon' => 'icon-cog',
-                ],
-                'input' => [
-                    [
-                        'type' => 'switch',
-                        'label' => 'Partial Capture',
-                        'desc' => $this->l(
-                            'Use this option to allow / deny Partial Capture Transactions'
-                        ),
-                        'name' => self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE,
-                        'values' => [
-                            [
-                                'id' => 'active_on',
-                                'value' => '1',
-                            ],
-                            [
-                                'id' => 'active_off',
-                                'value' => '0',
-                            ],
-                        ],
-                    ],
-                    [
-                        'type' => 'switch',
-                        'label' => 'Partial Refund',
-                        'desc' => $this->l(
-                            'Use this option to allow / deny Partial Refund Transactions'
-                        ),
-                        'name' => self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND,
-                        'values' => [
-                            [
-                                'id' => 'active_on',
-                                'value' => '1',
-                            ],
-                            [
-                                'id' => 'active_off',
-                                'value' => '0',
-                            ],
-                        ],
-                    ],
-                    [
-                        'type' => 'switch',
-                        'label' => 'Cancel Transaction',
-                        'desc' => $this->l(
-                            'Use this option to allow / deny Cancel Transactions'
-                        ),
-                        'name' => self::SETTING_EMERCHANTPAY_ALLOW_VOID,
-                        'values' => [
-                            [
-                                'id' => 'active_on',
-                                'value' => '1',
-                            ],
-                            [
-                                'id' => 'active_off',
-                                'value' => '0',
-                            ],
-                        ],
-                    ],
-                ],
-                'submit' => [
-                    'title' => $this->l('Save'),
-                ],
-            ],
-        ];
-
-        /* Add form fields */
-        $form_structure['form']['input'] = array_merge(
-            $this->getFormCredentialsFields(),
-            $this->getFormIframeOptionFields(),
-            $this->getFormTransactionFields(),
-            $this->getFormThreedsFields(),
-            $this->getFormScaFields(),
-            $form_structure['form']['input']
-        );
-
-        /*
-         * Option for registering jQuery to Checkout Page
-         *
-         * Note: 1.7.x does not register jQuery on the Checkout Page, so we are adding this option
-         * in order to be disabled if jQuery has been added from other module
-         */
-        if ($this->isPrestaVersion17()) {
-            $form_structure['form']['input'][] = [
-                'type' => 'switch',
-                'label' => 'Include jQuery Plugin to Checkout Page',
-                'desc' => $this->l(
-                    'Use this option to allow / deny jQuery Plugin Registration. This option should be enabled unless jQuery has already been registered.'
-                ),
-                'name' => self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT,
-                'values' => [
-                    [
-                        'id' => 'active_on',
-                        'value' => '1',
-                    ],
-                    [
-                        'id' => 'active_off',
-                        'value' => '0',
-                    ],
-                ],
-            ];
-        }
-
-        $helper = new HelperForm();
-        // Title and toolbar
-        $helper->title = $this->displayName;
-        $helper->show_toolbar = false;
-        $helper->toolbar_scroll = false;
-        // Module, token and currentIndex
-        $helper->id = (int) Tools::getValue('id_carrier');
-        $helper->identifier = $this->identifier;
-        $helper->token = Tools::getAdminTokenLite('AdminModules');
-        $helper->currentIndex = $this->context->link->getAdminLink(
-            'AdminModules',
-            false
-        ) . '&configure=' . $this->name . '&tab_module=' . $this->tab . '&module_name=' . $this->name;
-
-        // Language
-        $helper->default_form_language = (int) Configuration::get('PS_LANG_DEFAULT');
-        $helper->allow_employee_form_lang = (int) Configuration::get('PS_LANG_DEFAULT');
-
-        $helper->submit_action = 'submit' . $this->name;
-
-        $helper->tpl_vars = [
-            'fields_value' => $this->getConfigValues(),
-            'id_language' => $this->context->language->id,
-            'languages' => $this->context->controller->getLanguages(),
-        ];
-
-        return $helper->generateForm(
-            [$form_structure]
-        );
-    }
-
-    /**
      * Initialize the module and check for compatibility
      *
      * @return void
+     *
+     * @throws InvalidArgument
      */
     private function init()
     {
-        /* Bootstrap Genesis */
-        include_once dirname(__FILE__) . '/vendor/autoload.php';
-
-        /* emerchantpay Install Helper */
-        include_once dirname(__FILE__) . '/classes/EmerchantpayInstall.php';
-
-        /* emerchantpay Consumer Model */
-        include_once dirname(__FILE__) . '/classes/EmerchantpayConsumer.php';
-
-        /* emerchantpay Transaction Model */
-        include_once dirname(__FILE__) . '/classes/EmerchantpayTransaction.php';
-
-        /* emerchantpay Transaction Processor */
-        include_once dirname(__FILE__) . '/classes/EmerchantpayTransactionProcess.php';
-
-        /* emerchantpay Threeds helper */
-        include_once dirname(__FILE__) . '/classes/EmerchantpayThreeds.php';
-
         /* Check if Genesis Library is initialized */
         if (!class_exists('\Genesis\Genesis')) {
             $this->warning = 'Sorry, there was a problem initializing Genesis client, please verify your installation!';
@@ -2199,15 +1536,15 @@ class Emerchantpay extends PaymentModule
         try {
             /* Check and update database if necessary */
             EmerchantpayInstall::doProcessSchemaUpdate();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             /* just ignore and log exception - Init Method is called on Upload Module (it should be called after Module is installed) */
             $this->logError($e);
         }
 
         /* Verify system requirements */
         try {
-            \Genesis\Utils\Requirements::verify();
-        } catch (\Exception $e) {
+            Requirements::verify();
+        } catch (Exception $e) {
             $this->warning = $this->l('Your server does not meet the minimum system requirements! Contact your hosting provider for assistance!');
         }
 
@@ -2219,28 +1556,30 @@ class Emerchantpay extends PaymentModule
         }
 
         // Load Available WPF Languages
-        $this->languages = \Genesis\API\Constants\i18n::getAll();
+        $this->languages = i18n::getAll();
     }
 
     /**
      * Set Genesis Configuration based on the module settings
      *
      * @return void
+     *
+     * @throws InvalidArgument
      */
     public function applyGenesisConfig()
     {
-        \Genesis\Config::setEndpoint(
-            \Genesis\API\Constants\Endpoints::EMERCHANTPAY
+        Config::setEndpoint(
+            Endpoints::EMERCHANTPAY
         );
 
-        \Genesis\Config::setUsername(
+        Config::setUsername(
             Configuration::get('EMERCHANTPAY_USERNAME')
         );
-        \Genesis\Config::setPassword(
+        Config::setPassword(
             Configuration::get('EMERCHANTPAY_PASSWORD')
         );
 
-        \Genesis\Config::setEnvironment(
+        Config::setEnvironment(
             Configuration::get('EMERCHANTPAY_ENVIRONMENT')
         );
     }
@@ -2293,7 +1632,7 @@ class Emerchantpay extends PaymentModule
     protected function doMigrateSettings()
     {
         $toggleSettingKeys = [
-            self::SETTING_EMERCHANTPAY_CHECKOUT,
+            ConfigurationKeys::SETTING_EMERCHANTPAY_CHECKOUT,
         ];
 
         foreach ($toggleSettingKeys as $toggleSettingKey) {
@@ -2303,45 +1642,6 @@ class Emerchantpay extends PaymentModule
             } elseif ($settingValue == 'false') {
                 Configuration::updateValue($toggleSettingKey, '0');
             }
-        }
-    }
-
-    /**
-     * Prepares default values for some configuration keys
-     *
-     * @return bool
-     */
-    protected function setDefaultSettingsToDB()
-    {
-        $defaultConfigItems = [
-            self::SETTING_EMERCHANTPAY_CHECKOUT => '0',
-            self::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES => [
-                Genesis\API\Constants\Transaction\Types::AUTHORIZE,
-                Genesis\API\Constants\Transaction\Types::SALE,
-            ],
-            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_CAPTURE => '1',
-            self::SETTING_EMERCHANTPAY_ALLOW_PARTIAL_REFUND => '1',
-            self::SETTING_EMERCHANTPAY_ALLOW_VOID => '1',
-            self::SETTING_EMERCHANTPAY_ADD_JQUERY_CHECKOUT => '1',
-            self::SETTING_EMERCHANTPAY_WPF_TOKENIZATION => '0',
-            self::SETTING_EMERCHANTPAY_CHECKOUT_BANK_CODES => [],
-            self::SETTING_EMERCHANTPAY_THREEDS_ALLOWED => '1',
-            self::SETTING_EMERCHANTPAY_SCA_EXEMPTION => 'low_risk',
-            self::SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT => '100',
-            self::SETTING_EMERCHANTPAY_IFRAME_ALLOWED => '0',
-        ];
-
-        try {
-            foreach ($defaultConfigItems as $key => $value) {
-                $value = is_array($value) ? json_encode($value) : $value;
-                Configuration::updateValue($key, $value);
-            }
-
-            return true;
-        } catch (Exception $e) {
-            $this->logError($e);
-
-            return false;
         }
     }
 
@@ -2382,7 +1682,7 @@ class Emerchantpay extends PaymentModule
      *
      * @return bool
      */
-    protected function isPrestaVersion17()
+    public function isPrestaVersion17()
     {
         return version_compare(_PS_VERSION_, '1.7', '>=');
     }
@@ -2419,14 +1719,14 @@ class Emerchantpay extends PaymentModule
     private function getCustomParameterKey($transactionType)
     {
         switch ($transactionType) {
-            case Genesis\API\Constants\Transaction\Types::PPRO:
+            case Types::PPRO:
                 $result = 'payment_method';
                 break;
-            case Genesis\API\Constants\Transaction\Types::PAY_PAL:
+            case Types::PAY_PAL:
                 $result = 'payment_type';
                 break;
-            case Genesis\API\Constants\Transaction\Types::GOOGLE_PAY:
-            case Genesis\API\Constants\Transaction\Types::APPLE_PAY:
+            case Types::GOOGLE_PAY:
+            case Types::APPLE_PAY:
                 $result = 'payment_subtype';
                 break;
             default:
@@ -2482,19 +1782,6 @@ class Emerchantpay extends PaymentModule
     }
 
     /**
-     * Returns SCA Exemption options
-     *
-     * @return array
-     */
-    private function getScaExemptionOptions()
-    {
-        return [
-            Genesis\API\Constants\Transaction\Parameters\ScaExemptions::EXEMPTION_LOW_RISK => 'Low risk',
-            Genesis\API\Constants\Transaction\Parameters\ScaExemptions::EXEMPTION_LOW_VALUE => 'Low value',
-        ];
-    }
-
-    /**
      * Order transaction types with Card Transaction types in front
      *
      * @param array $selectedTypes Selected transaction types
@@ -2503,7 +1790,7 @@ class Emerchantpay extends PaymentModule
      */
     protected function orderCardTransactionTypes($selectedTypes)
     {
-        $creditCardTypes = \Genesis\API\Constants\Transaction\Types::getCardTransactionTypes();
+        $creditCardTypes = Types::getCardTransactionTypes();
 
         asort($selectedTypes);
 
@@ -2513,5 +1800,13 @@ class Emerchantpay extends PaymentModule
             $sortedArray,
             array_diff($selectedTypes, $sortedArray)
         );
+    }
+
+    /**
+     * @return CheckoutSettings
+     */
+    private function getCheckoutSettings()
+    {
+        return new CheckoutSettings($this, $this->identifier, $this->context);
     }
 }

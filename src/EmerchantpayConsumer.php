@@ -16,6 +16,9 @@
  * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
+
+namespace Emerchantpay\Genesis;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -23,7 +26,7 @@ if (!defined('_PS_VERSION_')) {
 /**
  * Class EmerchantpayConsumer
  */
-class EmerchantpayConsumer extends ObjectModel
+class EmerchantpayConsumer extends \ObjectModel
 {
     public $merchant_username;
     public $customer_email;
@@ -32,7 +35,7 @@ class EmerchantpayConsumer extends ObjectModel
     public $date_upd;
 
     /**
-     * @see ObjectModel::$definition
+     * @see \ObjectModel::$definition
      */
     public static $definition = [
         'table' => 'emerchantpay_consumers',
@@ -66,11 +69,14 @@ class EmerchantpayConsumer extends ObjectModel
      * @param bool $nullValues accept nulls?
      *
      * @return bool
+     *
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     public function add($autodate = true, $nullValues = false)
     {
         if (parent::add($autodate, $nullValues)) {
-            Hook::exec('actionEmerchantPayAddConsumer', ['emerchantpayAddConsumer' => $this]);
+            \Hook::exec('actionEmerchantPayAddConsumer', ['emerchantpayAddConsumer' => $this]);
 
             return true;
         }
@@ -83,11 +89,13 @@ class EmerchantpayConsumer extends ObjectModel
      * @param $customerEmail
      *
      * @return int|null
+     *
+     * @throws \PrestaShopException
      */
     public static function getConsumerId($merchantUsername, $customerEmail)
     {
-        /** @var PrestaShopCollectionCore $result */
-        $result = new PrestaShopCollection('EmerchantpayConsumer');
+        /** @var \PrestaShopCollectionCore $result */
+        $result = new \PrestaShopCollection(self::class);
         $result->where('merchant_username', '=', $merchantUsername);
         $result->where('customer_email', '=', $customerEmail);
 
@@ -102,6 +110,9 @@ class EmerchantpayConsumer extends ObjectModel
      * @param $consumerId
      *
      * @return bool
+     *
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     public static function createConsumer($merchantUsername, $customerEmail, $consumerId)
     {

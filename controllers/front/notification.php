@@ -16,6 +16,12 @@
  * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use Emerchantpay\Genesis\EmerchantpayTransaction;
+use Genesis\API\Constants\Transaction\Types;
+use PrestaShopLogger as Logger;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -27,7 +33,7 @@ if (!defined('_PS_VERSION_')) {
  */
 class EmerchantpayNotificationModuleFrontController extends ModuleFrontController
 {
-    /** @var emerchantpay */
+    /** @var Emerchantpay */
     public $module;
 
     /**
@@ -36,33 +42,28 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
      * @var array
      */
     public $types = [
-        \Genesis\API\Constants\Transaction\Types::ABNIDEAL,
-        \Genesis\API\Constants\Transaction\Types::ALIPAY,
-        \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
-        \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
-        \Genesis\API\Constants\Transaction\Types::CASHU,
-        \Genesis\API\Constants\Transaction\Types::FASHIONCHEQUE,
-        \Genesis\API\Constants\Transaction\Types::NETELLER,
-        \Genesis\API\Constants\Transaction\Types::PAYSAFECARD,
-        \Genesis\API\Constants\Transaction\Types::PPRO,
-        \Genesis\API\Constants\Transaction\Types::SALE,
-        \Genesis\API\Constants\Transaction\Types::SALE_3D,
-        \Genesis\API\Constants\Transaction\Types::SOFORT,
-        \Genesis\API\Constants\Transaction\Types::EZEEWALLET,
-        \Genesis\API\Constants\Transaction\Types::IDEBIT_PAYIN,
-        \Genesis\API\Constants\Transaction\Types::INPAY,
-        \Genesis\API\Constants\Transaction\Types::INSTA_DEBIT_PAYIN,
-        \Genesis\API\Constants\Transaction\Types::INTERSOLVE,
-        \Genesis\API\Constants\Transaction\Types::ONLINE_BANKING_PAYIN,
-        \Genesis\API\Constants\Transaction\Types::P24,
-        \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE,
-        \Genesis\API\Constants\Transaction\Types::PAYPAL_EXPRESS,
-        \Genesis\API\Constants\Transaction\Types::POLI,
-        \Genesis\API\Constants\Transaction\Types::SDD_SALE,
-        \Genesis\API\Constants\Transaction\Types::TCS,
-        \Genesis\API\Constants\Transaction\Types::TRUSTLY_SALE,
-        \Genesis\API\Constants\Transaction\Types::WEBMONEY,
-        \Genesis\API\Constants\Transaction\Types::WECHAT,
+        Types::AUTHORIZE,
+        Types::AUTHORIZE_3D,
+        Types::CASHU,
+        Types::FASHIONCHEQUE,
+        Types::NETELLER,
+        Types::PAYSAFECARD,
+        Types::PPRO,
+        Types::SALE,
+        Types::SALE_3D,
+        Types::SOFORT,
+        Types::EZEEWALLET,
+        Types::IDEBIT_PAYIN,
+        Types::INSTA_DEBIT_PAYIN,
+        Types::INTERSOLVE,
+        Types::ONLINE_BANKING_PAYIN,
+        Types::P24,
+        Types::POLI,
+        Types::SDD_SALE,
+        Types::TCS,
+        Types::TRUSTLY_SALE,
+        Types::WEBMONEY,
+        Types::WECHAT,
     ];
 
     /**
@@ -92,7 +93,7 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
     {
         try {
             /** @var \Genesis\API\Notification $notification */
-            $notification = new \Genesis\API\Notification($_POST);
+            $notification = new Genesis\API\Notification($_POST);
 
             if ($notification->isAuthentic()) {
                 $notification->initReconciliation();
@@ -118,12 +119,12 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
                 }
             }
         } catch (\Exception $exception) {
-            if (class_exists('Logger')) {
+            if (class_exists('PrestaShopLogger')) {
                 Logger::addLog(
                     $exception->getMessage(),
                     4,
                     $exception->getCode(),
-                    $this->module->displayName,
+                    $this->module->name,
                     $this->module->id,
                     true
                 );
@@ -138,7 +139,7 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
     {
         try {
             /** @var \Genesis\API\Notification $notification */
-            $notification = new \Genesis\API\Notification($_POST);
+            $notification = new Genesis\API\Notification($_POST);
 
             if ($notification->isAuthentic()) {
                 $notification->initReconciliation();
@@ -169,13 +170,13 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
                     }
                 }
             }
-        } catch (Exception $exception) {
-            if (class_exists('Logger')) {
+        } catch (\Exception $exception) {
+            if (class_exists('PrestaShopLogger')) {
                 Logger::addLog(
                     $exception->getMessage(),
                     4,
                     $exception->getCode(),
-                    $this->module->displayName,
+                    $this->module->name,
                     $this->module->id,
                     true
                 );
@@ -186,6 +187,8 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
     /**
      * @param $checkout_transaction
      * @param $payment_reconcile
+     *
+     * @throws PrestaShopException
      */
     protected function savePaymentTransaction($checkout_transaction, $payment_reconcile)
     {
@@ -220,6 +223,9 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
     /**
      * @param $checkout_transaction
      * @param $payment_reconcile
+     *
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
      */
     protected function addPaymentTransaction($checkout_transaction, $payment_reconcile)
     {

@@ -16,6 +16,15 @@
  * @copyright   2018 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
+
+namespace Emerchantpay\Genesis;
+
+use Emerchantpay\Genesis\Helpers\Constants\ConfigurationKeys;
+use Emerchantpay\Genesis\Settings\Checkout\CheckoutSettings;
+use Genesis\API\Constants\Transaction\States;
+use Genesis\API\Constants\Transaction\Types;
+use PrestaShopLogger as Logger;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -25,7 +34,7 @@ if (!defined('_PS_VERSION_')) {
  *
  * emerchantpay Transaction Model
  */
-class EmerchantpayTransaction extends ObjectModel
+class EmerchantpayTransaction extends \ObjectModel
 {
     public const REFERENCE_ACTION_CAPTURE = 'capture';
     public const REFERENCE_ACTION_REFUND = 'refund';
@@ -102,11 +111,14 @@ class EmerchantpayTransaction extends ObjectModel
      * @param bool $nullValues accept nulls?
      *
      * @return bool
+     *
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     public function add($autodate = true, $nullValues = false)
     {
         if (parent::add($autodate, $nullValues)) {
-            Hook::exec('actionEmerchantPayAddTransaction', ['emerchantpayAddTransaction' => $this]);
+            \Hook::exec('actionEmerchantPayAddTransaction', ['emerchantpayAddTransaction' => $this]);
 
             return true;
         }
@@ -117,12 +129,14 @@ class EmerchantpayTransaction extends ObjectModel
     /**
      * Get the order associated with the current transaction
      *
-     * @return OrderCore
+     * @return \Order
+     *
+     * @throws \PrestaShopException
      */
     public function getOrder()
     {
-        /** @var PrestaShopCollectionCore $orders */
-        $orders = new PrestaShopCollection('Order');
+        /** @var /PrestaShopCollectionCore $orders */
+        $orders = new \PrestaShopCollection('Order');
         $orders->where('reference', '=', $this->ref_order);
 
         return $orders->getFirst();
@@ -135,12 +149,12 @@ class EmerchantpayTransaction extends ObjectModel
      *
      * @return EmerchantpayTransaction
      *
-     * @throws PrestaShopException
+     * @throws \PrestaShopException
      */
     public static function getByUniqueId($id_unique)
     {
-        /** @var PrestaShopCollectionCore $result */
-        $result = new PrestaShopCollection('EmerchantpayTransaction');
+        /** @var /PrestaShopCollectionCore $result */
+        $result = new \PrestaShopCollection(self::class);
         $result->where('id_unique', '=', $id_unique);
 
         return $result->getFirst();
@@ -151,14 +165,14 @@ class EmerchantpayTransaction extends ObjectModel
      *
      * @param int $id_order
      *
-     * @return array
+     * @return \PrestaShopCollection
      */
     public static function getByOrderId($id_order)
     {
-        $order = new Order((int) $id_order);
+        $order = new \Order((int) $id_order);
 
-        /** @var PrestaShopCollectionCore $transactions */
-        $transactions = new PrestaShopCollection('EmerchantpayTransaction');
+        /** @var /PrestaShopCollectionCore $transactions */
+        $transactions = new \PrestaShopCollection(self::class);
         $transactions->where('ref_order', '=', $order->reference);
 
         return $transactions;
@@ -170,28 +184,28 @@ class EmerchantpayTransaction extends ObjectModel
      *
      * @param $id_transaction
      *
-     * @return OrderCore
+     * @return \Order
      */
     public static function getOrderByTransactionId($id_transaction)
     {
         $transaction = EmerchantpayTransaction::getByUniqueId($id_transaction);
 
-        /** @var PrestaShopCollectionCore $orders */
-        $orders = new PrestaShopCollection('Order');
+        /** @var /PrestaShopCollectionCore $orders */
+        $orders = new \PrestaShopCollection('Order');
         $orders->where('reference', '=', $transaction->ref_order);
 
         return $orders->getFirst();
     }
 
     /**
-     * Get the sum of the ammount for a list of transaction types and status
+     * Get the sum of the amount for a list of transaction types and status
      *
      * @param int $order_reference
      * @param string $parent_transaction_id
-     * @param array $types
+     * @param array|string $types
      * @param string $status
      *
-     * @return decimal
+     * @return float
      */
     private static function getTransactionsSumAmount($order_reference, $parent_transaction_id, $types, $status)
     {
@@ -211,10 +225,13 @@ class EmerchantpayTransaction extends ObjectModel
      *
      * @param int $order_reference
      * @param string $parent_transaction_id
-     * @param array $types
+     * @param array|string $types
      * @param string $status
      *
      * @return array
+     *
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     private static function getTransactionsByTypeAndStatus($order_reference, $parent_transaction_id, $types, $status)
     {
@@ -227,9 +244,9 @@ class EmerchantpayTransaction extends ObjectModel
             '\'))';
         $status = pSQL($status);
 
-        return ObjectModel::hydrateCollection(
-            'EmerchantpayTransaction',
-            Db::getInstance()->executeS("
+        return \ObjectModel::hydrateCollection(
+            self::class,
+            \Db::getInstance()->executeS("
 				SELECT *
 				FROM `$table`
 				WHERE (`ref_order` = '$order')
@@ -247,13 +264,16 @@ class EmerchantpayTransaction extends ObjectModel
      *
      * @return array
      *
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     *
      * @since 1.5.0.13
      */
     public static function getByOrderReference($order_reference)
     {
-        return ObjectModel::hydrateCollection(
-            'EmerchantpayTransaction',
-            Db::getInstance()->executeS('
+        return \ObjectModel::hydrateCollection(
+            self::class,
+            \Db::getInstance()->executeS('
 				SELECT *
 				FROM `' . _DB_PREFIX_ . "emerchantpay_transactions`
 				WHERE `ref_order` = '" . pSQL($order_reference) . "'
@@ -273,7 +293,7 @@ class EmerchantpayTransaction extends ObjectModel
         /* DecimalSeparator   -> .
            Thousand Separator -> empty
 
-           Otherwise an exception could be thrown from genesis
+           Otherwise, an exception could be thrown from genesis
         */
         return number_format($amount, 2, '.', '');
     }
@@ -286,11 +306,14 @@ class EmerchantpayTransaction extends ObjectModel
      * @param $id_order int OrderId
      *
      * @return array
+     *
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     public static function getTransactionTree($id_order)
     {
-        /** @var OrderCore $order */
-        $order = new Order((int) $id_order);
+        /** @var \Order $order */
+        $order = new \Order((int) $id_order);
 
         $result = self::getByOrderReference($order->reference);
 
@@ -308,12 +331,7 @@ class EmerchantpayTransaction extends ObjectModel
 
         // Ascending Date/Timestamp sorting
         uasort($transactions, function ($a, $b) {
-            // sort by timestamp (date) first
-            if (@$a['date_add'] == @$b['date_add']) {
-                return 0;
-            }
-
-            return (@$a['date_add'] > @$b['date_add']) ? 1 : -1;
+            return ($a['date_add'] ?? null) <=> ($b['date_add'] ?? null);
         });
 
         // Process individual fields
@@ -327,11 +345,11 @@ class EmerchantpayTransaction extends ObjectModel
                     $order->reference,
                     $transaction['id_parent'],
                     [
-                        \Genesis\API\Constants\Transaction\Types::AUTHORIZE,
-                        \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
-                        \Genesis\API\Constants\Transaction\Types::GOOGLE_PAY,
-                        \Genesis\API\Constants\Transaction\Types::PAY_PAL,
-                        \Genesis\API\Constants\Transaction\Types::APPLE_PAY,
+                        Types::AUTHORIZE,
+                        Types::AUTHORIZE_3D,
+                        Types::GOOGLE_PAY,
+                        Types::PAY_PAL,
+                        Types::APPLE_PAY,
                     ],
                     'approved'
                 );
@@ -385,15 +403,9 @@ class EmerchantpayTransaction extends ObjectModel
         // Order the parent/child entries
         $transactions = [];
 
-        foreach ($array_asc as $val) {
-            /*
-            if (isset($val['id_parent']) && $val['id_parent']){
-                continue;
-            }
-            */
-
+        array_walk($array_asc, function ($val) use (&$transactions, &$array_asc) {
             self::treeTransactionSort($transactions, $val, $array_asc);
-        }
+        });
 
         return $transactions;
     }
@@ -413,7 +425,7 @@ class EmerchantpayTransaction extends ObjectModel
             return self::checkReferenceActionByCustomAttr(self::REFERENCE_ACTION_CAPTURE, $transaction['type']);
         }
 
-        return \Genesis\API\Constants\Transaction\Types::canCapture($transaction['type']);
+        return Types::canCapture($transaction['type']);
     }
 
     /**
@@ -431,7 +443,7 @@ class EmerchantpayTransaction extends ObjectModel
             return self::checkReferenceActionByCustomAttr(self::REFERENCE_ACTION_REFUND, $transaction['type']);
         }
 
-        return \Genesis\API\Constants\Transaction\Types::canRefund($transaction['type']);
+        return Types::canRefund($transaction['type']);
     }
 
     /**
@@ -441,8 +453,7 @@ class EmerchantpayTransaction extends ObjectModel
      */
     protected static function canVoid($transaction)
     {
-        return \Genesis\API\Constants\Transaction\Types::canVoid($transaction['type'])
-            && static::isApprovedTransaction($transaction);
+        return Types::canVoid($transaction['type']) && static::isApprovedTransaction($transaction);
     }
 
     /**
@@ -453,7 +464,7 @@ class EmerchantpayTransaction extends ObjectModel
     protected static function getCheckoutTypes()
     {
         return json_decode(
-            Configuration::get(Emerchantpay::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES),
+            \Configuration::get(ConfigurationKeys::SETTING_EMERCHANTPAY_CHECKOUT_TRX_TYPES),
             true
         );
     }
@@ -471,7 +482,7 @@ class EmerchantpayTransaction extends ObjectModel
             return false;
         }
 
-        $state = new \Genesis\API\Constants\Transaction\States($transaction['status']);
+        $state = new States($transaction['status']);
 
         return $state->isApproved();
     }
@@ -486,9 +497,9 @@ class EmerchantpayTransaction extends ObjectModel
     protected static function isTransactionWithCustomAttribute($transactionType)
     {
         $transactionTypes = [
-            \Genesis\API\Constants\Transaction\Types::GOOGLE_PAY,
-            \Genesis\API\Constants\Transaction\Types::PAY_PAL,
-            \Genesis\API\Constants\Transaction\Types::APPLE_PAY,
+            Types::GOOGLE_PAY,
+            Types::PAY_PAL,
+            Types::APPLE_PAY,
         ];
 
         return in_array($transactionType, $transactionTypes);
@@ -497,9 +508,8 @@ class EmerchantpayTransaction extends ObjectModel
     /**
      * Check if canCapture, canRefund based on the selected custom attribute
      *
-     * @param $action
-     * @param $transactionType
-     * @param $selectedTypes
+     * @param string $action
+     * @param string $transactionType
      *
      * @return bool
      */
@@ -512,51 +522,56 @@ class EmerchantpayTransaction extends ObjectModel
         }
 
         switch ($transactionType) {
-            case \Genesis\API\Constants\Transaction\Types::GOOGLE_PAY:
+            case Types::GOOGLE_PAY:
                 if (self::REFERENCE_ACTION_CAPTURE === $action) {
                     return in_array(
-                        Emerchantpay::GOOGLE_PAY_TRANSACTION_PREFIX .
-                        Emerchantpay::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE,
+                        CheckoutSettings::GOOGLE_PAY_TRANSACTION_PREFIX .
+                        CheckoutSettings::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE,
                         $selectedTypes
                     );
                 }
 
                 if (self::REFERENCE_ACTION_REFUND === $action) {
                     return in_array(
-                        Emerchantpay::GOOGLE_PAY_TRANSACTION_PREFIX . Emerchantpay::GOOGLE_PAY_PAYMENT_TYPE_SALE,
+                        CheckoutSettings::GOOGLE_PAY_TRANSACTION_PREFIX .
+                        CheckoutSettings::GOOGLE_PAY_PAYMENT_TYPE_SALE,
                         $selectedTypes
                     );
                 }
                 break;
-            case \Genesis\API\Constants\Transaction\Types::PAY_PAL:
+            case Types::PAY_PAL:
                 if (self::REFERENCE_ACTION_CAPTURE === $action) {
                     return in_array(
-                        Emerchantpay::PAYPAL_TRANSACTION_PREFIX . Emerchantpay::PAYPAL_PAYMENT_TYPE_AUTHORIZE,
+                        CheckoutSettings::PAYPAL_TRANSACTION_PREFIX .
+                        CheckoutSettings::PAYPAL_PAYMENT_TYPE_AUTHORIZE,
                         $selectedTypes
                     );
                 }
 
                 if (self::REFERENCE_ACTION_REFUND === $action) {
                     $refundableTypes = [
-                        Emerchantpay::PAYPAL_TRANSACTION_PREFIX . Emerchantpay::PAYPAL_PAYMENT_TYPE_SALE,
-                        Emerchantpay::PAYPAL_TRANSACTION_PREFIX . Emerchantpay::PAYPAL_PAYMENT_TYPE_EXPRESS,
+                        CheckoutSettings::PAYPAL_TRANSACTION_PREFIX .
+                        CheckoutSettings::PAYPAL_PAYMENT_TYPE_SALE,
+                        CheckoutSettings::PAYPAL_TRANSACTION_PREFIX .
+                        CheckoutSettings::PAYPAL_PAYMENT_TYPE_EXPRESS,
                     ];
 
                     return count(array_intersect($refundableTypes, $selectedTypes)) > 0;
                 }
                 break;
-            case \Genesis\API\Constants\Transaction\Types::APPLE_PAY:
+            case Types::APPLE_PAY:
                 if (self::REFERENCE_ACTION_CAPTURE === $action) {
                     return in_array(
-                        Emerchantpay::APPLE_PAY_TRANSACTION_PREFIX .
-                        Emerchantpay::APPLE_PAY_PAYMENT_TYPE_AUTHORIZE,
+                        CheckoutSettings::APPLE_PAY_TRANSACTION_PREFIX .
+                        CheckoutSettings::APPLE_PAY_PAYMENT_TYPE_AUTHORIZE,
                         $selectedTypes
                     );
                 }
 
                 if (self::REFERENCE_ACTION_REFUND === $action) {
                     return in_array(
-                        Emerchantpay::APPLE_PAY_TRANSACTION_PREFIX . Emerchantpay::APPLE_PAY_PAYMENT_TYPE_SALE,
+                        CheckoutSettings::APPLE_PAY_TRANSACTION_PREFIX .
+                        CheckoutSettings::APPLE_PAY_PAYMENT_TYPE_SALE,
                         $selectedTypes
                     );
                 }
@@ -593,7 +608,7 @@ class EmerchantpayTransaction extends ObjectModel
     /**
      * Import a Genesis Response Object
      *
-     * @param stdClass $response
+     * @param \stdClass $response
      */
     public function importResponse($response)
     {
@@ -628,13 +643,15 @@ class EmerchantpayTransaction extends ObjectModel
      *
      * @param int $status Order Status Id
      * @param bool $notify_customer Should we notify the customer?
+     *
+     * @throws \PrestaShopException
      */
     public function updateOrderHistory($status, $notify_customer = null)
     {
         $order = $this->getOrder();
 
-        /** @var OrderHistoryCore $new_history */
-        $new_history = new OrderHistory();
+        /** @var /OrderHistoryCore $new_history */
+        $new_history = new \OrderHistory();
         $new_history->id_order = (int) $order->id;
         $new_history->changeIdOrderState((int) $status, $order, true);
 
@@ -660,7 +677,7 @@ class EmerchantpayTransaction extends ObjectModel
         try {
             return $parent_transaction->update();
         } catch (\Exception $e) {
-            if (class_exists('Logger')) {
+            if (class_exists('PrestaShopLogger')) {
                 Logger::addLog($e->getMessage(), 4);
             }
 
@@ -678,8 +695,8 @@ class EmerchantpayTransaction extends ObjectModel
         }
 
         switch ($this->type) {
-            case \Genesis\API\Constants\Transaction\Types::REFUND:
-            case \Genesis\API\Constants\Transaction\Types::VOID:
+            case Types::REFUND:
+            case Types::VOID:
                 return true;
             default:
                 return false;
@@ -694,10 +711,10 @@ class EmerchantpayTransaction extends ObjectModel
     protected function getStatusFromTransactionType($type)
     {
         switch ($type) {
-            case \Genesis\API\Constants\Transaction\Types::REFUND:
-                return \Genesis\API\Constants\Transaction\States::REFUNDED;
-            case \Genesis\API\Constants\Transaction\Types::VOID:
-                return \Genesis\API\Constants\Transaction\States::VOIDED;
+            case Types::REFUND:
+                return States::REFUNDED;
+            case Types::VOID:
+                return States::VOIDED;
             default:
                 return 'unknown';
         }

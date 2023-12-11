@@ -6,8 +6,8 @@ This is a Payment Module for Prestashop that gives you the ability to process pa
 Requirements
 ------------
 
-* Prestashop 1.6.x - 8.1.x (Tested up to __8.1.0__)
-* [GenesisPHP v1.21.11](https://github.com/GenesisGateway/genesis_php/releases/tag/1.21.11) - (Integrated in Module)
+* Prestashop 1.7.1 - 8.1.x (Tested up to __8.1.2__)
+* [GenesisPHP v1.24.1](https://github.com/GenesisGateway/genesis_php/releases/tag/1.24.1) - (Integrated in Module)
 * [Composer v2.5.5](https://github.com/composer/composer/releases/tag/2.5.5) 
 
 GenesisPHP Requirements
@@ -70,6 +70,8 @@ You're now ready to process payments through our gateway.
 
 __Note__: If you have trouble with your credentials or terminal configuration, get in touch with our [support] team
 
+__Note__: For security reasons, the default cookie policy is set to Lax. In order for payments in iframe to work, the setting must be changed to None. The setting can be found in ```Configure``` -> ```Advanced Parameters``` -> ```Administration``` -> ```Cookie SameSite``` 
+
 [support]: mailto:tech-support@emerchantpay.net
 
 Supported Transactions
@@ -117,6 +119,7 @@ Supported Transactions
     * __Online Banking__
       * __Interac Combined Pay-in (CPI)__ 
       * __Bancontact (BTC)__ 
+      * __Blik One Click (BLK)__
     * __OXXO__
     * __P24__
     * __Pago Facil__

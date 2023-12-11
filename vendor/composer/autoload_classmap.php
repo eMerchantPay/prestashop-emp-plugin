@@ -7,4 +7,8 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
+    'EmerchantpayFrameModuleFrontController' => $baseDir . '/controllers/front/frame.php',
+    'EmerchantpayNotificationModuleFrontController' => $baseDir . '/controllers/front/notification.php',
+    'EmerchantpayRedirectModuleFrontController' => $baseDir . '/controllers/front/redirect.php',
+    'EmerchantpayValidationModuleFrontController' => $baseDir . '/controllers/front/validation.php',
 );

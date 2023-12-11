@@ -17,6 +17,8 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
+namespace Emerchantpay\Genesis;
+
 use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\CardHolderAccount\PasswordChangeIndicators;
 use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\CardHolderAccount\RegistrationIndicators;
 use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\CardHolderAccount\ShippingAddressUsageIndicators;
@@ -80,9 +82,9 @@ class EmerchantpayThreeds
     /**
      * Get shipping indicator
      *
-     * @param CartCore $cart
-     * @param AddressCore $invoice
-     * @param AddressCore $shipping
+     * @param \Cart $cart
+     * @param \Address $invoice
+     * @param \Address $shipping
      * @param bool $isGuest
      *
      * @return string
@@ -110,8 +112,8 @@ class EmerchantpayThreeds
     /**
      * Get Reorder items indicator, according if this is first order or item is reordered
      *
-     * @param CartCore $cart
-     * @param CustomerCore $customer
+     * @param \Cart $cart
+     * @param \Customer $customer
      * @param bool $isGuest
      *
      * @return string
@@ -137,7 +139,7 @@ class EmerchantpayThreeds
     /**
      * Get customer latest update indicator
      *
-     * @param CustomerCore $customer
+     * @param \Customer $customer
      * @param int $idLang
      *
      * @return string
@@ -153,7 +155,7 @@ class EmerchantpayThreeds
     /**
      * Get last password change indicator
      *
-     * @param CustomerCore $customer
+     * @param \Customer $customer
      *
      * @return string
      */
@@ -168,7 +170,7 @@ class EmerchantpayThreeds
     /**
      * Find last changes date - address or customer account
      *
-     * @param CustomerCore $customer
+     * @param \Customer $customer
      * @param int $idLang
      *
      * @return string
@@ -203,7 +205,7 @@ class EmerchantpayThreeds
     /**
      * Get Payment account firs time usage indicator
      *
-     * @param CustomerCore $customer
+     * @param \Customer $customer
      *
      * @return string
      */
@@ -218,13 +220,13 @@ class EmerchantpayThreeds
     /**
      * Find date when the customer made first order
      *
-     * @param CustomerCore $customer
+     * @param \Customer $customer
      *
      * @return string
      */
     public static function findFirstCustomerOrderDate($customer)
     {
-        $orders = self::getSortedCustomerData(Order::getCustomerOrders($customer->id), SORT_ASC);
+        $orders = self::getSortedCustomerData(\Order::getCustomerOrders($customer->id), SORT_ASC);
         $orderDate = (new \DateTime())->format(self::PRESTASHOP_DATETIME_FORMAT);
 
         if (CommonUtils::isValidArray($orders)) {
@@ -237,14 +239,14 @@ class EmerchantpayThreeds
     /**
      * Iterate orders to find the first date when Shipping address is used
      *
-     * @param CustomerCore $customer
-     * @param CartCore $cart
+     * @param \Customer $customer
+     * @param \Cart $cart
      *
      * @return string
      */
     public static function findShippingAddressDateFirstUsed($customer, $cart)
     {
-        $orders = self::getSortedCustomerData(Order::getCustomerOrders($customer->id), SORT_ASC);
+        $orders = self::getSortedCustomerData(\Order::getCustomerOrders($customer->id), SORT_ASC);
 
         foreach ($orders as $order) {
             if ($order['id_address_delivery'] === $cart->id_address_delivery) {
@@ -277,15 +279,15 @@ class EmerchantpayThreeds
      *
      * @return int
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public static function findNumberOfOrdersForAPeriod($customerId, $period)
     {
         $endDate = new \DateTime();
-        $startDate = (new \DateTime())->sub(new DateInterval($period));
+        $startDate = (new \DateTime())->sub(new \DateInterval($period));
 
         return count(
-            Order::getOrdersIdByDate(
+            \Order::getOrdersIdByDate(
                 $startDate->format(self::PRESTASHOP_DATETIME_FORMAT),
                 $endDate->format(self::PRESTASHOP_DATETIME_FORMAT),
                 $customerId
@@ -302,8 +304,8 @@ class EmerchantpayThreeds
      */
     public static function findNumberOfOrdersForLastSixMonths($customerId)
     {
-        $allOrders = Order::getCustomerOrders($customerId);
-        $startDate = (new \DateTime())->sub(new DateInterval(self::ACTIVITY_6_MONTHS));
+        $allOrders = \Order::getCustomerOrders($customerId);
+        $startDate = (new \DateTime())->sub(new \DateInterval(self::ACTIVITY_6_MONTHS));
 
         $numberOfOrders = 0;
 
@@ -328,8 +330,8 @@ class EmerchantpayThreeds
     /**
      * Compare billing and shipping addresses
      *
-     * @param AddressCore $invoiceAddress
-     * @param AddressCore $shippingAddress
+     * @param \Address $invoiceAddress
+     * @param \Address $shippingAddress
      *
      * @return bool
      */
@@ -393,7 +395,7 @@ class EmerchantpayThreeds
      */
     private static function getDateIndicator($date)
     {
-        $now = new DateTime();
+        $now = new \DateTime();
         $checkDate = \DateTime::createFromFormat(self::PRESTASHOP_DATETIME_FORMAT, $date);
         $days = $checkDate->diff($now)->days;
 
