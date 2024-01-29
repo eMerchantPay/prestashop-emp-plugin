@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018 emerchantpay Ltd.
+ * Copyright (C) 2015-2024 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -13,13 +13,14 @@
  * GNU General Public License for more details.
  *
  * @author      emerchantpay
- * @copyright   2018 emerchantpay Ltd.
+ * @copyright   2015-2024 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Emerchantpay\Genesis\EmerchantpayTransaction;
 use Genesis\API\Constants\Transaction\Types;
+use Genesis\API\Notification;
 use PrestaShopLogger as Logger;
 
 if (!defined('_PS_VERSION_')) {
@@ -92,8 +93,7 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
     private function processDirectIPN()
     {
         try {
-            /** @var \Genesis\API\Notification $notification */
-            $notification = new Genesis\API\Notification($_POST);
+            $notification = new Notification($_POST);
 
             if ($notification->isAuthentic()) {
                 $notification->initReconciliation();
@@ -118,7 +118,7 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
                     $notification->renderResponse();
                 }
             }
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             if (class_exists('PrestaShopLogger')) {
                 Logger::addLog(
                     $exception->getMessage(),
@@ -138,8 +138,7 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
     private function processCheckoutIPN()
     {
         try {
-            /** @var \Genesis\API\Notification $notification */
-            $notification = new Genesis\API\Notification($_POST);
+            $notification = new Notification($_POST);
 
             if ($notification->isAuthentic()) {
                 $notification->initReconciliation();
@@ -170,7 +169,7 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
                     }
                 }
             }
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             if (class_exists('PrestaShopLogger')) {
                 Logger::addLog(
                     $exception->getMessage(),
@@ -197,7 +196,7 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
         if ($payment_transaction) {
             $payment_transaction->importResponse($payment_reconcile);
             $payment_transaction->save();
-        } elseif ($payment_reconcile instanceof \ArrayObject) {
+        } elseif ($payment_reconcile instanceof ArrayObject) {
             foreach ($payment_reconcile as $trx) {
                 $this->addPaymentTransaction($checkout_transaction, $trx);
             }
@@ -213,7 +212,7 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
      */
     protected function getPaymentTransaction($payment_reconcile)
     {
-        if ($payment_reconcile instanceof \ArrayObject) {
+        if ($payment_reconcile instanceof ArrayObject) {
             return EmerchantpayTransaction::getByUniqueId($payment_reconcile[0]->unique_id);
         }
 

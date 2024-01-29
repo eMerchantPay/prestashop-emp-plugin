@@ -1,5 +1,5 @@
-{*
- * Copyright (C) 2022 emerchantpay Ltd.
+{**
+ * Copyright (C) 2015-2024 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,9 +12,10 @@
  * GNU General Public License for more details.
  *
  * @author      emerchantpay
- * @copyright   2022 emerchantpay Ltd.
+ * @copyright   2015-2024 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  *}
+
 <form class="payment-option-form-{$method_name|escape:'htmlall':'UTF-8'}"
       method="post"
       action="{$submit_form_action|escape:'htmlall':'UTF-8'}"

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2023 emerchantpay Ltd.
+ * Copyright (C) 2015-2024 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -13,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * @author      emerchantpay
- * @copyright   2018-2023 emerchantpay Ltd.
+ * @copyright   2015-2024 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
@@ -306,7 +306,7 @@ abstract class Settings
                 'Exemption Amount',
                 'Exemption Amount determinate if the SCA Exemption should be' .
                 ' included in the request to the Gateway.',
-                ConfigurationKeys::SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT,
+                ConfigurationKeys::SETTING_EMERCHANTPAY_SCA_EXEMPTION_AMOUNT
             ),
         ];
     }

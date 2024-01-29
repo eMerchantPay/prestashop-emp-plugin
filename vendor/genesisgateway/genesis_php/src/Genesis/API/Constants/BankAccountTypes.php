@@ -46,12 +46,18 @@ class BankAccountTypes
      */
     const MAESTRA_ACCOUNTS = 'M';
 
+    /**
+     * P: for Payment accounts
+     */
+    const PAYMENT_ACCOUNT = 'P';
+
     public static function getAll()
     {
         return [
             self::CHECKING_ACCOUNT,
             self::SAVINGS_ACCOUNT,
-            self::MAESTRA_ACCOUNTS
+            self::MAESTRA_ACCOUNTS,
+            self::PAYMENT_ACCOUNT
         ];
     }
 }

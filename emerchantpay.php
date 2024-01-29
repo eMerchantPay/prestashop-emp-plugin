@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2023 emerchantpay Ltd.
+ * Copyright (C) 2015-2024 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -13,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * @author      emerchantpay
- * @copyright   2018-2023 emerchantpay Ltd.
+ * @copyright   2015-2024 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 require_once __DIR__ . '/vendor/autoload.php';
@@ -87,7 +87,7 @@ class Emerchantpay extends PaymentModule
         $this->tab = 'payments_gateways';
         $this->displayName = 'emerchantpay Payment Gateway';
         $this->controllers = ['frame', 'notification', 'redirect', 'validation'];
-        $this->version = '2.1.1';
+        $this->version = '2.1.2';
         $this->author = 'emerchantpay Ltd.';
         $this->need_instance = 1;
         $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
@@ -311,9 +311,7 @@ class Emerchantpay extends PaymentModule
                         'denied_partial_refund' => $this->l(
                             'Partial Refund is currently disabled! You can enable this option in the Module Settings.'
                         ),
-                        'denied_void' => $this->l(
-                            'Cancel Transaction are currently disabled! You can enable this option in the Module Settings.'
-                        ),
+                        'denied_void' => $this->l('Cancel Transaction are currently disabled! You can enable this option in the Module Settings.'), // phpcs:ignore Generic.Files.LineLength.TooLong
                     ],
                     'error' => $this->getSessVar('error_transaction'),
                     'tree' => EmerchantpayTransaction::getTransactionTree(
@@ -805,7 +803,8 @@ class Emerchantpay extends PaymentModule
 
             $this->setSessVar(
                 'error_checkout',
-                'Please, make sure you\'ve entered correct credentials for accessing the gateway and all of the required data, e.g. Email, Phone, Billing/Shipping Address.'
+                'Please, make sure you\'ve entered correct credentials for accessing the gateway and all of the ' .
+                ' required data, e.g. Email, Phone, Billing/Shipping Address.'
             );
         }
 
@@ -1281,7 +1280,7 @@ class Emerchantpay extends PaymentModule
         $methods = Methods::getMethods();
 
         foreach ($methods as $method) {
-            $aliasMap[$method . $pproSuffix] = Genesis\API\Constants\Transaction\Types::PPRO;
+            $aliasMap[$method . $pproSuffix] = Types::PPRO;
         }
 
         $aliasMap = array_merge($aliasMap, [
@@ -1537,7 +1536,8 @@ class Emerchantpay extends PaymentModule
             /* Check and update database if necessary */
             EmerchantpayInstall::doProcessSchemaUpdate();
         } catch (Exception $e) {
-            /* just ignore and log exception - Init Method is called on Upload Module (it should be called after Module is installed) */
+            // just ignore and log exception - Init Method is called on Upload Module
+            // (it should be called after Module is installed)
             $this->logError($e);
         }
 
@@ -1545,14 +1545,14 @@ class Emerchantpay extends PaymentModule
         try {
             Requirements::verify();
         } catch (Exception $e) {
-            $this->warning = $this->l('Your server does not meet the minimum system requirements! Contact your hosting provider for assistance!');
+            $this->warning = $this->l('Your server does not meet the minimum system requirements! Contact your hosting provider for assistance!'); // phpcs:ignore Generic.Files.LineLength.TooLong
         }
 
         /* Check if the module is configured */
         if (Configuration::get('EMERCHANTPAY_USERNAME') && Configuration::get('EMERCHANTPAY_PASSWORD')) {
             $this->applyGenesisConfig();
         } else {
-            $this->warning = $this->l('You need to set your credentials (username, password), in order to use Genesis Payment Gateway!');
+            $this->warning = $this->l('You need to set your credentials (username, password), in order to use Genesis Payment Gateway!'); // phpcs:ignore Generic.Files.LineLength.TooLong
         }
 
         // Load Available WPF Languages

@@ -8,3 +8,7 @@ vendor/*
 .php-cs-fixer.cache
 *.zip
 bin/check-standards
+vendor/composer/autoload_files.php
+vendor/composer/pcre/
+vendor/composer/semver/
+vendor/composer/xdebug-handler/

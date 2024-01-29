@@ -2,10 +2,13 @@
     "name": "emerchantpay/prestashop-emp-plugin",
     "description": "emerchantpay Payment Gateway for Prestashop",
     "type": "prestashop-module",
-    "version": "2.1.1",
+    "version": "2.1.2",
     "license": "GPL-2.0",
     "config": {
-        "prepend-autoloader": false
+        "prepend-autoloader": false,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     },
     "authors": [
         {
@@ -16,13 +19,14 @@
     ],
     "minimum-stability": "stable",
     "require": {
-        "genesisgateway/genesis_php": "1.24.1"
+        "genesisgateway/genesis_php": "1.24.2"
     },
     "require-dev": {
         "prestashop/php-dev-tools": "^4.3",
         "squizlabs/php_codesniffer": "^3.7",
         "phpmd/phpmd": "^2.13",
-        "prestashop/autoindex": "^2.1"
+        "prestashop/autoindex": "^2.1",
+        "slevomat/coding-standard": "^8.14"
     },
     "scripts": {
         "pack": [

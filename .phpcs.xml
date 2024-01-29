@@ -2,10 +2,28 @@
 <ruleset name="PrestaShop EMP Plugin Coding Standards">
     <description>Generally-applicable sniffs for PrestaShop EMP Plugin</description>
 
-    <rule ref="PSR1" />
+    <!-- Code MUST follow all rules outlined in PSR-1. -->
+    <rule ref="PSR1">
+        <exclude name="PSR1.Files.SideEffects.FoundWithSymbols" />
+    </rule>
+
+    <!-- Controllers doesn't have Namespace -->
+    <rule ref="PSR1.Classes.ClassDeclaration.MissingNamespace">
+        <exclude-pattern>*/controllers/*</exclude-pattern>
+        <exclude-pattern>emerchantpay.php</exclude-pattern>
+    </rule>
+
+    <!-- relative path from PHPCS source location -->
+    <config name="installed_paths" value="../../slevomat/coding-standard"/>
+    <rule ref="SlevomatCodingStandard.Arrays.TrailingArrayComma" />
+    <rule ref="SlevomatCodingStandard.Namespaces.AlphabeticallySortedUses" />
+    <!-- include SlevomatCodingStandard -->
+
     <rule ref="PSR2" />
 
     <exclude-pattern>*/genesis/*</exclude-pattern>
     <exclude-pattern>*/vendor/*</exclude-pattern>
     <exclude-pattern>*/translations/*</exclude-pattern>
+    <exclude-pattern>*.min.css</exclude-pattern>
+    <exclude-pattern>*.min.js</exclude-pattern>
 </ruleset>
