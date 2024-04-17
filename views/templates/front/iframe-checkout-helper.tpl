@@ -17,10 +17,14 @@
  *}
 
 <script>
+    {**
+     * Payment Button onClick event
+     *}
     document.addEventListener('DOMContentLoaded', function () {
-        const checkoutButton  = document.querySelector('#payment-confirmation button');
-        const mainArea        = document.querySelector('#content');
-        const paymentMethod   = 'emerchantpay_checkout';
+        const checkoutButton = document.querySelector('#payment-confirmation button');
+        const mainArea       = document.querySelector('#wrapper');
+        const mainBody       = document.querySelector('body');
+        const paymentMethod  = 'emerchantpay_checkout';
 
         checkoutButton.addEventListener('click', function(event) {
             const selectedPaymentOption = document.querySelector('input[name="payment-option"]:checked');
@@ -32,55 +36,80 @@
             event.preventDefault();
             event.stopPropagation();
 
-            const mainBody   = document.querySelector('body');
-            const form       = document.querySelector('.payment-option-form-{$method_name|escape:'htmlall':'UTF-8'}');
-            const div        = document.createElement('div');
-            const header     = document.createElement('div');
-            const iframe     = document.createElement('iframe');
-            div.className    = 'emp-threeds-modal';
-            header.className = 'emp-threeds-iframe-header';
-            iframe.className = 'emp-threeds-iframe';
-            header.innerHTML = '<div class="screen-logo"><img src="{$emerchantpay['path']|escape:'htmlall':'UTF-8'}/views/img/logos/emerchantpay_logo.png" alt="Emerchantpay logo"></div>'
-                + '<h3>The payment is being processed<br><span>Please, wait</span></h3>';
-            div.appendChild(header);
-            div.appendChild(iframe);
-
-            document.body.appendChild(div);
-            mainArea.style.opacity  = 0.6;
+            if (mainArea) {
+                mainArea.style.opacity  = '0.6';
+            }
             mainBody.style.overflow = 'hidden';
-            div.style.display       = 'block';
 
-            doBeforeSubmitEMerchantPayCheckoutPaymentForm(form);
-            const postUrl   = decodeURIComponent(form.action);
-            const formData  = new FormData(form);
-            const xhr       = new XMLHttpRequest();
-
-            xhr.open('POST', postUrl, true);
-
-            xhr.onload = function () {
-                if (xhr.status >= 200 && xhr.status < 400) {
-                    try {
-                        let response  = JSON.parse(xhr.responseText);
-                        iframe.onload = function () { document.querySelector('.emp-threeds-iframe-header').style.display = 'none' }
-                        iframe.src    = response.redirect;
-                    } catch (e) {
-                        console.log('Could not parse the server response');
-                        parent.location.reload();
-                    }
-                } else {
-                    console.log('Server returned an error');
-                    parent.location.reload();
-                }
-            }
-
-            xhr.onerror = function () {
-                console.log('Connection error');
-                parent.location.reload();
-            }
-
-            xhr.send(formData);
+            empExecuteRequest(empCreateIframeElement());
         })
     });
+
+    {**
+     * Create iFrame element and attach it to the body
+     *
+     * @returns {HTMLIFrameElement}
+     *}
+    function empCreateIframeElement() {
+        const div        = document.createElement('div');
+        const header     = document.createElement('div');
+        const iframe     = document.createElement('iframe');
+        div.className    = 'emp-threeds-modal';
+        header.className = 'emp-threeds-iframe-header';
+        iframe.className = 'emp-threeds-iframe';
+        header.innerHTML = '<div class="screen-logo"><img src="{$emerchantpay['path']|escape:'htmlall':'UTF-8'}/views/img/logos/emerchantpay_logo.png" alt="Emerchantpay logo"></div>'
+            + '<h3>The payment is being processed<br><span>Please, wait</span></h3>';
+
+        div.appendChild(header);
+        div.appendChild(iframe);
+
+        document.body.appendChild(div);
+
+        div.style.display = 'block';
+
+        return iframe;
+    }
+
+    {**
+     * Create XMLHttpRequest to the payment method validation controller
+     *   - Upon Success an iFrame will be loaded with the redirect URL
+     *   - Upon failure reload the page
+     *
+     * @param iframe
+     *}
+    function empExecuteRequest(iframe) {
+        const form = document.querySelector('.payment-option-form-{$method_name|escape:'htmlall':'UTF-8'}');
+        const xhr  = new XMLHttpRequest();
+
+        doBeforeSubmitEMerchantPayCheckoutPaymentForm(form);
+        const postUrl  = decodeURIComponent(form.action);
+        const formData = new FormData(form);
+
+        xhr.open('POST', postUrl, true);
+
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 400) {
+                try {
+                    let response  = JSON.parse(xhr.responseText);
+                    iframe.onload = function () { document.querySelector('.emp-threeds-iframe-header').style.display = 'none' }
+                    iframe.src    = response.redirect;
+                } catch (e) {
+                    console.log('Could not parse the server response');
+                    parent.location.reload();
+                }
+            } else {
+                console.log('Server returned an error');
+                parent.location.reload();
+            }
+        }
+
+        xhr.onerror = function () {
+            console.log('Connection error');
+            parent.location.reload();
+        }
+
+        xhr.send(formData);
+    }
 </script>
 <style>
     iframe.emp-threeds-iframe {

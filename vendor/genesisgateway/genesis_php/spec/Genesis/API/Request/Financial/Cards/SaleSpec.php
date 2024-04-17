@@ -2,6 +2,7 @@
 
 namespace spec\Genesis\API\Request\Financial\Cards;
 
+use Genesis\API\Constants\Transaction\Parameters\Recurring\Types;
 use Genesis\API\Request\Financial\Cards\Sale;
 use PhpSpec\ObjectBehavior;
 use spec\SharedExamples\Genesis\API\Request\Financial\AccountOwnerAttributesExamples;
@@ -21,6 +22,7 @@ use spec\SharedExamples\Genesis\API\Request\Financial\TokenizationAttributesExam
 use spec\SharedExamples\Genesis\API\Request\Financial\FundingAttributesExamples;
 use spec\SharedExamples\Genesis\API\Request\RequestExamples;
 use spec\SharedExamples\Genesis\API\Traits\Request\DocumentAttributesExample;
+use spec\SharedExamples\Genesis\API\Request\Financial\NeighborhoodAttributesExamples;
 
 class SaleSpec extends ObjectBehavior
 {
@@ -29,7 +31,7 @@ class SaleSpec extends ObjectBehavior
         CredentialOnFileAttributesExamples, UcofAttributesExamples, ScaAttributesExamples,
         AllowedZeroAmount, CreditCardAttributesExamples, DocumentAttributesExample, ManagedRecurringAttributesExample,
         RecurringTypeAttributesExample, RecurringCategoryAttributesExample, FundingAttributesExamples,
-        AccountOwnerAttributesExamples;
+        AccountOwnerAttributesExamples, NeighborhoodAttributesExamples;
 
     public function it_is_initializable()
     {
@@ -42,6 +44,20 @@ class SaleSpec extends ObjectBehavior
         $this->setReferenceId('transaction-reference-id');
         $this->getReferenceId()->shouldBe('transaction-reference-id');
         $this->getDocument()->shouldContain('transaction-reference-id');
+    }
+
+    public function it_should_not_fail_with_subsequent_recurring_type()
+    {
+        $faker = $this->getFaker();
+
+        $this->setTransactionId($faker->numberBetween(1, PHP_INT_MAX));
+        $this->setAmount($faker->numberBetween(1, PHP_INT_MAX));
+        $this->setUsage('Genesis PHP Client Automated Request');
+        $this->setRemoteIp($faker->ipv4);
+        $this->setRecurringType(Types::SUBSEQUENT);
+        $this->setReferenceId('transaction-reference-id');
+
+        $this->shouldNotThrow()->during('getDocument');
     }
 
     protected function setRequestParameters()

@@ -12,3 +12,5 @@ vendor/composer/autoload_files.php
 vendor/composer/pcre/
 vendor/composer/semver/
 vendor/composer/xdebug-handler/
+phpcs_report.xml
+phpmd_report.xml

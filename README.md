@@ -1,13 +1,14 @@
 emerchantpay Gateway Module for Prestashop
 =============================
+[![Software License](https://img.shields.io/badge/license-GPL-green.svg?style=flat)](http://opensource.org/licenses/gpl-2.0.php)
 
 This is a Payment Module for Prestashop that gives you the ability to process payments through emerchantpay's Payment Gateway - Genesis.
 
 Requirements
 ------------
 
-* Prestashop 1.7.1 - 8.1.x (Tested up to __8.1.3__)
-* [GenesisPHP v1.24.2](https://github.com/GenesisGateway/genesis_php/releases/tag/1.24.2) - (Integrated in Module)
+* Prestashop 1.7.1 - 8.1.x (Tested up to __8.1.5__)
+* [GenesisPHP v1.24.6](https://github.com/GenesisGateway/genesis_php/releases/tag/1.24.6) - (Integrated in Module)
 * [Composer v2.5.5](https://github.com/composer/composer/releases/tag/2.5.5) 
 
 GenesisPHP Requirements
@@ -155,3 +156,30 @@ Supported Transactions
     * __WebMoney__
     * __WebPay__
     * __WeChat__
+
+Development
+------------
+* Install dev packages
+```shell
+composer install
+```
+* Run Autoindex
+```shell
+composer autoindex
+```
+* Run PHP Code Sniffer
+```shell
+composer php-cs
+```
+* Run PHP Mess Detector
+```shell
+composer php-md
+```
+* Pack installation archive (Linux or macOS only)
+```shell
+composer pack
+```
+* Update License Headers
+```shell
+composer header-stamp
+```
