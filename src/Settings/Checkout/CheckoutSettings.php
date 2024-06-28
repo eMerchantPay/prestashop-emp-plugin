@@ -22,9 +22,9 @@ namespace Emerchantpay\Genesis\Settings\Checkout;
 use Emerchantpay\Genesis\EmerchantpayThreeds;
 use Emerchantpay\Genesis\Helpers\Constants\ConfigurationKeys;
 use Emerchantpay\Genesis\Settings\Base\Settings;
-use Genesis\API\Constants\Payment\Methods;
-use Genesis\API\Constants\Transaction\Names;
-use Genesis\API\Constants\Transaction\Types;
+use Genesis\Api\Constants\Payment\Methods;
+use Genesis\Api\Constants\Transaction\Names;
+use Genesis\Api\Constants\Transaction\Types;
 
 if (!defined('_PS_VERSION_')) {
     exit;

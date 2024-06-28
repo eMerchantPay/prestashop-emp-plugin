@@ -4,9 +4,13 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit3ae419185e743280d154c9ab85e1295c
+class ComposerStaticInit1fe4988643a02521f483615110b368c6
 {
     public static $prefixLengthsPsr4 = array (
+        'G' => 
+        array (
+            'Genesis\\' => 8,
+        ),
         'E' => 
         array (
             'Emerchantpay\\Genesis\\' => 21,
@@ -14,19 +18,13 @@ class ComposerStaticInit3ae419185e743280d154c9ab85e1295c
     );
 
     public static $prefixDirsPsr4 = array (
+        'Genesis\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/genesisgateway/genesis_php/src/Genesis',
+        ),
         'Emerchantpay\\Genesis\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src',
-        ),
-    );
-
-    public static $prefixesPsr0 = array (
-        'G' => 
-        array (
-            'Genesis' => 
-            array (
-                0 => __DIR__ . '/..' . '/genesisgateway/genesis_php/src',
-            ),
         ),
     );
 
@@ -41,10 +39,9 @@ class ComposerStaticInit3ae419185e743280d154c9ab85e1295c
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit3ae419185e743280d154c9ab85e1295c::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit3ae419185e743280d154c9ab85e1295c::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit3ae419185e743280d154c9ab85e1295c::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit3ae419185e743280d154c9ab85e1295c::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit1fe4988643a02521f483615110b368c6::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit1fe4988643a02521f483615110b368c6::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit1fe4988643a02521f483615110b368c6::$classMap;
 
         }, null, ClassLoader::class);
     }

@@ -19,6 +19,7 @@
 
 namespace Emerchantpay\Genesis;
 
+use Emerchantpay\Genesis\Helpers\DbHelper;
 use Emerchantpay\Genesis\Settings\Base\Settings;
 
 if (!defined('_PS_VERSION_')) {
@@ -136,12 +137,16 @@ class EmerchantpayInstall
      */
     protected static function updateTransactionsSchema()
     {
-        if (!\Db::getInstance()->Execute('SELECT transaction_id from `' . _DB_PREFIX_ . 'emerchantpay_transactions`')) {
-            $sqlAddTransactionIdField = '
-              ALTER TABLE `' . _DB_PREFIX_ . 'emerchantpay_transactions`
-                ADD `transaction_id` VARCHAR(255) NOT NULL AFTER `ref_order`';
+        $table = _DB_PREFIX_ . 'emerchantpay_transactions';
 
-            \Db::getInstance()->Execute($sqlAddTransactionIdField);
+        if (!DbHelper::isTableExists($table)) {
+            return;
+        }
+
+        if (!DbHelper::isColumnExists($table, 'transaction_id')) {
+            \Db::getInstance()->execute(
+                'ALTER TABLE `' . $table . '` ADD `transaction_id` VARCHAR(255) NOT NULL AFTER `ref_order`'
+            );
         }
     }
 
@@ -150,7 +155,9 @@ class EmerchantpayInstall
      */
     protected static function updateConsumersSchema()
     {
-        if (!\Db::getInstance()->Execute('SELECT consumer_id from `' . _DB_PREFIX_ . 'emerchantpay_consumers`')) {
+        $table = _DB_PREFIX_ . 'emerchantpay_consumers';
+
+        if (!DbHelper::isTableExists($table)) {
             \Db::getInstance()->Execute(static::getCreateConsumersSchemaQuery());
         }
     }

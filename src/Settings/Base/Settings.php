@@ -22,8 +22,8 @@ namespace Emerchantpay\Genesis\Settings\Base;
 use Emerchantpay\Genesis\Helpers\Constants\ConfigurationKeys;
 use Emerchantpay\Genesis\Helpers\Forms\FormGenerator;
 use Emerchantpay\Genesis\Helpers\Forms\SettingsService;
-use Genesis\API\Constants\Banks;
-use Genesis\API\Constants\Transaction\Parameters\ScaExemptions;
+use Genesis\Api\Constants\Banks;
+use Genesis\Api\Constants\Transaction\Parameters\ScaExemptions;
 
 if (!defined('_PS_VERSION_')) {
     exit;

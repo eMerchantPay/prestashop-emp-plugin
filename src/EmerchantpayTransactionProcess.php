@@ -19,11 +19,12 @@
 
 namespace Emerchantpay\Genesis;
 
-use Genesis\API\Constants\Transaction\States;
-use Genesis\API\Constants\Transaction\Types;
-use Genesis\API\Request\Financial\Alternatives\Klarna\Items;
-use Genesis\API\Request\WPF\Create;
-use Genesis\API\Response;
+use Emerchantpay\Genesis\Exceptions\ErrorState;
+use Genesis\Api\Constants\Transaction\States;
+use Genesis\Api\Constants\Transaction\Types;
+use Genesis\Api\Request\Financial\Alternatives\Klarna\Items;
+use Genesis\Api\Request\Wpf\Create;
+use Genesis\Api\Response;
 use Genesis\Config;
 use Genesis\Genesis;
 
@@ -49,7 +50,7 @@ class EmerchantpayTransactionProcess
      */
     public static function checkout($data)
     {
-        $genesis = new Genesis('WPF\Create');
+        $genesis = new Genesis('Wpf\Create');
 
         $genesis
             ->request()
@@ -193,6 +194,10 @@ class EmerchantpayTransactionProcess
 
         $genesis->execute();
 
+        if (!$genesis->response()->isSuccessful()) {
+            throw new ErrorState($genesis->response()->getErrorDescription());
+        }
+
         return $genesis->response();
     }
 
@@ -300,6 +305,10 @@ class EmerchantpayTransactionProcess
 
         $genesis->execute();
 
+        if (!$genesis->response()->isSuccessful()) {
+            throw new ErrorState($genesis->response()->getErrorDescription());
+        }
+
         return $genesis->response();
     }
 
@@ -334,6 +343,10 @@ class EmerchantpayTransactionProcess
         }
 
         $genesis->execute();
+
+        if (!$genesis->response()->isSuccessful()) {
+            throw new ErrorState($genesis->response()->getErrorDescription());
+        }
 
         return $genesis->response();
     }
@@ -370,6 +383,10 @@ class EmerchantpayTransactionProcess
 
         $genesis->execute();
 
+        if (!$genesis->response()->isSuccessful()) {
+            throw new ErrorState($genesis->response()->getErrorDescription());
+        }
+
         return $genesis->response();
     }
 
@@ -394,6 +411,10 @@ class EmerchantpayTransactionProcess
                 ->setReferenceId($data['reference_id']);
 
         $genesis->execute();
+
+        if (!$genesis->response()->isSuccessful()) {
+            throw new ErrorState($genesis->response()->getErrorDescription());
+        }
 
         return $genesis->response();
     }

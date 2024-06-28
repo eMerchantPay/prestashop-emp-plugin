@@ -19,8 +19,8 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Emerchantpay\Genesis\EmerchantpayTransaction;
-use Genesis\API\Constants\Transaction\Types;
-use Genesis\API\Notification;
+use Genesis\Api\Constants\Transaction\Types;
+use Genesis\Api\Notification;
 use PrestaShopLogger as Logger;
 
 if (!defined('_PS_VERSION_')) {

@@ -1,9 +1,18 @@
 #!/bin/bash --login
 
-[ -f emerchantpay.zip ] && rm emerchantpay.zip
-composer install --no-dev
-[ ! -L emerchantpay ] && ln -s "$(pwd)" emerchantpay
-zip -r emerchantpay \
+folder_name="emerchantpay"
+
+# Remove existing archive
+[ -f "${folder_name}.zip" ] && rm "${folder_name}.zip"
+
+# Install without development dependencies
+composer install -q --no-dev
+
+# Add folder
+[ ! -L "${folder_name}" ] && ln -s "$(pwd)" "${folder_name}"
+
+# Pack
+zip -rq "${folder_name}" \
     emerchantpay/src \
     emerchantpay/controllers \
     emerchantpay/translations \
@@ -18,4 +27,8 @@ zip -r emerchantpay \
     emerchantpay/index.php \
     emerchantpay/config.xml \
     emerchantpay/.htaccess
-[ -L emerchantpay ] && rm emerchantpay
+
+# Remove folder
+[ -L "${folder_name}" ] && rm "${folder_name}"
+
+[ -f "${folder_name}.zip" ] && echo "The installation package (${folder_name}.zip) was packed!"

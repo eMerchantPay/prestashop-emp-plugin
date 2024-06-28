@@ -21,8 +21,8 @@ namespace Emerchantpay\Genesis;
 
 use Emerchantpay\Genesis\Helpers\Constants\ConfigurationKeys;
 use Emerchantpay\Genesis\Settings\Checkout\CheckoutSettings;
-use Genesis\API\Constants\Transaction\States;
-use Genesis\API\Constants\Transaction\Types;
+use Genesis\Api\Constants\Transaction\States;
+use Genesis\Api\Constants\Transaction\Types;
 use PrestaShopLogger as Logger;
 
 if (!defined('_PS_VERSION_')) {

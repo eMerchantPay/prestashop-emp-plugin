@@ -23,22 +23,20 @@ use Emerchantpay\Genesis\EmerchantpayInstall;
 use Emerchantpay\Genesis\EmerchantpayThreeds;
 use Emerchantpay\Genesis\EmerchantpayTransaction;
 use Emerchantpay\Genesis\EmerchantpayTransactionProcess;
+use Emerchantpay\Genesis\Exceptions\ErrorState;
 use Emerchantpay\Genesis\Helpers\Constants\ConfigurationKeys;
 use Emerchantpay\Genesis\Settings\Checkout\CheckoutSettings;
-use Genesis\API\Constants\Endpoints;
-use Genesis\API\Constants\i18n;
-use Genesis\API\Constants\Payment\Methods;
-use Genesis\API\Constants\Transaction\Parameters\PayByVouchers\CardTypes;
-use Genesis\API\Constants\Transaction\Parameters\PayByVouchers\RedeemTypes;
-use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\CardHolderAccount\RegistrationIndicators;
-use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\MerchantRisk\DeliveryTimeframes;
-use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\Purchase\Categories;
-use Genesis\API\Constants\Transaction\States;
-use Genesis\API\Constants\Transaction\Types;
-use Genesis\API\Request\Financial\Alternatives\Klarna\Item;
-use Genesis\API\Request\Financial\Alternatives\Klarna\Items;
+use Genesis\Api\Constants\Endpoints;
+use Genesis\Api\Constants\i18n;
+use Genesis\Api\Constants\Payment\Methods;
+use Genesis\Api\Constants\Transaction\Parameters\Threeds\V2\CardHolderAccount\RegistrationIndicators;
+use Genesis\Api\Constants\Transaction\Parameters\Threeds\V2\MerchantRisk\DeliveryTimeframes;
+use Genesis\Api\Constants\Transaction\Parameters\Threeds\V2\Purchase\Categories;
+use Genesis\Api\Constants\Transaction\States;
+use Genesis\Api\Constants\Transaction\Types;
+use Genesis\Api\Request\Financial\Alternatives\Klarna\Item;
+use Genesis\Api\Request\Financial\Alternatives\Klarna\Items;
 use Genesis\Config;
-use Genesis\Exceptions\ErrorAPI;
 use Genesis\Exceptions\ErrorParameter;
 use Genesis\Exceptions\InvalidArgument;
 use Genesis\Utils\Common;
@@ -87,7 +85,7 @@ class Emerchantpay extends PaymentModule
         $this->tab = 'payments_gateways';
         $this->displayName = 'emerchantpay Payment Gateway';
         $this->controllers = ['frame', 'notification', 'redirect', 'validation'];
-        $this->version = '2.1.3';
+        $this->version = '2.1.4';
         $this->author = 'emerchantpay Ltd.';
         $this->need_instance = 1;
         $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
@@ -759,7 +757,7 @@ class Emerchantpay extends PaymentModule
             $response = $responseObj->getResponseObject();
 
             $message = 'Unique Id: ' . $response->unique_id . PHP_EOL .
-                       'Transaction Id: ' . $this->transaction_data->id . PHP_EOL;
+                'Transaction Id: ' . $this->transaction_data->id . PHP_EOL;
 
             $this->validateOrder(
                 (int) $this->context->cart->id,
@@ -794,10 +792,10 @@ class Emerchantpay extends PaymentModule
             }
 
             return $response->redirect_url;
-        } catch (ErrorAPI $api) {
-            $this->logError($api);
+        } catch (ErrorState $error) {
+            $this->logError($error);
 
-            $this->setSessVar('error_checkout', $api->getMessage());
+            $this->setSessVar('error_checkout', $error->getMessage());
         } catch (Exception $e) {
             $this->logError($e);
 
@@ -868,6 +866,10 @@ class Emerchantpay extends PaymentModule
                 true
             );
             $transaction_response->add();
+        } catch (ErrorState $error) {
+            $this->logError($error);
+
+            $this->setSessVar('error_transaction', $error->getMessage());
         } catch (Exception $e) {
             $this->logError($e);
 
@@ -932,6 +934,10 @@ class Emerchantpay extends PaymentModule
             $transaction_response->add();
 
             $transaction_response->changeParentStatus();
+        } catch (ErrorState $error) {
+            $this->logError($error);
+
+            $this->setSessVar('error_transaction', $error->getMessage());
         } catch (Exception $e) {
             $this->logError($e);
 
@@ -985,6 +991,10 @@ class Emerchantpay extends PaymentModule
             $transaction_response->add();
 
             $transaction_response->changeParentStatus();
+        } catch (ErrorState $error) {
+            $this->logError($error);
+
+            $this->setSessVar('error_transaction', $error->getMessage());
         } catch (Exception $e) {
             $this->logError($e);
 
@@ -1342,12 +1352,6 @@ class Emerchantpay extends PaymentModule
         $userIdHash = $this->getCurrentUserIdHash();
 
         switch ($transactionType) {
-            case Types::PAYBYVOUCHER_SALE:
-                $attributes = [
-                    'card_type' => CardTypes::VIRTUAL,
-                    'redeem_type' => RedeemTypes::INSTANT,
-                ];
-                break;
             case Types::IDEBIT_PAYIN:
             case Types::INSTA_DEBIT_PAYOUT:
                 $attributes = [
