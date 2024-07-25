@@ -90,20 +90,4 @@ trait BankAttributes
 
         return $this;
     }
-
-    /**
-     * Return conditional iban validation rule
-     *
-     * @return array
-     */
-    protected function getIbanConditions()
-    {
-        return [
-            'iban' => [
-                $this->iban => [
-                    ['iban' => new RegexValidator(RegexValidator::PATTERN_DE_IBAN)]
-                ]
-            ],
-        ];
-    }
 }

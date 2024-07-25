@@ -38,7 +38,6 @@ class CheckoutSettings extends Settings
     /**
      * Transaction Type specifics
      */
-    const PPRO_TRANSACTION_SUFFIX = '_ppro';
     const GOOGLE_PAY_TRANSACTION_PREFIX = 'google_pay_';
     const GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE = 'authorize';
     const GOOGLE_PAY_PAYMENT_TYPE_SALE = 'sale';
@@ -131,14 +130,6 @@ class CheckoutSettings extends Settings
 
         $transactionTypes = array_diff($transactionTypes, $excludedTypes);
 
-        // Add PPRO specific Types
-        $pproTypes = array_map(
-            function ($type) {
-                return $type . self::PPRO_TRANSACTION_SUFFIX;
-            },
-            Methods::getMethods()
-        );
-
         // Add Google Pay Transaction Methods
         $googlePayMethods = array_map(
             function ($type) {
@@ -175,7 +166,6 @@ class CheckoutSettings extends Settings
 
         $transactionTypes = array_merge(
             $transactionTypes,
-            $pproTypes,
             $googlePayMethods,
             $payPalMethods,
             $applePayMethods

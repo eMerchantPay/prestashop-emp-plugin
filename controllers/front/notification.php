@@ -49,7 +49,6 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
         Types::FASHIONCHEQUE,
         Types::NETELLER,
         Types::PAYSAFECARD,
-        Types::PPRO,
         Types::SALE,
         Types::SALE_3D,
         Types::SOFORT,

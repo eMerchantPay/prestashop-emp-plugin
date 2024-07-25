@@ -100,7 +100,6 @@ Supported Transactions
     * __eps__
     * __eZeeWallet__
     * __Fashioncheque__
-    * __GiroPay__
     * __Google Pay__
     * __iDeal__
     * __iDebit__
@@ -130,15 +129,6 @@ Supported Transactions
     * __Pix__
     * __POLi__
     * __Post Finance__
-    * __PPRO__
-        * __eps__
-        * __GiroPay__
-        * __Ideal__
-        * __Przelewy24__
-        * __SafetyPay__
-        * __TrustPay__
-        * __BCMC__
-        * __MyBank__
     * __PSE__
     * __RapiPago__
     * __Redpagos__

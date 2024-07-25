@@ -43,13 +43,6 @@ class Methods
     const EPS = 'eps';
 
     /**
-     * GiroPay
-     *
-     * PPRO transaction
-     */
-    const GIRO_PAY = 'giropay';
-
-    /**
      * iDEAL
      *
      * PPRO transaction

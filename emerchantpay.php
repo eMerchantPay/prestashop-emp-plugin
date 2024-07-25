@@ -85,7 +85,7 @@ class Emerchantpay extends PaymentModule
         $this->tab = 'payments_gateways';
         $this->displayName = 'emerchantpay Payment Gateway';
         $this->controllers = ['frame', 'notification', 'redirect', 'validation'];
-        $this->version = '2.1.4';
+        $this->version = '2.1.5';
         $this->author = 'emerchantpay Ltd.';
         $this->need_instance = 1;
         $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
@@ -1286,14 +1286,7 @@ class Emerchantpay extends PaymentModule
             )
         );
 
-        $pproSuffix = CheckoutSettings::PPRO_TRANSACTION_SUFFIX;
-        $methods = Methods::getMethods();
-
-        foreach ($methods as $method) {
-            $aliasMap[$method . $pproSuffix] = Types::PPRO;
-        }
-
-        $aliasMap = array_merge($aliasMap, [
+        $aliasMap = [
             CheckoutSettings::GOOGLE_PAY_TRANSACTION_PREFIX .
             CheckoutSettings::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE => Types::GOOGLE_PAY,
             CheckoutSettings::GOOGLE_PAY_TRANSACTION_PREFIX .
@@ -1308,7 +1301,7 @@ class Emerchantpay extends PaymentModule
             CheckoutSettings::APPLE_PAY_PAYMENT_TYPE_AUTHORIZE => Types::APPLE_PAY,
             CheckoutSettings::APPLE_PAY_TRANSACTION_PREFIX .
             CheckoutSettings::APPLE_PAY_PAYMENT_TYPE_SALE => Types::APPLE_PAY,
-        ]);
+        ];
 
         foreach ($selectedTypes as $selectedType) {
             if (array_key_exists($selectedType, $aliasMap)) {
@@ -1321,7 +1314,6 @@ class Emerchantpay extends PaymentModule
                 $processedList[$transactionType]['parameters'][] = [
                     $key => str_replace(
                         [
-                            $pproSuffix,
                             CheckoutSettings::GOOGLE_PAY_TRANSACTION_PREFIX,
                             CheckoutSettings::PAYPAL_TRANSACTION_PREFIX,
                             CheckoutSettings::APPLE_PAY_TRANSACTION_PREFIX,
@@ -1723,9 +1715,6 @@ class Emerchantpay extends PaymentModule
     private function getCustomParameterKey($transactionType)
     {
         switch ($transactionType) {
-            case Types::PPRO:
-                $result = 'payment_method';
-                break;
             case Types::PAY_PAL:
                 $result = 'payment_type';
                 break;
