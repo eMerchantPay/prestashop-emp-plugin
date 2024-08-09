@@ -19,7 +19,6 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Emerchantpay\Genesis\EmerchantpayTransaction;
-use Genesis\Api\Constants\Transaction\Types;
 use Genesis\Api\Notification;
 use PrestaShopLogger as Logger;
 
@@ -37,49 +36,44 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
     /** @var Emerchantpay */
     public $module;
 
-    /**
-     * Supported transaction types for Order Status
-     *
-     * @var array
-     */
-    public $types = [
-        Types::AUTHORIZE,
-        Types::AUTHORIZE_3D,
-        Types::CASHU,
-        Types::FASHIONCHEQUE,
-        Types::NETELLER,
-        Types::PAYSAFECARD,
-        Types::SALE,
-        Types::SALE_3D,
-        Types::SOFORT,
-        Types::EZEEWALLET,
-        Types::IDEBIT_PAYIN,
-        Types::INSTA_DEBIT_PAYIN,
-        Types::INTERSOLVE,
-        Types::ONLINE_BANKING_PAYIN,
-        Types::P24,
-        Types::POLI,
-        Types::SDD_SALE,
-        Types::TCS,
-        Types::TRUSTLY_SALE,
-        Types::WEBMONEY,
-        Types::WECHAT,
-    ];
+    /** @var Notification */
+    protected $notification;
 
     /**
      * @see FrontController::initContent()
      */
     public function initContent()
     {
-        parent::initContent();
+        try {
+            parent::initContent();
 
-        $this->module->applyGenesisConfig();
+            $this->module->applyGenesisConfig();
 
-        if (Tools::getIsset('signature')) {
-            if (Tools::getIsset('wpf_unique_id')) {
-                $this->processCheckoutIPN();
-            } else {
+            $this->notification = new Notification($_POST);
+
+            if ($this->notification->isAPINotification()) {
+                // Configure Gateway library
+                Genesis\Config::setToken(filter_input(INPUT_POST, 'terminal_token', FILTER_SANITIZE_STRING));
+
                 $this->processDirectIPN();
+            }
+
+            if ($this->notification->isWPFNotification()) {
+                $this->processCheckoutIPN();
+            }
+
+            // Provide response to the Gateway
+            $this->notification->renderResponse();
+        } catch (Exception $exception) {
+            if (class_exists('PrestaShopLogger')) {
+                Logger::addLog(
+                    $exception->getMessage(),
+                    4,
+                    $exception->getCode(),
+                    $this->module->name,
+                    $this->module->id,
+                    true
+                );
             }
         }
 
@@ -88,134 +82,182 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
 
     /**
      * Process Notification for the Direct API
+     *
+     * @return void
+     *
+     * @throws Exception
      */
     private function processDirectIPN()
     {
-        try {
-            $notification = new Notification($_POST);
-
-            if ($notification->isAuthentic()) {
-                $notification->initReconciliation();
-
-                $reconcile = $notification->getReconciliationObject();
-
-                if (isset($reconcile->unique_id)) {
-                    $transaction = EmerchantpayTransaction::getByUniqueId($reconcile->unique_id);
-
-                    if (isset($transaction->id_unique) && $transaction->id_unique == $reconcile->unique_id) {
-                        if (in_array($reconcile->transaction_type, $this->types)) {
-                            $status = $this->module->getPrestaStatus($reconcile->status);
-                        } else {
-                            $status = $this->module->getPrestaBackendStatus($reconcile->transaction_type);
-                        }
-
-                        $transaction->importResponse($reconcile);
-                        $transaction->updateOrderHistory($status, true);
-                        $transaction->save();
-                    }
-
-                    $notification->renderResponse();
-                }
-            }
-        } catch (Exception $exception) {
-            if (class_exists('PrestaShopLogger')) {
-                Logger::addLog(
-                    $exception->getMessage(),
-                    4,
-                    $exception->getCode(),
-                    $this->module->name,
-                    $this->module->id,
-                    true
-                );
-            }
+        if (!$this->notification->isAuthentic()) {
+            throw new Exception($this->module->l('Notification can not be handled due no Authenticity.'));
         }
+
+        $this->notification->initReconciliation();
+
+        $reconcile = $this->notification->getReconciliationObject();
+
+        // Update the Payment without updating the Order due the Direct Payment is not available anymore
+        $this->saveDirectPaymentTransaction($reconcile);
     }
 
     /**
      * Process Notifications for the Checkout (WPF) API
+     *
+     * @return void
+     *
+     * @throws Exception
      */
     private function processCheckoutIPN()
     {
-        try {
-            $notification = new Notification($_POST);
-
-            if ($notification->isAuthentic()) {
-                $notification->initReconciliation();
-
-                $checkout_reconcile = $notification->getReconciliationObject();
-
-                if (isset($checkout_reconcile->unique_id)) {
-                    $checkout_transaction = EmerchantpayTransaction::getByUniqueId($checkout_reconcile->unique_id);
-
-                    if (isset($checkout_transaction->id_unique)) {
-                        $checkout_transaction->type = 'checkout';
-                        $checkout_transaction->importResponse($checkout_reconcile);
-                        $checkout_transaction->save();
-
-                        if (isset($checkout_reconcile->payment_transaction)) {
-                            $this->savePaymentTransaction(
-                                $checkout_transaction,
-                                $checkout_reconcile->payment_transaction
-                            );
-                        }
-
-                        $checkout_transaction->updateOrderHistory(
-                            $this->module->getPrestaStatus($checkout_reconcile->status),
-                            true
-                        );
-
-                        $notification->renderResponse();
-                    }
-                }
-            }
-        } catch (Exception $exception) {
-            if (class_exists('PrestaShopLogger')) {
-                Logger::addLog(
-                    $exception->getMessage(),
-                    4,
-                    $exception->getCode(),
-                    $this->module->name,
-                    $this->module->id,
-                    true
-                );
-            }
+        if (!$this->notification->isAuthentic()) {
+            throw new Exception($this->module->l('Notification can not be handled due no Authenticity.'));
         }
+
+        $this->notification->initReconciliation();
+
+        $checkoutReconcile = $this->notification->getReconciliationObject();
+        $checkoutTransaction = $this->getPaymentTransaction($checkoutReconcile);
+
+        if (!isset($checkoutTransaction->id_unique)) {
+            throw new Exception($this->module->l('Initial Payment not found!'));
+        }
+
+        // Update initial payment - WPF creation record
+        $this->updatePaymentTransaction($checkoutTransaction, $checkoutReconcile, 'checkout');
+
+        // Process WPF Reconcile payment_transaction
+        $this->saveCheckoutPaymentTransaction($checkoutTransaction, $checkoutReconcile);
+
+        // Update PrestaShop Order
+        $orderStatus = $this->module->getPrestaStatus($checkoutReconcile->status);
+        $checkoutTransaction->updateOrderHistory($orderStatus, true);
     }
 
     /**
-     * @param $checkout_transaction
-     * @param $payment_reconcile
+     * @param EmerchantpayTransaction $initialPayment
+     * @param stdClass $gatewayReconciliation
+     *
+     * @return void
      *
      * @throws PrestaShopException
      */
-    protected function savePaymentTransaction($checkout_transaction, $payment_reconcile)
+    private function saveCheckoutPaymentTransaction($initialPayment, $gatewayReconciliation)
     {
-        $payment_transaction = $this->getPaymentTransaction($payment_reconcile);
+        if (!isset($gatewayReconciliation->payment_transaction)) {
+            return;
+        }
 
-        if ($payment_transaction) {
-            $payment_transaction->importResponse($payment_reconcile);
-            $payment_transaction->save();
-        } elseif ($payment_reconcile instanceof ArrayObject) {
-            foreach ($payment_reconcile as $trx) {
-                $this->addPaymentTransaction($checkout_transaction, $trx);
-            }
-        } else {
-            $this->addPaymentTransaction($checkout_transaction, $payment_reconcile);
+        $paymentTransaction = $gatewayReconciliation->payment_transaction;
+
+        if ($paymentTransaction instanceof ArrayObject) {
+            $this->processMultiplePaymentEvents($initialPayment, $paymentTransaction);
+        }
+
+        if ($paymentTransaction instanceof stdClass) {
+            $this->processSingleEvent($initialPayment, $paymentTransaction);
         }
     }
 
     /**
-     * @param $payment_reconcile
+     * @param EmerchantpayTransaction $initialPayment
+     * @param stdClass $gatewayReconciliation
      *
-     * @return EmerchantpayTransaction
+     * @return void
+     *
+     * @throws PrestaShopException
      */
-    protected function getPaymentTransaction($payment_reconcile)
+    private function saveDirectPaymentTransaction($reconcile)
     {
-        if ($payment_reconcile instanceof ArrayObject) {
-            return EmerchantpayTransaction::getByUniqueId($payment_reconcile[0]->unique_id);
+        $paymentModel = $this->getPaymentTransaction($reconcile);
+
+        if (isset($paymentModel->id_unique)) {
+            $this->updatePaymentTransaction($paymentModel, $reconcile);
+
+            return;
         }
 
-        return EmerchantpayTransaction::getByUniqueId($payment_reconcile->unique_id);
+        if (!isset($reconcile->reference_transaction_unique_id)) {
+            return;
+        }
+
+        // Get the parent transaction
+        $parentPaymentModel = EmerchantpayTransaction::getByUniqueId($reconcile->reference_transaction_unique_id);
+
+        if ($parentPaymentModel) {
+            $this->addPaymentTransaction($parentPaymentModel, $reconcile);
+        }
+    }
+
+    /**
+     * @param EmerchantpayTransaction $initialPayment
+     * @param ArrayObject $gatewayPayments
+     *
+     * @return void
+     *
+     * @throws PrestaShopException
+     */
+    private function processMultiplePaymentEvents($initialPayment, $gatewayPayments)
+    {
+        foreach ($gatewayPayments as $payment) {
+            $this->processSingleEvent($initialPayment, $payment);
+        }
+    }
+
+    /**
+     * @param EmerchantpayTransaction $initialPayment
+     * @param stdClass $gatewayPayment
+     *
+     * @return void
+     *
+     * @throws PrestaShopException
+     */
+    private function processSingleEvent($initialPayment, $gatewayPayment)
+    {
+        $paymentModel = $this->getPaymentTransaction($gatewayPayment);
+
+        if (isset($paymentModel->id_unique)) {
+            $this->updatePaymentTransaction($paymentModel, $gatewayPayment);
+
+            return;
+        }
+
+        if (isset($gatewayPayment->unique_id)) {
+            $this->addPaymentTransaction($initialPayment, $gatewayPayment);
+        }
+    }
+
+    /**
+     * Retrieve the Emerchantpay Payment row from the DB by Gateway Unique ID
+     *
+     * @param stdClass $paymentResponse
+     *
+     * @return false|EmerchantpayTransaction
+     */
+    private function getPaymentTransaction($paymentResponse)
+    {
+        if (!isset($paymentResponse->unique_id)) {
+            return false;
+        }
+
+        return EmerchantpayTransaction::getByUniqueId($paymentResponse->unique_id);
+    }
+
+    /**
+     * @param EmerchantpayTransaction $paymentModel
+     * @param stdClass $response
+     *
+     * @return void
+     */
+    private function updatePaymentTransaction($paymentModel, $response, $type = '')
+    {
+        if (!empty($type)) {
+            $paymentModel->type = $type;
+        }
+
+        $paymentModel->importResponse($response);
+
+        $paymentModel->save();
     }
 
     /**
@@ -225,7 +267,7 @@ class EmerchantpayNotificationModuleFrontController extends ModuleFrontControlle
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
      */
-    protected function addPaymentTransaction($checkout_transaction, $payment_reconcile)
+    private function addPaymentTransaction($checkout_transaction, $payment_reconcile)
     {
         $payment_transaction = new EmerchantpayTransaction();
 

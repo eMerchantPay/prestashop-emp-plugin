@@ -28,7 +28,6 @@ use Emerchantpay\Genesis\Helpers\Constants\ConfigurationKeys;
 use Emerchantpay\Genesis\Settings\Checkout\CheckoutSettings;
 use Genesis\Api\Constants\Endpoints;
 use Genesis\Api\Constants\i18n;
-use Genesis\Api\Constants\Payment\Methods;
 use Genesis\Api\Constants\Transaction\Parameters\Threeds\V2\CardHolderAccount\RegistrationIndicators;
 use Genesis\Api\Constants\Transaction\Parameters\Threeds\V2\MerchantRisk\DeliveryTimeframes;
 use Genesis\Api\Constants\Transaction\Parameters\Threeds\V2\Purchase\Categories;
@@ -85,7 +84,7 @@ class Emerchantpay extends PaymentModule
         $this->tab = 'payments_gateways';
         $this->displayName = 'emerchantpay Payment Gateway';
         $this->controllers = ['frame', 'notification', 'redirect', 'validation'];
-        $this->version = '2.1.5';
+        $this->version = '2.1.6';
         $this->author = 'emerchantpay Ltd.';
         $this->need_instance = 1;
         $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
@@ -861,10 +860,10 @@ class Emerchantpay extends PaymentModule
                 $transaction_response->terminal = $transaction->terminal;
             }
 
-            $transaction_response->updateOrderHistory(
-                Configuration::get('PS_OS_WS_PAYMENT'),
-                true
-            );
+            if ($response->isApproved()) {
+                $transaction_response->updateOrderHistory(Configuration::get('PS_OS_WS_PAYMENT'), true);
+            }
+
             $transaction_response->add();
         } catch (ErrorState $error) {
             $this->logError($error);
@@ -927,10 +926,11 @@ class Emerchantpay extends PaymentModule
             $transaction_response->id_parent = $transaction->id_unique;
             $transaction_response->ref_order = $transaction->ref_order;
             $transaction_response->importResponse($response->getResponseObject());
-            $transaction_response->updateOrderHistory(
-                Configuration::get('PS_OS_REFUND'),
-                true
-            );
+
+            if ($response->isApproved()) {
+                $transaction_response->updateOrderHistory(Configuration::get('PS_OS_REFUND'), true);
+            }
+
             $transaction_response->add();
 
             $transaction_response->changeParentStatus();
@@ -984,10 +984,11 @@ class Emerchantpay extends PaymentModule
             $transaction_response->id_parent = $transaction->id_unique;
             $transaction_response->ref_order = $transaction->ref_order;
             $transaction_response->importResponse($response->getResponseObject());
-            $transaction_response->updateOrderHistory(
-                Configuration::get('PS_OS_CANCELED'),
-                true
-            );
+
+            if ($response->isApproved()) {
+                $transaction_response->updateOrderHistory(Configuration::get('PS_OS_CANCELED'), true);
+            }
+
             $transaction_response->add();
 
             $transaction_response->changeParentStatus();
@@ -1022,6 +1023,8 @@ class Emerchantpay extends PaymentModule
             case States::PENDING:
             case States::PENDING_ASYNC:
                 return Configuration::get('PS_OS_PREPARATION');
+            case States::VOIDED:
+                return Configuration::get('PS_OS_CANCELED');
             default:
                 return Configuration::get('PS_OS_ERROR');
         }

@@ -644,11 +644,18 @@ class EmerchantpayTransaction extends \ObjectModel
      * @param int $status Order Status Id
      * @param bool $notify_customer Should we notify the customer?
      *
+     * @return void
+     *
      * @throws \PrestaShopException
      */
     public function updateOrderHistory($status, $notify_customer = null)
     {
         $order = $this->getOrder();
+
+        // Prevent duplicated state updates
+        if ((int) $order->getCurrentState() === (int) $status) {
+            return;
+        }
 
         /** @var /OrderHistoryCore $new_history */
         $new_history = new \OrderHistory();

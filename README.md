@@ -8,7 +8,7 @@ Requirements
 ------------
 
 * Prestashop 1.7.1 - 8.1.x (Tested up to __8.1.7__)
-* [GenesisPHP v2.0.0](https://github.com/GenesisGateway/genesis_php/releases/tag/2.0.0) - (Integrated in Module)
+* [GenesisPHP v2.0.2](https://github.com/GenesisGateway/genesis_php/releases/tag/2.0.2) - (Integrated in Module)
 * [Composer v2.5.5](https://github.com/composer/composer/releases/tag/2.5.5) 
 
 GenesisPHP Requirements
@@ -119,7 +119,9 @@ Supported Transactions
     * __Online Banking__
       * __Interac Combined Pay-in (CPI)__ 
       * __Bancontact (BTC)__ 
-      * __Blik One Click (BLK)__
+      * __BLIK (BLK)__
+      * __SPEI (SE)__
+      * __LatiPay (PID)__
     * __OXXO__
     * __P24__
     * __Pago Facil__

@@ -91,7 +91,9 @@ abstract class Settings
         return [
             Banks::CPI => 'Interac Combined Pay-in',
             Banks::BCT => 'Bancontact',
-            Banks::BLK => 'Blik One Click',
+            Banks::BLK => 'BLIK',
+            Banks::SE => 'SPEI',
+            Banks::PID => 'LatiPay',
         ];
     }
 

@@ -36,11 +36,18 @@
     <rule ref="rulesets/naming.xml">
         <exclude name="LongVariable"/>
         <exclude name="BooleanGetMethodName"/>
+        <exclude name="LongClassName"/>
     </rule>
 
     <rule ref="rulesets/naming.xml/LongVariable">
         <properties>
             <property name="maximum" value="25" />
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/naming.xml/LongClassName">
+        <properties>
+           <property name="maximum" value="50" />
         </properties>
     </rule>
 
