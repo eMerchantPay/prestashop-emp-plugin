@@ -22,7 +22,7 @@ namespace Emerchantpay\Genesis;
 use Emerchantpay\Genesis\Exceptions\ErrorState;
 use Genesis\Api\Constants\Transaction\States;
 use Genesis\Api\Constants\Transaction\Types;
-use Genesis\Api\Request\Financial\Alternatives\Klarna\Items;
+use Genesis\Api\Request\Financial\Alternatives\Transaction\Items as InvoiceItems;
 use Genesis\Api\Request\Wpf\Create;
 use Genesis\Api\Response;
 use Genesis\Config;
@@ -336,7 +336,7 @@ class EmerchantpayTransactionProcess
                 ->setAmount($data['amount'])
                 ->setCurrency($data['currency']);
 
-        if ($data['transaction_type'] === Types::KLARNA_AUTHORIZE && $data['items'] instanceof Items) {
+        if ($data['transaction_type'] === Types::INVOICE && $data['items'] instanceof InvoiceItems) {
             $genesis
                 ->request()
                 ->setItems($data['items']);
@@ -375,7 +375,7 @@ class EmerchantpayTransactionProcess
                 ->setAmount($data['amount'])
                 ->setCurrency($data['currency']);
 
-        if ($data['transaction_type'] === Types::KLARNA_CAPTURE && $data['items'] instanceof Items) {
+        if ($data['transaction_type'] === Types::INVOICE_CAPTURE && $data['items'] instanceof InvoiceItems) {
             $genesis
                 ->request()
                 ->setItems($data['items']);

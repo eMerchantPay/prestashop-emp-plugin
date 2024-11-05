@@ -36,7 +36,7 @@ class EmerchantpayInstall
     private $status = true;
 
     private $hooks = [
-        'orderConfirmation',
+        'displayОrderConfirmation',
         'adminOrder',
         /*
          * Hooks for 1.7.x

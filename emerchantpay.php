@@ -27,14 +27,15 @@ use Emerchantpay\Genesis\Exceptions\ErrorState;
 use Emerchantpay\Genesis\Helpers\Constants\ConfigurationKeys;
 use Emerchantpay\Genesis\Settings\Checkout\CheckoutSettings;
 use Genesis\Api\Constants\Endpoints;
+use Genesis\Api\Constants\Financial\Alternative\Transaction\ItemTypes;
 use Genesis\Api\Constants\i18n;
 use Genesis\Api\Constants\Transaction\Parameters\Threeds\V2\CardHolderAccount\RegistrationIndicators;
 use Genesis\Api\Constants\Transaction\Parameters\Threeds\V2\MerchantRisk\DeliveryTimeframes;
 use Genesis\Api\Constants\Transaction\Parameters\Threeds\V2\Purchase\Categories;
 use Genesis\Api\Constants\Transaction\States;
 use Genesis\Api\Constants\Transaction\Types;
-use Genesis\Api\Request\Financial\Alternatives\Klarna\Item;
-use Genesis\Api\Request\Financial\Alternatives\Klarna\Items;
+use Genesis\Api\Request\Financial\Alternatives\Transaction\Item as InvoiceItem;
+use Genesis\Api\Request\Financial\Alternatives\Transaction\Items as InvoiceItems;
 use Genesis\Config;
 use Genesis\Exceptions\ErrorParameter;
 use Genesis\Exceptions\InvalidArgument;
@@ -84,7 +85,7 @@ class Emerchantpay extends PaymentModule
         $this->tab = 'payments_gateways';
         $this->displayName = 'emerchantpay Payment Gateway';
         $this->controllers = ['frame', 'notification', 'redirect', 'validation'];
-        $this->version = '2.1.6';
+        $this->version = '2.2.0';
         $this->author = 'emerchantpay Ltd.';
         $this->need_instance = 1;
         $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
@@ -481,27 +482,29 @@ class Emerchantpay extends PaymentModule
      *
      * @return bool
      */
-    public function hookOrderConfirmation($params)
+    public function hookDisplayOrderConfirmation($params)
     {
-        if (!isset($params['objOrder']) || ($params['objOrder']->module != $this->name)) {
+        $order = (isset($params['objOrder'])) ? $params['objOrder'] : $params['order'];
+
+        if ($order->module != $this->name) {
             return false;
         }
 
-        if ($params['objOrder'] && Validate::isLoadedObject($params['objOrder']) && isset($params['objOrder']->valid)) {
-            $reference = isset($params['objOrder']->reference)
-                ? $params['objOrder']->reference
-                : '#' . sprintf('%06d', $params['objOrder']->id);
+        if (Validate::isLoadedObject($order) && isset($order->valid)) {
+            $reference = isset($order->reference)
+                ? $order->reference
+                : '#' . sprintf('%06d', $order->id);
 
             $this->smarty->assign(
                 'order',
                 [
                     'reference' => $reference,
-                    'valid' => $params['objOrder']->valid,
+                    'valid' => $order->valid,
                 ]
             );
         }
 
-        switch ($params['objOrder']->current_state) {
+        switch ($order->current_state) {
             case Configuration::get('PS_OS_PREPARATION'):
                 $status = 'pending';
                 break;
@@ -834,9 +837,9 @@ class Emerchantpay extends PaymentModule
                 Config::setToken($transaction->terminal);
             }
 
-            if ($transaction->type === Types::KLARNA_AUTHORIZE) {
+            if ($transaction->type === Types::INVOICE) {
                 $cart = new Cart($this->context->cart->id);
-                $items = $this->getKlarnaCustomParamItems($cart);
+                $items = $this->getInvoiceCustomParamItems($cart);
             }
 
             $data = [
@@ -904,9 +907,9 @@ class Emerchantpay extends PaymentModule
                 Config::setToken($transaction->terminal);
             }
 
-            if ($transaction->type === Types::KLARNA_CAPTURE) {
+            if ($transaction->type === Types::INVOICE_CAPTURE) {
                 $cart = new Cart($this->context->cart->id);
-                $items = $this->getKlarnaCustomParamItems($cart);
+                $items = $this->getInvoiceCustomParamItems($cart);
             }
 
             $data = [
@@ -1361,8 +1364,8 @@ class Emerchantpay extends PaymentModule
                     'user_id' => $trustlyUser,
                 ];
                 break;
-            case Types::KLARNA_AUTHORIZE:
-                $attributes = $this->getKlarnaCustomParamItems($cart)->toArray();
+            case Types::INVOICE:
+                $attributes = $this->getInvoiceCustomParamItems($cart)->toArray();
                 break;
             case Types::ONLINE_BANKING_PAYIN:
                 $selectedBankCodes = json_decode(
@@ -1393,64 +1396,62 @@ class Emerchantpay extends PaymentModule
     /**
      * @param Cart $cart
      *
-     * @return Items
+     * @return InvoiceItems
      *
-     * @throws ErrorParameter
+     * @throws ErrorParameter|InvalidArgument
      */
-    private function getKlarnaCustomParamItems($cart)
+    private function getInvoiceCustomParamItems($cart)
     {
         /** @var Currency $currency */
         $currency = new Currency((int) $cart->id_currency);
         $cartSummary = $cart->getSummaryDetails();
-        $items = new Items($currency->iso_code);
+        $items = new InvoiceItems();
+        $items->setCurrency($currency->iso_code);
 
         foreach ($cartSummary['products'] as $product) {
             $type = $product['is_virtual'] ?
-                Item::ITEM_TYPE_DIGITAL :
-                Item::ITEM_TYPE_PHYSICAL;
+                ItemTypes::DIGITAL :
+                ItemTypes::PHYSICAL;
 
-            $klarnaItem = new Item(
-                $product['name'],
-                $type,
-                $product['quantity'],
-                $product['price_with_reduction_without_tax']
-            );
-            $items->addItem($klarnaItem);
+            $invoiceItem = new InvoiceItem();
+            $invoiceItem
+                ->setName($product['name'])
+                ->setQuantity($product['quantity'])
+                ->setUnitPrice($product['price_with_reduction_without_tax'])
+                ->setItemType($type);
+            $items->addItem($invoiceItem);
         }
 
         $discount = (float) $cartSummary['total_discounts'];
         if ($discount) {
             $items->addItem(
-                new Item(
-                    'Discount',
-                    Item::ITEM_TYPE_DISCOUNT,
-                    1,
-                    -$discount
-                )
+                (new InvoiceItem())
+                    ->setName('Discount')
+                    ->setQuantity(1)
+                    ->setUnitPrice(-$discount)
+                    ->setItemType(ItemTypes::DISCOUNT)
             );
         }
 
         $tax = (float) $cartSummary['total_tax'];
         if ($tax) {
             $items->addItem(
-                new Item(
-                    'Tax',
-                    Item::ITEM_TYPE_SURCHARGE,
-                    1,
-                    $tax
-                )
+                (new InvoiceItem())
+                    ->setName('Tax')
+                    ->setQuantity(1)
+                    ->setUnitPrice($tax)
+                    ->setItemType(ItemTypes::SURCHARGE)
             );
         }
 
         $shippingCost = (float) $cartSummary['total_shipping'];
         if ($shippingCost) {
             $items->addItem(
-                new Item(
-                    'Shipping Cost',
-                    Item::ITEM_TYPE_SHIPPING_FEE,
-                    1,
-                    $shippingCost
-                )
+                (new InvoiceItem())
+                    ->setName('Shipping Cost')
+                    ->setQuantity(1)
+                    ->setUnitPrice($shippingCost)
+                    ->setItemType(ItemTypes::SHIPPING_FEE)
             );
         }
 
