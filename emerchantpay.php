@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2024 emerchantpay Ltd.
+ * Copyright (C) 2015-2025 emerchantpay Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -13,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * @author      emerchantpay
- * @copyright   2015-2024 emerchantpay Ltd.
+ * @copyright   2015-2025 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 require_once __DIR__ . '/vendor/autoload.php';
@@ -85,7 +85,7 @@ class Emerchantpay extends PaymentModule
         $this->tab = 'payments_gateways';
         $this->displayName = 'emerchantpay Payment Gateway';
         $this->controllers = ['frame', 'notification', 'redirect', 'validation'];
-        $this->version = '2.2.0';
+        $this->version = '2.2.1';
         $this->author = 'emerchantpay Ltd.';
         $this->need_instance = 1;
         $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];

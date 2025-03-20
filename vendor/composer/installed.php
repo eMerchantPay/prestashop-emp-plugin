@@ -20,9 +20,9 @@
             'dev_requirement' => false,
         ),
         'genesisgateway/genesis_php' => array(
-            'pretty_version' => '2.0.3',
-            'version' => '2.0.3.0',
-            'reference' => '0dec0c133b98217e45e23f3e0e1e7984ccd9aa48',
+            'pretty_version' => '2.1.2',
+            'version' => '2.1.2.0',
+            'reference' => 'e28be662ffe29d7c8b0c24887918c223c7d717fb',
             'type' => 'library',
             'install_path' => __DIR__ . '/../genesisgateway/genesis_php',
             'aliases' => array(),
