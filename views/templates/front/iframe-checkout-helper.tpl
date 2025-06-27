@@ -57,6 +57,7 @@
         div.className    = 'emp-threeds-modal';
         header.className = 'emp-threeds-iframe-header';
         iframe.className = 'emp-threeds-iframe';
+        iframe.setAttribute('allow', 'payment');
         header.innerHTML = '<div class="screen-logo"><img src="{$emerchantpay['path']|escape:'htmlall':'UTF-8'}/views/img/logos/emerchantpay_logo.png" alt="Emerchantpay logo"></div>'
             + '<h3>The payment is being processed<br><span>Please, wait</span></h3>';
 
